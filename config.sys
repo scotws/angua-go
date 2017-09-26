@@ -15,7 +15,7 @@ PUTCHAR 00:f002
 ; --- SYSTEM MEMORY ---
 
 ; Use the following format:
-; <start> <end> <type> [<romfile>]
+; <type> <start> <end> [<romfile>]
 
-00:0000 00:7fff ram
-00:8000 00:ffff rom ./roms/test.bin
+ram 00:0000 00:7fff 
+rom 00:8000 00:ffff ./roms/test.bin
