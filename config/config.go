@@ -19,7 +19,9 @@
 
 package config
 
-import "strings"
+import (
+	"strings"
+)
 
 func IsComment(s string) bool {
 	cs := strings.TrimSpace(s)
@@ -29,4 +31,9 @@ func IsComment(s string) bool {
 func IsEmpty(s string) bool {
 	cs := strings.TrimSpace(s)
 	return cs == ""
+}
+
+// TODO code test
+func IsMemBlockDef(s string) bool {
+	return strings.ToLower(s) == "ram" || strings.ToLower(s) == "rom"
 }

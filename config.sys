@@ -7,9 +7,9 @@
 
 ; --- SYSTEM I/O ADDRESSES ---
 
-GETCHAR 00:f000
-GETCHAR_BLOCK 00:f001
-PUTCHAR 00:f002
+GETCHAR $00:f000
+GETCHAR_BLOCK $00:f001
+PUTCHAR $00:f002
 
 
 ; --- SYSTEM MEMORY ---
@@ -17,5 +17,5 @@ PUTCHAR 00:f002
 ; Use the following format:
 ; <type> <start> <end> [<romfile>]
 
-ram 00:0000 00:7fff 
-rom 00:8000 00:ffff ./roms/test.bin
+ram $00:0000 $00:7fff 
+rom $00:8000 $00:ffff ./roms/test.bin
