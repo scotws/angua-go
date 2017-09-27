@@ -1,7 +1,7 @@
 // py65816 A 65816 MPU emulator in MPU
 // Scot W. Stevenson scot.stevenson@gmail.com
 // First version: 26. Sep 2017
-// Second version: 26. Sep 2017
+// Second version: 27. Sep 2017
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -35,6 +35,8 @@ type memBlock struct {
 	class  string // "ram" or "rom"
 	start  int
 	end    int
+	size   int
+	data   *[]byte
 	source string // ROM file path
 }
 
@@ -43,6 +45,7 @@ var (
 	memory []memBlock
 
 	// Default values for special locations
+	// These can be overridden by config file
 	getc       = 0xf000
 	getc_block = 0xf001
 	putc       = 0xf002
@@ -90,17 +93,19 @@ func main() {
 
 func makeMemBlock(ws []string) memBlock {
 
-	addr := ""
-
-	start := convNum(ws[1])
-	end := convNum(ws[2])
+	s := convNum(ws[1])
+	e := convNum(ws[2])
+	sz := e - s + 1
+	d := make([]byte, sz)
+	prt := &d
 
 	// ROM memory blocks get link to their content
+	a := ""
 	if len(ws) == 4 {
-		addr = ws[3]
+		a = ws[3]
 	}
 
-	return memBlock{ws[0], start, end, addr}
+	return memBlock{class: ws[0], start: s, end: e, size: sz, data: prt, source: a}
 }
 
 // Convert a legal number string to an int. Note we accept ':' and '.' as delimiters,

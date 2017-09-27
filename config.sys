@@ -1,15 +1,15 @@
 ; Sample hardware configuration file for go65816
 ; Scot W. Stevenson <scot.stevenson@gmail.com>
 ; First version: 26. Sep 2017
-; This version: 26. Sep 2017
+; This version: 27. Sep 2017
 
 ; Empty lines and lines that start with ';' (like this one) are ignored
 
 ; --- SYSTEM I/O ADDRESSES ---
 
-GETCHAR $00:f000
-GETCHAR_BLOCK $00:f001
-PUTCHAR $00:f002
+getc $00:f000
+getc_block $00:f001
+putc $00:f002
 
 
 ; --- SYSTEM MEMORY ---
