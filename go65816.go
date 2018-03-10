@@ -1,7 +1,7 @@
-// py65816 A 65816 MPU emulator in MPU
-// Scot W. Stevenson scot.stevenson@gmail.com
+// py65816 A 65816 MPU emulator in Go
+// Scot W. Stevenson <scot.stevenson@gmail.com>
 // First version: 26. Sep 2017
-// Second version: 27. Sep 2017
+// This version: 09. Mar 2018
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -29,26 +29,29 @@ import (
 	"go65816/config"
 )
 
-const configFile = "config.sys"
+const (
+	configFile = "config.sys"
+	maxAddr    = 1<<24 - 1
+)
 
-type memBlock struct {
+type chunk struct {
 	class  string // "ram" or "rom"
-	start  int
-	end    int
-	size   int
+	start  uint
+	end    uint
+	size   uint
 	data   *[]byte
 	source string // ROM file path
 }
 
 var (
 	confs  []string
-	memory []memBlock
+	memory []chunk
 
 	// Default values for special locations
-	// These can be overridden by config file
-	getc       = 0xf000
-	getc_block = 0xf001
-	putc       = 0xf002
+	// These can be overridden
+	getc       = 0x00f000
+	getc_block = 0x00f001
+	putc       = 0x00f002
 )
 
 func main() {
@@ -79,8 +82,8 @@ func main() {
 
 		ws := strings.Fields(l)
 
-		if config.IsMemBlockDef(ws[0]) {
-			memory = append(memory, makeMemBlock(ws))
+		if config.IsChunkDef(ws[0]) {
+			memory = append(memory, makeChunk(ws))
 		} else {
 			// TODO Test
 			fmt.Println(ws)
@@ -91,10 +94,20 @@ func main() {
 	fmt.Println(memory)
 }
 
-func makeMemBlock(ws []string) memBlock {
+func makeChunk(ws []string) chunk {
 
 	s := convNum(ws[1])
+
+	if !isValidAddr(s) {
+		log.Fatal("Can't use ", s, " as start address")
+	}
+
 	e := convNum(ws[2])
+
+	if !isValidAddr(e) {
+		log.Fatal("Can't use ", e, " as end address")
+	}
+
 	sz := e - s + 1
 	d := make([]byte, sz)
 	prt := &d
@@ -105,41 +118,54 @@ func makeMemBlock(ws []string) memBlock {
 		a = ws[3]
 	}
 
-	return memBlock{class: ws[0], start: s, end: e, size: sz, data: prt, source: a}
+	return chunk{class: ws[0], start: s, end: e, size: sz, data: prt, source: a}
+}
+
+// Make sure address is not larger than can be stated with 24 bits
+// TODO code test
+func isValidAddr(a uint) bool {
+	return a <= maxAddr
+}
+
+// Remove '.' and ':' which users can use as number delimiters. Also removed
+// spaces
+// TODO code test
+func stripDelim(s string) string {
+	s1 := strings.Replace(s, ":", "", -1)
+	s2 := strings.Replace(s1, ".", "", -1)
+	return strings.TrimSpace(s2)
 }
 
 // Convert a legal number string to an int. Note we accept ':' and '.' as delimiters,
 // use $ for hex numbers, % for binary numbers, and nothing for decimal numbers.
 // TODO code test
-func convNum(s string) int {
+func convNum(s string) uint {
 
-	s1 := strings.Replace(s, ":", "", -1)
-	s2 := strings.Replace(s1, ".", "", -1)
-	s3 := strings.TrimSpace(s2)
+	ss := stripDelim(s)
 
-	d := s3[0]
+	d := ss[0]
 
 	switch d {
 
 	case '$':
-		n, err := strconv.ParseInt(s3[1:], 16, 0)
+		n, err := strconv.ParseInt(ss[1:], 16, 0)
 		if err != nil {
-			log.Fatal("config.sys: Can't convert ", s3, " as hex number")
+			log.Fatal("config.sys: Can't convert ", ss, " as hex number")
 		}
-		return int(n)
+		return uint(n)
 
 	case '%':
-		n, err := strconv.ParseInt(s3[1:], 2, 0)
+		n, err := strconv.ParseInt(ss[1:], 2, 0)
 		if err != nil {
-			log.Fatal("config.sys: Can't convert ", s3, " as binary number")
+			log.Fatal("config.sys: Can't convert ", ss, " as binary number")
 		}
-		return int(n)
+		return uint(n)
 
 	default:
-		n, err := strconv.ParseInt(s3, 10, 0)
+		n, err := strconv.ParseInt(ss, 10, 0)
 		if err != nil {
-			log.Fatal("config.sys: Can't convert ", s3, " as decimal number")
+			log.Fatal("config.sys: Can't convert ", ss, " as decimal number")
 		}
-		return int(n)
+		return uint(n)
 	}
 }
