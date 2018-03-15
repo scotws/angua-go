@@ -6,7 +6,9 @@
 
 package mem
 
-import "testing"
+import (
+	"testing"
+)
 
 // Test if we get the right size of a Chunk
 func TestChunkSize(t *testing.T) {
@@ -90,10 +92,11 @@ func TestStoreNFetch(t *testing.T) {
 			b    byte
 		}{
 			{0x100, 0xEE},
+			{0x400, 0xEE},
 		}
 	)
 
-	tc := Chunk{start: 0, end: 0x400, label: "Test", data: mydata}
+	tc := Chunk{start: 0x100, end: 0x500, label: "Test", data: mydata}
 
 	for _, test := range tests {
 
@@ -103,7 +106,20 @@ func TestStoreNFetch(t *testing.T) {
 		if got != test.b {
 			t.Errorf("Store and Fetch (%q) = %v", test.addr, test.b)
 		}
-
-		tc.hexdump()
 	}
+}
+
+// Play with the hexdump
+func TestHexdump(t *testing.T) {
+	var (
+		mydata = make([]byte, 0x200) // 1 KiB length
+	)
+
+	tc := Chunk{start: 0x400, end: 0x800, label: "Test", data: mydata}
+
+	for i := 0; i < 10; i++ {
+		tc.store(byte(0x30+i), uint(0x400+i)) // 0x30 is ASCII for "0"
+	}
+
+	tc.hexdump()
 }

@@ -7,6 +7,8 @@ package mem
 
 import (
 	"fmt"
+	"strings"
+	"unicode"
 )
 
 const (
@@ -37,26 +39,41 @@ func (c Chunk) fetch(addr uint) byte {
 }
 
 // hexdump prints the chunk's memory contents in a nice hex table
-// TODO add ASCII dump
-// TODO return result as a string
+// We could use the library encoding/hex for this, but we want to print the
+// first address of the line, and the library function starts the count with
+// zero, not the address. Also, we want uppercase letters for hex values
 func (c Chunk) hexdump() {
 
-	fmt.Printf("%06X: ", c.start)
+	fmt.Printf("%06X ", c.start)
 
+	var r rune
 	var count uint = 0
+	var sb strings.Builder
 
 	for _, b := range c.data {
+
 		fmt.Printf(" %02X", b)
 
+		// This is the 21. century so we hexdump in Unicode, not ASCII
+		r = rune(b)
+
+		if !unicode.IsPrint(r) {
+			r = rune('.')
+		}
+
+		fmt.Fprintf(&sb, string(r))
 		count += 1
 
+		// We put one extra blank line after the first eight entries to
+		// make the dump more readable
 		if count%8 == 0 {
 			fmt.Print(" ")
 		}
 
 		if count%16 == 0 {
-			fmt.Print("\n")
-			fmt.Printf("%06X: ", c.start+count)
+			fmt.Printf(" |%s|\n", sb.String())
+			sb.Reset()
+			fmt.Printf("%06X ", c.start+count)
 		}
 	}
 
@@ -72,7 +89,7 @@ func (c Chunk) size() uint {
 // chunk. Assumes that we already checked that the address is in fact in this
 // chunk
 func (c Chunk) store(b byte, addr uint) {
-	c.data[addr] = b
+	c.data[addr-c.start] = b
 }
 
 // Memory is the total system memory, which is basically just a bunch of chunks
