@@ -41,15 +41,8 @@ var (
 	confs  []string
 	memory mem.Memory
 
-	specials = make(map[uint]string)
-
+	specials  = make(map[uint]string)
 	beVerbose = flag.Bool("v", false, "Verbose, print more output")
-
-	// Default values for special locations
-	// These can be overridden
-	getc       = 0x00f000
-	getc_block = 0x00f001
-	putc       = 0x00f002
 )
 
 // -----------------------------------------------------------------
@@ -172,7 +165,7 @@ func main() {
 			verbose(fmt.Sprintf("- Defined special address '%s' at %s", name, fmtAddr(addr)))
 
 		case config.DefinesChunk(ws[0]):
-			rw := config.IsWriteable(ws[1])
+			ty := ws[1]
 			a1 := convNum(ws[2]) // start address
 			a2 := convNum(ws[3]) // end address
 			lb := ws[4]
@@ -181,7 +174,7 @@ func main() {
 			da := make([]byte, size)
 
 			// If this is ROM, load contents of binary file
-			if !rw {
+			if ty == "rom" {
 
 				if len(ws) < 6 {
 					log.Fatal(fmt.Sprintf("Can't load ROM file for chunk '%s'", lb))
@@ -199,7 +192,7 @@ func main() {
 				}
 			}
 
-			c := mem.Chunk{a1, a2, rw, lb, da}
+			c := mem.Chunk{a1, a2, ty, lb, da}
 			memory.Chunks = append(memory.Chunks, c)
 			verbose(fmt.Sprintf("- Added chunk %s to memory (%d bytes)", lb, size))
 
@@ -211,6 +204,7 @@ func main() {
 
 	verbose("Configuration file finished")
 	fmt.Printf("Memory size: %d bytes (%d KiB)\n", memory.Size(), memory.Size()/1024)
+	fmt.Printf(memory.List())
 
 	// --- FEHLT ---
 }

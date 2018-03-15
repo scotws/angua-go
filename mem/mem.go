@@ -16,11 +16,11 @@ const (
 )
 
 type Chunk struct {
-	Start     uint   // stores 65816 addr
-	End       uint   // stores 65816 addr
-	Writeable bool   // true for RAM, false for ROM
-	Label     string // internal use only
-	Data      []byte
+	Start uint   // stores 65816 addr
+	End   uint   // stores 65816 addr
+	Type  string // "ram" or "rom"
+	Label string // internal use only
+	Data  []byte
 }
 
 // Memory is the total system memory, which is basically just a bunch of chunks
@@ -136,7 +136,19 @@ func (m Memory) Contains(addr uint) bool {
 	return result
 }
 
-// size returns the total size of the system memory, RAM and ROM, in bytes
+// List returns a list of all chunks in memory, as a string
+func (m Memory) List() string {
+	var r string
+	var template string = "%s %s %06X-%06X (%d bytes)\n"
+
+	for _, c := range m.Chunks {
+		r += fmt.Sprintf(template, c.Label, c.Type, c.Start, c.End, c.Size())
+	}
+
+	return r
+}
+
+// Size returns the total size of the system memory, RAM and ROM, in bytes
 func (m Memory) Size() uint {
 
 	var sum uint

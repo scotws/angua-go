@@ -7,8 +7,6 @@
 package config
 
 import (
-	"fmt"
-	"log"
 	"strings"
 )
 
@@ -33,19 +31,4 @@ func DefinesSpecial(s string) bool {
 
 func DefinesChunk(s string) bool {
 	return s == keywordChunk
-}
-
-func IsWriteable(s string) bool {
-	var r bool
-
-	switch {
-	case s == "ram":
-		r = true
-	case s == "rom":
-		r = false
-	default:
-		log.Fatal(fmt.Sprintf("Unknown keyword '%s' in chunk config file", s))
-	}
-
-	return r
 }
