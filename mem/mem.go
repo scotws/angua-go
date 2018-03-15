@@ -43,69 +43,6 @@ func (c Chunk) Fetch(addr uint) byte {
 	return c.Data[addr-c.Start]
 }
 
-// hexdump prints the chunk's memory contents in a nice hex table
-// We could use the library encoding/hex for this, but we want to print the
-// first address of the line, and the library function starts the count with
-// zero, not the address. Also, we want uppercase letters for hex values
-func (c Chunk) Hexdump(addr1, addr2 uint) {
-
-	var r rune
-	var count uint
-	var hb strings.Builder // hex part
-	var cb strings.Builder // char part
-	var template string = "%-58s%s\n"
-
-	if !c.Contains(addr1) {
-		fmt.Printf("Address %X not in chunk %s", addr1, c.Label)
-		return
-	}
-
-	if !c.Contains(addr2) {
-		fmt.Printf("Address %X not in chunk %s", addr2, c.Label)
-		return
-	}
-
-	for i := addr1; i <= addr2; i++ {
-
-		// The first run produces a blank line because this if is
-		// triggered, however, the strings are empty because of the way
-		// Go initializes things
-		if count%16 == 0 {
-			fmt.Printf(template, hb.String(), cb.String())
-			hb.Reset()
-			cb.Reset()
-
-			fmt.Fprintf(&hb, "%06X ", addr1+count)
-		}
-
-		b := c.Fetch(i)
-
-		// Build the hex string
-		fmt.Fprintf(&hb, " %02X", b)
-
-		// Build the string list. This is the 21. century so we hexdump
-		// in Unicode, not ASCII
-		r = rune(b)
-		if !unicode.IsPrint(r) {
-			r = rune('.')
-		}
-
-		fmt.Fprintf(&cb, string(r))
-		count += 1
-
-		// We put one extra blank line after the first eight entries to
-		// make the dump more readable
-		if count%8 == 0 {
-			fmt.Fprintf(&hb, " ")
-		}
-
-	}
-
-	// If the loop is all done, we might still have stuff left in the
-	// buffers
-	fmt.Printf(template, hb.String(), cb.String())
-}
-
 // Size returns the, uh, size of a chunk in bytes
 func (c Chunk) Size() uint {
 	return c.End - c.Start + 1
@@ -152,6 +89,61 @@ func (m Memory) Fetch(addr uint) (byte, bool) {
 		}
 	}
 	return b, found
+}
+
+// Hexdump prints a Memory contents in a nice hex table. If the addresses do not
+// exist, we just print a zero without any fuss. hWe could use the library
+// encoding/hex for this, but we want to print the first address of the line,
+// and the library function starts the count with zero, not the address. Also,
+// we want uppercase letters for hex values
+func (m Memory) Hexdump(addr1, addr2 uint) {
+
+	var r rune
+	var count uint
+	var hb strings.Builder // hex part
+	var cb strings.Builder // char part
+	var template string = "%-58s%s\n"
+
+	for i := addr1; i <= addr2; i++ {
+
+		// The first run produces a blank line because this if is
+		// triggered, however, the strings are empty because of the way
+		// Go initializes things
+		if count%16 == 0 {
+			fmt.Printf(template, hb.String(), cb.String())
+			hb.Reset()
+			cb.Reset()
+
+			fmt.Fprintf(&hb, "%06X ", addr1+count)
+		}
+
+		// We ignore the ok flag here
+		b, _ := m.Fetch(i)
+
+		// Build the hex string
+		fmt.Fprintf(&hb, " %02X", b)
+
+		// Build the string list. This is the 21. century so we hexdump
+		// in Unicode, not ASCII
+		r = rune(b)
+		if !unicode.IsPrint(r) {
+			r = rune('.')
+		}
+
+		fmt.Fprintf(&cb, string(r))
+		count += 1
+
+		// We put one extra blank line after the first eight entries to
+		// make the dump more readable
+		if count%8 == 0 {
+			fmt.Fprintf(&hb, " ")
+		}
+
+	}
+
+	// If the loop is all done, we might still have stuff left in the
+	// buffers
+	fmt.Printf(template, hb.String(), cb.String())
 }
 
 // List returns a list of all chunks in memory, as a string
