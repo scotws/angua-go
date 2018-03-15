@@ -203,8 +203,19 @@ func main() {
 	}
 
 	verbose("Configuration file finished")
-	fmt.Printf("Memory size: %d bytes (%d KiB)\n", memory.Size(), memory.Size()/1024)
-	fmt.Printf(memory.List())
+	fmt.Println(" ---- (TESTING) ----")
+
+	mybyte1, ok := memory.Fetch(0xe020)
+	if !ok {
+		log.Printf("Attempt to access non-existant memory address %X", 0xe020)
+	}
+	fmt.Println("Byte at 0xe020: ", mybyte1)
+
+	mybyte2, ok := memory.Fetch(0xa000)
+	if !ok {
+		log.Printf("Attempt to access non-existant memory address %06X\n", 0xa000)
+	}
+	fmt.Println("Byte at 0xa000: ", mybyte2)
 
 	// --- FEHLT ---
 }
