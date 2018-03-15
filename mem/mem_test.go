@@ -2,30 +2,11 @@
 // Part of the go65816 packages
 // Scot W. Stevenson <scot.stevenson@gmail.com>
 // First version 09. Mar 2018
-// This version 09. Mar 2018
+// This version 15. Mar 2018
 
 package mem
 
 import "testing"
-
-// Test if test for given address is valid
-func TestIsValidAddr(t *testing.T) {
-	var tests = []struct {
-		input uint
-		want  bool
-	}{
-		{0x0, true},
-		{1024, true},
-		{0xffffff, true},
-		{0x1000000, false},
-	}
-
-	for _, test := range tests {
-		if got := isValidAddr(test.input); got != test.want {
-			t.Errorf("isValidAddr(%q) = %v", test.input, got)
-		}
-	}
-}
 
 // Test if we get the right size of a Chunk
 func TestChunkSize(t *testing.T) {
@@ -52,9 +33,77 @@ func TestChunkSize(t *testing.T) {
 	}
 }
 
-// Test hexdump of data from chunk's memory
-func TestChunkHexdump(t *testing.T) {
-	tc := Chunk{start: 0, end: 10}
-	tc.erase()
-	tc.hexdump()
+// Test if our address is in range
+func TestContainsAddr(t *testing.T) {
+	var (
+		tc = Chunk{start: 0x400, end: 0x800}
+
+		tests = []struct {
+			input uint
+			want  bool
+		}{
+			{0x400, true},
+			{0x3FF, false},
+			{0x801, false},
+		}
+	)
+
+	for _, test := range tests {
+		got := tc.containsAddr(test.input)
+
+		if got != test.want {
+			t.Errorf("Contains Addr(%q) = %v", test.input, got)
+		}
+	}
+}
+
+// Test fetching of a byte
+func TestFetch(t *testing.T) {
+	var (
+		mydata = make([]byte, 0x400) // 1 KiB length
+
+		tests = []struct {
+			input uint
+			want  byte
+		}{
+			{0x100, 0},
+		}
+	)
+	tc := Chunk{start: 0, end: 0x400, label: "Test", data: mydata}
+
+	for _, test := range tests {
+		got := tc.fetch(test.input)
+
+		if got != test.want {
+			t.Errorf("Fetch (%q) = %v", test.input, got)
+		}
+	}
+}
+
+// Test storing of a byte
+func TestStoreNFetch(t *testing.T) {
+	var (
+		mydata = make([]byte, 0x400) // 1 KiB buffer
+
+		tests = []struct {
+			addr uint
+			b    byte
+		}{
+			{0x100, 0xEE},
+		}
+	)
+
+	tc := Chunk{start: 0, end: 0x400, label: "Test", data: mydata}
+
+	for _, test := range tests {
+
+		tc.store(test.b, test.addr)
+		got := tc.fetch(test.addr)
+
+		if got != test.b {
+			t.Errorf("Store and Fetch (%q) = %v", test.addr, test.b)
+		}
+
+		tc.hexdump()
+	}
 }

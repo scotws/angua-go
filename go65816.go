@@ -27,6 +27,7 @@ import (
 	"strings"
 
 	"go65816/config"
+	"go65816/mem"
 )
 
 const (
@@ -34,18 +35,9 @@ const (
 	maxAddr    = 1<<24 - 1
 )
 
-type chunk struct {
-	class  string // "ram" or "rom"
-	start  uint
-	end    uint
-	size   uint
-	data   *[]byte
-	source string // ROM file path
-}
-
 var (
 	confs  []string
-	memory []chunk
+	memory []mem.Chunk
 
 	// Default values for special locations
 	// These can be overridden
@@ -94,7 +86,7 @@ func main() {
 	fmt.Println(memory)
 }
 
-func makeChunk(ws []string) chunk {
+func makeChunk(ws []string) mem.Chunk {
 
 	s := convNum(ws[1])
 
@@ -118,11 +110,11 @@ func makeChunk(ws []string) chunk {
 		a = ws[3]
 	}
 
-	return chunk{class: ws[0], start: s, end: e, size: sz, data: prt, source: a}
+	return mem.Chunk{class: ws[0], start: s, end: e, size: sz, data: prt, source: a}
 }
 
 // Make sure address is not larger than can be stated with 24 bits
-// TODO code test
+// We don't need to test for negative numbers because we force uint
 func isValidAddr(a uint) bool {
 	return a <= maxAddr
 }
