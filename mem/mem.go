@@ -22,10 +22,10 @@ type Chunk struct {
 	data      []byte
 }
 
-// containsAddr takes a memory address and checks if it is in this chunk,
+// contains takes a memory address and checks if it is in this chunk,
 // returning a bool. Assumes that the address has been confirmed to be a valid
 // 65816 address as a uint
-func (c Chunk) containsAddr(addr uint) bool {
+func (c Chunk) contains(addr uint) bool {
 	return c.start <= addr && addr <= c.end
 }
 
@@ -38,14 +38,15 @@ func (c Chunk) fetch(addr uint) byte {
 
 // hexdump prints the chunk's memory contents in a nice hex table
 // TODO add ASCII dump
+// TODO return result as a string
 func (c Chunk) hexdump() {
 
 	fmt.Printf("%06X: ", c.start)
 
-	count := 0
+	var count uint = 0
 
 	for _, b := range c.data {
-		fmt.Printf(" %02x", b)
+		fmt.Printf(" %02X", b)
 
 		count += 1
 
@@ -55,7 +56,7 @@ func (c Chunk) hexdump() {
 
 		if count%16 == 0 {
 			fmt.Print("\n")
-			fmt.Printf("%06X: ", c.start+uint(count))
+			fmt.Printf("%06X: ", c.start+count)
 		}
 	}
 
@@ -72,4 +73,38 @@ func (c Chunk) size() uint {
 // chunk
 func (c Chunk) store(b byte, addr uint) {
 	c.data[addr] = b
+}
+
+// Memory is the total system memory, which is basically just a bunch of chunks
+type Memory struct {
+	chunks []Chunk
+}
+
+// contains takes an 65816 address as an uint and checks to see if it is
+// valid, returning a bool
+func (m Memory) contains(addr uint) bool {
+
+	result := false
+
+	for _, c := range m.chunks {
+
+		if c.contains(addr) {
+			result = true
+			break
+		}
+	}
+
+	return result
+}
+
+// size returns the total size of the system memory, RAM and ROM, in bytes
+func (m Memory) size() uint {
+
+	var sum uint = 0
+
+	for _, c := range m.chunks {
+		sum += c.size()
+	}
+
+	return sum
 }

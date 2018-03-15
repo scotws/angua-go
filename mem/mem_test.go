@@ -49,7 +49,7 @@ func TestContainsAddr(t *testing.T) {
 	)
 
 	for _, test := range tests {
-		got := tc.containsAddr(test.input)
+		got := tc.contains(test.input)
 
 		if got != test.want {
 			t.Errorf("Contains Addr(%q) = %v", test.input, got)
