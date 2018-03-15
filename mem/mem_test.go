@@ -20,15 +20,15 @@ func TestChunkSize(t *testing.T) {
 		input ip
 		want  uint
 	}{
-		{ip{0, 0}, 0},
-		{ip{0, 1024}, 1024},
-		{ip{1024, 2048}, 1024},
-		{ip{0x100, 0x200}, 0x100},
+		{ip{0, 0}, 1},
+		{ip{0, 0x3FF}, 1024},
+		{ip{0x400, 0x7FF}, 1024},
+		{ip{0x100, 0x1FF}, 0x100},
 	}
 
 	for _, test := range tests {
-		tc := Chunk{start: test.input.start, end: test.input.end}
-		got := tc.size()
+		tc := Chunk{Start: test.input.start, End: test.input.end}
+		got := tc.Size()
 		if got != test.want {
 			t.Errorf("Chunk size(%q) = %v", test.input, got)
 		}
@@ -38,7 +38,7 @@ func TestChunkSize(t *testing.T) {
 // Test if our address is in range
 func TestContainsAddr(t *testing.T) {
 	var (
-		tc = Chunk{start: 0x400, end: 0x800}
+		tc = Chunk{Start: 0x400, End: 0x800}
 
 		tests = []struct {
 			input uint
@@ -51,7 +51,7 @@ func TestContainsAddr(t *testing.T) {
 	)
 
 	for _, test := range tests {
-		got := tc.contains(test.input)
+		got := tc.Contains(test.input)
 
 		if got != test.want {
 			t.Errorf("Contains Addr(%q) = %v", test.input, got)
@@ -71,10 +71,10 @@ func TestFetch(t *testing.T) {
 			{0x100, 0},
 		}
 	)
-	tc := Chunk{start: 0, end: 0x400, label: "Test", data: mydata}
+	tc := Chunk{Start: 0, End: 0x400, Label: "Test", Data: mydata}
 
 	for _, test := range tests {
-		got := tc.fetch(test.input)
+		got := tc.Fetch(test.input)
 
 		if got != test.want {
 			t.Errorf("Fetch (%q) = %v", test.input, got)
@@ -96,12 +96,12 @@ func TestStoreNFetch(t *testing.T) {
 		}
 	)
 
-	tc := Chunk{start: 0x100, end: 0x500, label: "Test", data: mydata}
+	tc := Chunk{Start: 0x100, End: 0x500, Label: "Test", Data: mydata}
 
 	for _, test := range tests {
 
-		tc.store(test.b, test.addr)
-		got := tc.fetch(test.addr)
+		tc.Store(test.b, test.addr)
+		got := tc.Fetch(test.addr)
 
 		if got != test.b {
 			t.Errorf("Store and Fetch (%q) = %v", test.addr, test.b)
@@ -115,11 +115,11 @@ func TestHexdump(t *testing.T) {
 		mydata = make([]byte, 0x3FF) // 1 KiB length
 	)
 
-	tc := Chunk{start: 0x400, end: 0x7FF, label: "Test", data: mydata}
+	tc := Chunk{Start: 0x400, End: 0x7FF, Label: "Test", Data: mydata}
 
 	for i := 0; i < 10; i++ {
-		tc.store(byte(0x40+i), uint(0x400+i))
+		tc.Store(byte(0x40+i), uint(0x400+i))
 	}
 
-	tc.hexdump(0x400, 0x4FF)
+	tc.Hexdump(0x400, 0x4FF)
 }

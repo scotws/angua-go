@@ -2,7 +2,7 @@
 // Part of the go65816 package
 // Scot W. Stevenson <scot.stevenson@gmail.com>
 // First version 26. Sep 2017
-// This version 26. Sep 2017
+// This version 15. Mar 2018
 
 package config
 
@@ -14,9 +14,9 @@ func TestIsComment(t *testing.T) {
 		want  bool
 	}{
 		{"", false},      // empty line
-		{";", true},      // comment at beginning of line
-		{"; ----", true}, // comment with stuff
-		{" ;", true},     // comment after indent
+		{"#", true},      // comment at beginning of line
+		{"# ----", true}, // comment with stuff
+		{" #", true},     // comment after indent
 	}
 
 	for _, test := range tests {

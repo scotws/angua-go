@@ -16,32 +16,38 @@ const (
 )
 
 type Chunk struct {
-	start     uint   // stores 65816 addr
-	end       uint   // stores 65816 addr
-	writeable bool   // true for RAM, false for ROM
-	file      string // file path
-	label     string // internal use only
-	data      []byte
+	Start     uint   // stores 65816 addr
+	End       uint   // stores 65816 addr
+	Writeable bool   // true for RAM, false for ROM
+	Label     string // internal use only
+	Data      []byte
 }
+
+// Memory is the total system memory, which is basically just a bunch of chunks
+type Memory struct {
+	chunks []Chunk
+}
+
+// --- CHUNK METHODS ---
 
 // contains takes a memory address and checks if it is in this chunk,
 // returning a bool. Assumes that the address has been confirmed to be a valid
 // 65816 address as a uint
-func (c Chunk) contains(addr uint) bool {
-	return c.start <= addr && addr <= c.end
+func (c Chunk) Contains(addr uint) bool {
+	return c.Start <= addr && addr <= c.End
 }
 
 // fetch gets one byte of memory from the data of a chunk and returns it.
 // Assumes we have already made sure that the address is in this chunk
-func (c Chunk) fetch(addr uint) byte {
-	return c.data[addr-c.start]
+func (c Chunk) Fetch(addr uint) byte {
+	return c.Data[addr-c.Start]
 }
 
 // hexdump prints the chunk's memory contents in a nice hex table
 // We could use the library encoding/hex for this, but we want to print the
 // first address of the line, and the library function starts the count with
 // zero, not the address. Also, we want uppercase letters for hex values
-func (c Chunk) hexdump(addr1, addr2 uint) {
+func (c Chunk) Hexdump(addr1, addr2 uint) {
 
 	var r rune
 	var count uint
@@ -49,17 +55,17 @@ func (c Chunk) hexdump(addr1, addr2 uint) {
 	var cb strings.Builder // char part
 	var template string = "%-58s%s\n"
 
-	if !c.contains(addr1) {
-		fmt.Printf("Address %X not in chunk %s", addr1, c.label)
+	if !c.Contains(addr1) {
+		fmt.Printf("Address %X not in chunk %s", addr1, c.Label)
 		return
 	}
 
-	if !c.contains(addr2) {
-		fmt.Printf("Address %X not in chunk %s", addr2, c.label)
+	if !c.Contains(addr2) {
+		fmt.Printf("Address %X not in chunk %s", addr2, c.Label)
 		return
 	}
 
-	for i := addr1; i < addr2; i++ {
+	for i := addr1; i <= addr2; i++ {
 
 		// The first run produces a blank line because this if is
 		// triggered, however, the strings are empty because of the way
@@ -72,7 +78,7 @@ func (c Chunk) hexdump(addr1, addr2 uint) {
 			fmt.Fprintf(&hb, "%06X ", addr1+count)
 		}
 
-		b := c.fetch(i)
+		b := c.Fetch(i)
 
 		// Build the hex string
 		fmt.Fprintf(&hb, " %02X", b)
@@ -101,31 +107,28 @@ func (c Chunk) hexdump(addr1, addr2 uint) {
 }
 
 // Size returns the, uh, size of a chunk in bytes
-func (c Chunk) size() uint {
-	return c.end - c.start
+func (c Chunk) Size() uint {
+	return c.End - c.Start + 1
 }
 
 // Store takes a byte and an address and stores the byte at the address in the
 // chunk. Assumes that we already checked that the address is in fact in this
 // chunk
-func (c Chunk) store(b byte, addr uint) {
-	c.data[addr-c.start] = b
+func (c Chunk) Store(b byte, addr uint) {
+	c.Data[addr-c.Start] = b
 }
 
-// Memory is the total system memory, which is basically just a bunch of chunks
-type Memory struct {
-	chunks []Chunk
-}
+// --- MEMORY METHODS ---
 
 // contains takes an 65816 address as an uint and checks to see if it is
 // valid, returning a bool
-func (m Memory) contains(addr uint) bool {
+func (m Memory) Contains(addr uint) bool {
 
 	result := false
 
 	for _, c := range m.chunks {
 
-		if c.contains(addr) {
+		if c.Contains(addr) {
 			result = true
 			break
 		}
@@ -135,12 +138,12 @@ func (m Memory) contains(addr uint) bool {
 }
 
 // size returns the total size of the system memory, RAM and ROM, in bytes
-func (m Memory) size() uint {
+func (m Memory) Size() uint {
 
 	var sum uint = 0
 
 	for _, c := range m.chunks {
-		sum += c.size()
+		sum += c.Size()
 	}
 
 	return sum

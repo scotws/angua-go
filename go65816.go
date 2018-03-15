@@ -19,15 +19,16 @@
 package main
 
 import (
-	// "bufio"
+	"bufio"
+	"encoding/binary"
 	"flag"
-	//	"fmt"
+	"fmt"
 	"log"
 	"os"
 	"strconv"
 	"strings"
 
-	// "go65816/config"
+	"go65816/config"
 	"go65816/mem"
 )
 
@@ -40,6 +41,8 @@ var (
 	confs  []string
 	memory mem.Memory
 
+	specials = make(map[uint]string)
+
 	beVerbose = flag.Bool("v", false, "Verbose, print more output")
 
 	// Default values for special locations
@@ -50,6 +53,7 @@ var (
 )
 
 // -----------------------------------------------------------------
+// TOP LEVEL HELPER FUNCTIONS
 
 // verbose takes a string and prints it on the standard output through logger if
 // the user awants us to be verbose
@@ -57,21 +61,6 @@ func verbose(s string) {
 	if *beVerbose {
 		log.Print(s)
 	}
-}
-
-// isValidAddr takes an uint and makes sure that as an address, it is not larger
-// than can be stated with 24 bits We don't need to test for negative numbers
-// because we force uint
-func isValidAddr(a uint) bool {
-	return a <= maxAddr
-}
-
-// stripDelimiters removes '.' and ':' which users can use as number delimiters.
-// Also removes spaces
-func stripDelimiters(s string) string {
-	s1 := strings.Replace(s, ":", "", -1)
-	s2 := strings.Replace(s1, ".", "", -1)
-	return strings.TrimSpace(s2)
 }
 
 // convNum Convert a legal number string to an uint. Note we accept ':' and '.'
@@ -113,7 +102,33 @@ func convNum(s string) uint {
 	}
 }
 
+// fmtAddr takes a 65816 address as a uint and returns  a hex number string with
+// a ':' between the bank byte and the rest of the address. Hex digits are
+// capitalized. Assumes we are sure that the address is valid
+// TODO write test
+func fmtAddr(addr uint) string {
+	s1 := fmt.Sprintf("%06X", addr)
+	s2 := s1[0:2] + ":" + s1[2:len(s1)]
+	return s2
+}
+
+// isValidAddr takes an uint and makes sure that as an address, it is not larger
+// than can be stated with 24 bits We don't need to test for negative numbers
+// because we force uint
+func isValidAddr(a uint) bool {
+	return a <= maxAddr
+}
+
+// stripDelimiters removes '.' and ':' which users can use as number delimiters.
+// Also removes spaces
+func stripDelimiters(s string) string {
+	s1 := strings.Replace(s, ":", "", -1)
+	s2 := strings.Replace(s1, ".", "", -1)
+	return strings.TrimSpace(s2)
+}
+
 // -----------------------------------------------------------------
+// MAIN ROUTINE
 
 func main() {
 
@@ -121,38 +136,80 @@ func main() {
 
 	// --- Load configuration ---
 
+	verbose("Reading configuration file")
+
 	cf, err := os.Open(configFile)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer cf.Close()
-	/*
-		source := bufio.NewScanner(cf)
 
-		for source.Scan() {
-				confs = append(confs, source.Text())
+	source := bufio.NewScanner(cf)
+
+	for source.Scan() {
+		confs = append(confs, source.Text())
+	}
+
+	for _, l := range confs {
+
+		if config.IsComment(l) {
+			continue
+		}
+
+		if config.IsEmpty(l) {
+			continue
+		}
+
+		ws := strings.Fields(l)
+
+		switch {
+
+		case config.DefinesSpecial(ws[0]):
+			name := ws[1]
+			addr := convNum(ws[2])
+			specials[addr] = name
+
+			verbose(fmt.Sprintf("- Defined special address '%s' at %s", name, fmtAddr(addr)))
+
+		case config.DefinesChunk(ws[0]):
+			rw := config.IsWriteable(ws[1])
+			a1 := convNum(ws[2]) // start address
+			a2 := convNum(ws[3]) // end address
+			lb := ws[4]
+
+			size := a2 - a1 + 1
+			da := make([]byte, size)
+
+			// If this is ROM, load contents of binary file
+			if !rw {
+
+				if len(ws) < 6 {
+					log.Fatal(fmt.Sprintf("Can't load ROM file for chunk '%s'", lb))
+				}
+
+				f, err := os.Open(ws[5])
+				if err != nil {
+					log.Fatal(err)
+				}
+				defer f.Close()
+
+				err = binary.Read(f, binary.LittleEndian, &da)
+				if err != nil {
+					log.Fatal(err)
+				}
 			}
 
-			for _, l := range confs {
+			// HIER HIER TODO
+			//		c := mem.Chunk{a1, a2, rw, lb, da}
+			verbose(fmt.Sprintf("- Loaded memory chunk %s (%d bytes)", lb, size))
 
-				if config.IsComment(l) {
-					continue
-				}
+		default:
+			log.Printf("Error in %s (unknown keyword '%s'), skipping", configFile, ws[0])
+		}
 
-				if config.IsEmpty(l) {
-					continue
-				}
+	}
 
-				ws := strings.Fields(l)
+	verbose("Configuration file finished")
 
-				if config.IsChunkDef(ws[0]) {
-					memory = append(memory, makeChunk(ws))
-				} else {
-					// TODO Test
-					fmt.Println(ws)
-
-				}
-			}
-
-			fmt.Println(memory) */
+	// --- FEHLT ---
 }
