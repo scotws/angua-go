@@ -44,19 +44,31 @@ func (c Chunk) fetch(addr uint) byte {
 // zero, not the address. Also, we want uppercase letters for hex values
 func (c Chunk) hexdump() {
 
-	fmt.Printf("%06X ", c.start)
-
 	var r rune
 	var count uint = 0
-	var sb strings.Builder
+	var hb strings.Builder // hex part
+	var sb strings.Builder // char part
 
 	for _, b := range c.data {
 
-		fmt.Printf(" %02X", b)
+		// The first run produces a blank line because this if is
+		// triggered, however, the strings are empty because of the way
+		// Go initializes things
+		if count%16 == 0 {
+			fmt.Print(hb.String())
+			fmt.Println(" ", sb.String())
+			hb.Reset()
+			sb.Reset()
 
-		// This is the 21. century so we hexdump in Unicode, not ASCII
+			fmt.Fprintf(&hb, "%06X ", c.start+count)
+		}
+
+		// Build the hex string
+		fmt.Fprintf(&hb, " %02X", b)
+
+		// Build the string list. This is the 21. century so we hexdump
+		// in Unicode, not ASCII
 		r = rune(b)
-
 		if !unicode.IsPrint(r) {
 			r = rune('.')
 		}
@@ -67,17 +79,9 @@ func (c Chunk) hexdump() {
 		// We put one extra blank line after the first eight entries to
 		// make the dump more readable
 		if count%8 == 0 {
-			fmt.Print(" ")
-		}
-
-		if count%16 == 0 {
-			fmt.Printf(" |%s|\n", sb.String())
-			sb.Reset()
-			fmt.Printf("%06X ", c.start+count)
+			fmt.Fprintf(&hb, " ")
 		}
 	}
-
-	fmt.Println()
 }
 
 // Size returns the, uh, size of a chunk in bytes
