@@ -25,7 +25,7 @@ type Chunk struct {
 
 // Memory is the total system memory, which is basically just a bunch of chunks
 type Memory struct {
-	chunks []Chunk
+	Chunks []Chunk
 }
 
 // --- CHUNK METHODS ---
@@ -126,23 +126,22 @@ func (m Memory) Contains(addr uint) bool {
 
 	result := false
 
-	for _, c := range m.chunks {
+	for _, c := range m.Chunks {
 
 		if c.Contains(addr) {
 			result = true
 			break
 		}
 	}
-
 	return result
 }
 
 // size returns the total size of the system memory, RAM and ROM, in bytes
 func (m Memory) Size() uint {
 
-	var sum uint = 0
+	var sum uint
 
-	for _, c := range m.chunks {
+	for _, c := range m.Chunks {
 		sum += c.Size()
 	}
 

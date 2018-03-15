@@ -199,9 +199,9 @@ func main() {
 				}
 			}
 
-			// HIER HIER TODO
-			//		c := mem.Chunk{a1, a2, rw, lb, da}
-			verbose(fmt.Sprintf("- Loaded memory chunk %s (%d bytes)", lb, size))
+			c := mem.Chunk{a1, a2, rw, lb, da}
+			memory.Chunks = append(memory.Chunks, c)
+			verbose(fmt.Sprintf("- Added chunk %s to memory (%d bytes)", lb, size))
 
 		default:
 			log.Printf("Error in %s (unknown keyword '%s'), skipping", configFile, ws[0])
@@ -210,6 +210,7 @@ func main() {
 	}
 
 	verbose("Configuration file finished")
+	fmt.Printf("Memory size: %d bytes (%d KiB)\n", memory.Size(), memory.Size()/1024)
 
 	// --- FEHLT ---
 }
