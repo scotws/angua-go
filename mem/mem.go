@@ -136,6 +136,29 @@ func (m Memory) Contains(addr uint) bool {
 	return result
 }
 
+// Fetch takes an address and gets a byte from the appropriate chunk and returns
+// it. If the byte is outside the normal range, it returns a zero and prints an
+// error if verbose mode is set
+func (m Memory) Fetch (addr uint) byte {
+	var b byte
+	var found bool = false
+
+	for _, c in range m.Chunks {
+
+		if c.Contains(addr) {
+			b = c.Fetch(addr)
+			found = true 
+			break
+		}
+	}
+
+	if !found {
+		verbose(fmt.Sprintf("Attempt to access non-existant address %X", addr))
+	}
+
+	return b
+}
+
 // List returns a list of all chunks in memory, as a string
 func (m Memory) List() string {
 	var r string
