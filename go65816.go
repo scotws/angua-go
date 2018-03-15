@@ -1,7 +1,7 @@
 // py65816 A 65816 MPU emulator in Go
 // Scot W. Stevenson <scot.stevenson@gmail.com>
 // First version: 26. Sep 2017
-// This version: 09. Mar 2018
+// This version: 15. Mar 2018
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -19,25 +19,28 @@
 package main
 
 import (
-	"bufio"
-	"fmt"
+	// "bufio"
+	"flag"
+	//	"fmt"
 	"log"
 	"os"
 	"strconv"
 	"strings"
 
-	"go65816/config"
+	// "go65816/config"
 	"go65816/mem"
 )
 
 const (
-	configFile = "config.sys"
+	configFile = "config.cfg"
 	maxAddr    = 1<<24 - 1
 )
 
 var (
 	confs  []string
-	memory []mem.Chunk
+	memory mem.Memory
+
+	beVerbose = flag.Bool("v", false, "Verbose, print more output")
 
 	// Default values for special locations
 	// These can be overridden
@@ -46,107 +49,55 @@ var (
 	putc       = 0x00f002
 )
 
-func main() {
+// -----------------------------------------------------------------
 
-	// *** CONFIGURATION FILE ***
-
-	cf, err := os.Open(configFile)
-	if err != nil {
-		log.Fatal(err)
+// verbose takes a string and prints it on the standard output through logger if
+// the user awants us to be verbose
+func verbose(s string) {
+	if *beVerbose {
+		log.Print(s)
 	}
-	defer cf.Close()
-
-	source := bufio.NewScanner(cf)
-
-	for source.Scan() {
-		confs = append(confs, source.Text())
-	}
-
-	for _, l := range confs {
-
-		if config.IsComment(l) {
-			continue
-		}
-
-		if config.IsEmpty(l) {
-			continue
-		}
-
-		ws := strings.Fields(l)
-
-		if config.IsChunkDef(ws[0]) {
-			memory = append(memory, makeChunk(ws))
-		} else {
-			// TODO Test
-			fmt.Println(ws)
-
-		}
-	}
-
-	fmt.Println(memory)
 }
 
-func makeChunk(ws []string) mem.Chunk {
-
-	s := convNum(ws[1])
-
-	if !isValidAddr(s) {
-		log.Fatal("Can't use ", s, " as start address")
-	}
-
-	e := convNum(ws[2])
-
-	if !isValidAddr(e) {
-		log.Fatal("Can't use ", e, " as end address")
-	}
-
-	sz := e - s + 1
-	d := make([]byte, sz)
-	prt := &d
-
-	// ROM memory blocks get link to their content
-	a := ""
-	if len(ws) == 4 {
-		a = ws[3]
-	}
-
-	return mem.Chunk{class: ws[0], start: s, end: e, size: sz, data: prt, source: a}
-}
-
-// Make sure address is not larger than can be stated with 24 bits
-// We don't need to test for negative numbers because we force uint
+// isValidAddr takes an uint and makes sure that as an address, it is not larger
+// than can be stated with 24 bits We don't need to test for negative numbers
+// because we force uint
 func isValidAddr(a uint) bool {
 	return a <= maxAddr
 }
 
-// Remove '.' and ':' which users can use as number delimiters. Also removed
-// spaces
-// TODO code test
-func stripDelim(s string) string {
+// stripDelimiters removes '.' and ':' which users can use as number delimiters.
+// Also removes spaces
+func stripDelimiters(s string) string {
 	s1 := strings.Replace(s, ":", "", -1)
 	s2 := strings.Replace(s1, ".", "", -1)
 	return strings.TrimSpace(s2)
 }
 
-// Convert a legal number string to an int. Note we accept ':' and '.' as delimiters,
-// use $ for hex numbers, % for binary numbers, and nothing for decimal numbers.
-// TODO code test
+// convNum Convert a legal number string to an uint. Note we accept ':' and '.'
+// as delimiters, use $ or 0x for hex numbers, % for binary numbers, and nothing
+// for decimal numbers.
 func convNum(s string) uint {
 
-	ss := stripDelim(s)
+	ss := stripDelimiters(s)
 
-	d := ss[0]
+	switch {
 
-	switch d {
-
-	case '$':
+	case strings.HasPrefix(ss, "$"):
 		n, err := strconv.ParseInt(ss[1:], 16, 0)
 		if err != nil {
 			log.Fatal("config.sys: Can't convert ", ss, " as hex number")
 		}
 		return uint(n)
 
-	case '%':
+	case strings.HasPrefix(ss, "0x"):
+		n, err := strconv.ParseInt(ss[2:], 16, 0)
+		if err != nil {
+			log.Fatal("config.sys: Can't convert ", ss, " as hex number")
+		}
+		return uint(n)
+
+	case strings.HasPrefix(ss, "%"):
 		n, err := strconv.ParseInt(ss[1:], 2, 0)
 		if err != nil {
 			log.Fatal("config.sys: Can't convert ", ss, " as binary number")
@@ -160,4 +111,48 @@ func convNum(s string) uint {
 		}
 		return uint(n)
 	}
+}
+
+// -----------------------------------------------------------------
+
+func main() {
+
+	flag.Parse()
+
+	// --- Load configuration ---
+
+	cf, err := os.Open(configFile)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer cf.Close()
+	/*
+		source := bufio.NewScanner(cf)
+
+		for source.Scan() {
+				confs = append(confs, source.Text())
+			}
+
+			for _, l := range confs {
+
+				if config.IsComment(l) {
+					continue
+				}
+
+				if config.IsEmpty(l) {
+					continue
+				}
+
+				ws := strings.Fields(l)
+
+				if config.IsChunkDef(ws[0]) {
+					memory = append(memory, makeChunk(ws))
+				} else {
+					// TODO Test
+					fmt.Println(ws)
+
+				}
+			}
+
+			fmt.Println(memory) */
 }
