@@ -16,8 +16,8 @@ const (
 )
 
 type Chunk struct {
-	start     uint
-	end       uint
+	start     uint   // stores 65816 addr
+	end       uint   // stores 65816 addr
 	writeable bool   // true for RAM, false for ROM
 	file      string // file path
 	label     string // internal use only
@@ -34,34 +34,45 @@ func (c Chunk) contains(addr uint) bool {
 // fetch gets one byte of memory from the data of a chunk and returns it.
 // Assumes we have already made sure that the address is in this chunk
 func (c Chunk) fetch(addr uint) byte {
-	index := addr - c.start
-	return c.data[index]
+	return c.data[addr-c.start]
 }
 
 // hexdump prints the chunk's memory contents in a nice hex table
 // We could use the library encoding/hex for this, but we want to print the
 // first address of the line, and the library function starts the count with
 // zero, not the address. Also, we want uppercase letters for hex values
-func (c Chunk) hexdump() {
+func (c Chunk) hexdump(addr1, addr2 uint) {
 
 	var r rune
-	var count uint = 0
+	var count uint
 	var hb strings.Builder // hex part
-	var sb strings.Builder // char part
+	var cb strings.Builder // char part
+	var template string = "%-58s%s\n"
 
-	for _, b := range c.data {
+	if !c.contains(addr1) {
+		fmt.Printf("Address %X not in chunk %s", addr1, c.label)
+		return
+	}
+
+	if !c.contains(addr2) {
+		fmt.Printf("Address %X not in chunk %s", addr2, c.label)
+		return
+	}
+
+	for i := addr1; i < addr2; i++ {
 
 		// The first run produces a blank line because this if is
 		// triggered, however, the strings are empty because of the way
 		// Go initializes things
 		if count%16 == 0 {
-			fmt.Print(hb.String())
-			fmt.Println(" ", sb.String())
+			fmt.Printf(template, hb.String(), cb.String())
 			hb.Reset()
-			sb.Reset()
+			cb.Reset()
 
-			fmt.Fprintf(&hb, "%06X ", c.start+count)
+			fmt.Fprintf(&hb, "%06X ", addr1+count)
 		}
+
+		b := c.fetch(i)
 
 		// Build the hex string
 		fmt.Fprintf(&hb, " %02X", b)
@@ -73,7 +84,7 @@ func (c Chunk) hexdump() {
 			r = rune('.')
 		}
 
-		fmt.Fprintf(&sb, string(r))
+		fmt.Fprintf(&cb, string(r))
 		count += 1
 
 		// We put one extra blank line after the first eight entries to
@@ -81,7 +92,12 @@ func (c Chunk) hexdump() {
 		if count%8 == 0 {
 			fmt.Fprintf(&hb, " ")
 		}
+
 	}
+
+	// If the loop is all done, we might still have stuff left in the
+	// buffers
+	fmt.Printf(template, hb.String(), cb.String())
 }
 
 // Size returns the, uh, size of a chunk in bytes

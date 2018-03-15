@@ -112,14 +112,14 @@ func TestStoreNFetch(t *testing.T) {
 // Play with the hexdump
 func TestHexdump(t *testing.T) {
 	var (
-		mydata = make([]byte, 0x200) // 1 KiB length
+		mydata = make([]byte, 0x3FF) // 1 KiB length
 	)
 
-	tc := Chunk{start: 0x400, end: 0x800, label: "Test", data: mydata}
+	tc := Chunk{start: 0x400, end: 0x7FF, label: "Test", data: mydata}
 
 	for i := 0; i < 10; i++ {
-		tc.store(byte(0x30+i), uint(0x400+i)) // 0x30 is ASCII for "0"
+		tc.store(byte(0x40+i), uint(0x400+i))
 	}
 
-	tc.hexdump()
+	tc.hexdump(0x400, 0x4FF)
 }
