@@ -206,6 +206,18 @@ func main() {
 
 	fmt.Println(" ---- (TESTING) ----")
 
+	// --- READ ---
+	bs, ok := memory.Read(0xa000, 0xff)
+
+	if ok {
+		fmt.Println("All is well")
+	} else {
+		fmt.Println("This sucks")
+	}
+
+	fmt.Print(bs)
+	fmt.Print(len(bs))
+
 	memory.Hexdump(0xa000, 0xa0ff)
 
 	// --- FEHLT ---

@@ -51,7 +51,7 @@ func (c Chunk) Size() uint {
 // Store takes a byte and an address and stores the byte at the address in the
 // chunk. Assumes that we already checked that the address is in fact in this
 // chunk
-func (c Chunk) Store(b byte, addr uint) {
+func (c Chunk) Store(addr uint, b byte) {
 	c.Data[addr-c.Start] = b
 }
 
@@ -74,8 +74,8 @@ func (m Memory) Contains(addr uint) bool {
 }
 
 // Fetch takes an address and gets a byte from the appropriate chunk and returns
-// the byte with a true flag for success. If the byte is not memory, it returns
-// a zero and a false flag
+// the byte with a true flag for success. If the address is not memory, it
+// returns a zero value and a false flag
 func (m Memory) Fetch(addr uint) (byte, bool) {
 	var b byte
 	var found bool = false
@@ -91,11 +91,11 @@ func (m Memory) Fetch(addr uint) (byte, bool) {
 	return b, found
 }
 
-// Hexdump prints a Memory contents in a nice hex table. If the addresses do not
-// exist, we just print a zero without any fuss. hWe could use the library
-// encoding/hex for this, but we want to print the first address of the line,
-// and the library function starts the count with zero, not the address. Also,
-// we want uppercase letters for hex values
+// Hexdump prints the contents of a memory range in a nice hex table. If the
+// addresses do not exist, we just print a zero without any fuss. We could use
+// the library encoding/hex for this, but we want to print the first address of
+// the line, and the library function starts the count with zero, not the
+// address. Also, we want uppercase letters for hex values
 func (m Memory) Hexdump(addr1, addr2 uint) {
 
 	var r rune
@@ -158,6 +158,27 @@ func (m Memory) List() string {
 	return r
 }
 
+// Read returns a slice of memory as bytes and a flag to show if all bytes were
+// part of legal memory when given a starting address and the a size. Assumes
+// that the addresses have been correctly formatted and vetted
+func (m Memory) Read(addr uint, size uint) ([]byte, bool) {
+
+	var allLegal bool = true
+	var bs []byte
+
+	for i := addr; i <= addr+size; i++ {
+
+		b, ok := m.Fetch(i)
+
+		if !ok {
+			allLegal = false
+		}
+		bs = append(bs, b)
+	}
+
+	return bs, allLegal
+}
+
 // Size returns the total size of the system memory, RAM and ROM, in bytes
 func (m Memory) Size() uint {
 
@@ -168,4 +189,21 @@ func (m Memory) Size() uint {
 	}
 
 	return sum
+}
+
+// Store takes an address and a byte and saves them to memory. If the addr is
+// not part of legal memory, we return a false flag, otherwise a true. If the
+// addr is part of ROM, do the same thing
+func (m Memory) Store(addr uint, b byte) bool {
+	var f bool = false
+
+	for _, c := range m.Chunks {
+
+		if c.Type == "ram" && c.Contains(addr) {
+			c.Store(addr, b)
+			f = true
+			break
+		}
+	}
+	return f
 }

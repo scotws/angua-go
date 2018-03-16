@@ -100,26 +100,11 @@ func TestStoreNFetch(t *testing.T) {
 
 	for _, test := range tests {
 
-		tc.Store(test.b, test.addr)
+		tc.Store(test.addr, test.b)
 		got := tc.Fetch(test.addr)
 
 		if got != test.b {
 			t.Errorf("Store and Fetch (%q) = %v", test.addr, test.b)
 		}
 	}
-}
-
-// Play with the hexdump
-func TestHexdump(t *testing.T) {
-	var (
-		mydata = make([]byte, 0x3FF) // 1 KiB length
-	)
-
-	tc := Chunk{Start: 0x400, End: 0x7FF, Label: "Test", Data: mydata}
-
-	for i := 0; i < 10; i++ {
-		tc.Store(byte(0x40+i), uint(0x400+i))
-	}
-
-	tc.Hexdump(0x400, 0x4FF)
 }
