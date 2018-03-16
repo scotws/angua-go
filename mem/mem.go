@@ -167,7 +167,6 @@ func (m Memory) Read(addr uint, size uint) ([]byte, bool) {
 	var bs []byte
 
 	for i := addr; i <= addr+size; i++ {
-
 		b, ok := m.Fetch(i)
 
 		if !ok {
@@ -175,7 +174,6 @@ func (m Memory) Read(addr uint, size uint) ([]byte, bool) {
 		}
 		bs = append(bs, b)
 	}
-
 	return bs, allLegal
 }
 
@@ -206,4 +204,20 @@ func (m Memory) Store(addr uint, b byte) bool {
 		}
 	}
 	return f
+}
+
+// Write takes a 65816 address and a slice of bytes and story those bytes start
+// at that address. If all addresses were legal, it returns a true flag,
+// otherwise a false
+func (m Memory) Write(addr uint, bs []byte) bool {
+	var legal bool = true
+
+	for i := addr; i <= addr+len(bs); i++ {
+		ok := m.Store(i, bs[i-addr])
+
+		if !ok {
+			legal = false
+		}
+	}
+	return legal
 }

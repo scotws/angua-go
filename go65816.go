@@ -206,19 +206,16 @@ func main() {
 
 	fmt.Println(" ---- (TESTING) ----")
 
-	// --- READ ---
-	bs, ok := memory.Read(0xa000, 0xff)
+	bs := []byte{1, 2, 3, 4, 5}
+	ok := memory.Write(0x000, bs)
 
 	if ok {
-		fmt.Println("All is well")
+		fmt.Println("All is preachy")
 	} else {
 		fmt.Println("This sucks")
 	}
 
-	fmt.Print(bs)
-	fmt.Print(len(bs))
-
-	memory.Hexdump(0xa000, 0xa0ff)
+	memory.Hexdump(0x0000, 0x00ff)
 
 	// --- FEHLT ---
 }
