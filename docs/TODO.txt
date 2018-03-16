@@ -1,0 +1,8 @@
+TODO file for go65816 
+Scot W. Stevenson <scot.stevenson@gmail.com>
+First version: 16. Mar 2018
+This version: 16. Mar 2018
+
+MEMORY SUBSYSTEM
+        - Code Memory.StoreMore for multiple bytes
+
