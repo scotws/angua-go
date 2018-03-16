@@ -7,6 +7,7 @@ package mem
 
 import (
 	"fmt"
+	"log"
 	"strings"
 	"unicode"
 )
@@ -89,6 +90,36 @@ func (m Memory) Fetch(addr uint) (byte, bool) {
 		}
 	}
 	return b, found
+}
+
+// FetchMore takes a 65816 address and the number of bytes to get -- 1, 2 or 3
+// -- should be fetched and returned as an integer, retrieving those bytes as
+// little endian. Also returns a bool to show if all fetches were to legal
+// addresses. Assumes that the address itself was vetted.
+func (m Memory) FetchMore(addr uint, num uint) (uint, bool) {
+
+	const maxint = 3
+	var legal bool = true
+	var sum uint
+
+	// This is a bit harsh, but it will help us find errors during the
+	// development process. Consider doing something less drastic later
+	if num > maxint {
+		log.Fatal(fmt.Sprintf("Illegal attempt to read %d bytes from %06X", num, addr))
+	}
+
+	for i := uint(0); i <= num-1; i++ {
+		b, ok := m.Fetch(addr + i)
+
+		if !ok {
+			legal = false
+		}
+
+		// Shift eight bits to the left for every byte we go further to
+		// the right
+		sum += (uint(b) << (8 * i))
+	}
+	return sum, legal
 }
 
 // Hexdump prints the contents of a memory range in a nice hex table. If the
@@ -212,7 +243,7 @@ func (m Memory) Store(addr uint, b byte) bool {
 func (m Memory) Write(addr uint, bs []byte) bool {
 	var legal bool = true
 
-	for i := addr; i <= addr+len(bs); i++ {
+	for i := addr; i < addr+uint(len(bs)); i++ {
 		ok := m.Store(i, bs[i-addr])
 
 		if !ok {

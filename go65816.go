@@ -206,16 +206,21 @@ func main() {
 
 	fmt.Println(" ---- (TESTING) ----")
 
-	bs := []byte{1, 2, 3, 4, 5}
-	ok := memory.Write(0x000, bs)
+	bs := []byte{0xFF, 0xee, 0xdd}
+
+	_ = memory.Write(0xa000, bs)
+
+	n, ok := memory.FetchMore(0xa000, 3)
 
 	if ok {
-		fmt.Println("All is preachy")
+		fmt.Println("All is well")
 	} else {
 		fmt.Println("This sucks")
 	}
 
-	memory.Hexdump(0x0000, 0x00ff)
+	fmt.Printf("Number: %d (%06X)\n", n, n)
+
+	memory.Hexdump(0xa000, 0xa020)
 
 	// --- FEHLT ---
 }
