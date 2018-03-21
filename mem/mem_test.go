@@ -2,7 +2,7 @@
 // Part of the go65816 packages
 // Scot W. Stevenson <scot.stevenson@gmail.com>
 // First version 09. Mar 2018
-// This version 15. Mar 2018
+// This version 21. Mar 2018
 
 package mem
 
@@ -141,4 +141,5 @@ func TestStoreMore(t *testing.T) {
 		}
 
 	}
+	//	mymem.Hexdump(0x100, 0x4FF)
 }

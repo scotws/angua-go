@@ -1,7 +1,7 @@
 // go65816 Memory System
 // Scot W. Stevenson <scot.stevenson@gmail.com>
 // First version: 09. Mar 2018
-// This version: 15. Mar 2018
+// This version: 21. Mar 2018
 
 package mem
 
@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"sync"
 	"unicode"
 )
 
@@ -17,11 +18,12 @@ const (
 )
 
 type Chunk struct {
-	Start uint   // stores 65816 addr
-	End   uint   // stores 65816 addr
-	Type  string // "ram" or "rom"
-	Label string // internal use only
-	Data  []byte
+	Start      uint   // stores 65816 addr
+	End        uint   // stores 65816 addr
+	Type       string // "ram" or "rom"
+	Label      string // internal use only
+	sync.Mutex        // Make write of data array thread safe
+	Data       []byte
 }
 
 // Memory is the total system memory, which is basically just a bunch of chunks
@@ -51,9 +53,11 @@ func (c Chunk) Size() uint {
 
 // Store takes a byte and an address and stores the byte at the address in the
 // chunk. Assumes that we already checked that the address is in fact in this
-// chunk
+// chunk. We use the Mutex here out of paranoia to make sure it's thread safe
 func (c Chunk) Store(addr uint, b byte) {
+	c.Lock()
 	c.Data[addr-c.Start] = b
+	c.Unlock()
 }
 
 // --- MEMORY METHODS ---
@@ -76,7 +80,8 @@ func (m Memory) Contains(addr uint) bool {
 
 // Fetch takes an address and gets a byte from the appropriate chunk and returns
 // the byte with a true flag for success. If the address is not memory, it
-// returns a zero value and a false flag
+// returns a zero value and a false flag. We use a Mutex at chunk level, not
+// memory level
 func (m Memory) Fetch(addr uint) (byte, bool) {
 	var b byte
 	var found bool = false
