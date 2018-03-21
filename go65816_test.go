@@ -1,7 +1,7 @@
 // Test file for go65816
 // Scot W. Stevenson <scot.stevenson@gmail.com>
 // First version: 15. Mar 2018
-// This version: 15. Mar 2018
+// This version: 21. Mar 2018
 
 package main
 
@@ -68,6 +68,24 @@ func TestStripDelimiters(t *testing.T) {
 		got := stripDelimiters(test.input)
 		if got != test.want {
 			t.Errorf("stripDelimiters(%q) = %v", test.input, got)
+		}
+	}
+}
+
+func TestFmtAddr(t *testing.T) {
+	var tests = []struct {
+		input uint
+		want  string
+	}{
+		{0, "00:0000"},
+		{1, "00:0001"},
+		{1023, "00:03FF"},
+		{0x01ffff, "01:FFFF"},
+	}
+	for _, test := range tests {
+		got := fmtAddr(test.input)
+		if got != test.want {
+			t.Errorf("fmtAddr(%q) = %v", test.input, got)
 		}
 	}
 }

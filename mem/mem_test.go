@@ -108,3 +108,37 @@ func TestStoreNFetch(t *testing.T) {
 		}
 	}
 }
+
+// Test storing of a multi-byte number in little-endian format
+func TestStoreMore(t *testing.T) {
+	type ip struct {
+		addr uint
+		num  uint
+		len  uint
+	}
+
+	var mydata = make([]byte, 0x400) // 1 KiB length
+	var mymem Memory
+	tc := Chunk{Start: 0x100, End: 0x4FF, Label: "Test", Data: mydata, Type: "ram"}
+	mymem.Chunks = append(mymem.Chunks, tc)
+
+	var tests = []struct {
+		input ip
+		want  bool
+	}{
+		{ip{0x100, 0xee, 0}, false}, // can't ask to store zero bytes
+		{ip{0x100, 0xee, 4}, false}, // can't ask to store four bytes
+		{ip{0x100, 0xaa, 1}, true},
+		{ip{0x100, 0xaabb, 2}, true},
+		{ip{0x100, 0xaabbcc, 3}, true},
+	}
+
+	for _, test := range tests {
+		got := mymem.StoreMore(test.input.addr, test.input.num, test.input.len)
+
+		if got != test.want {
+			t.Errorf("StoreMore(%v) = %v", test.input, got)
+		}
+
+	}
+}

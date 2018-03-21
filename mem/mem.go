@@ -127,6 +127,7 @@ func (m Memory) FetchMore(addr uint, num uint) (uint, bool) {
 // the library encoding/hex for this, but we want to print the first address of
 // the line, and the library function starts the count with zero, not the
 // address. Also, we want uppercase letters for hex values
+// TODO Return result as a string instead of printing it
 func (m Memory) Hexdump(addr1, addr2 uint) {
 
 	var r rune
@@ -234,6 +235,34 @@ func (m Memory) Store(addr uint, b byte) bool {
 			break
 		}
 	}
+	return f
+}
+
+// StoreMore takes an address, a number and the number of bytes to store little
+// endian at that address. If any part of the address is not a part of legal
+// memory, return a false flag, otherwise true. At most, numbers up to 24 bit
+// length (three bytes) are stored. Anything above that is silently discarded.
+// If the number of bytes to store is anything but 1, 2, or 3, we return a false
+// flag with memory untouched
+func (m Memory) StoreMore(addr uint, num uint, len uint) bool {
+
+	if len < 1 || len > 3 {
+		return false
+	}
+
+	f := true
+
+	lsb := byte(num & 0xff)
+	msb := byte((num & 0xff00) >> 8)
+	bank := byte((num & 0xff0000) >> 16)
+
+	ba := [...]byte{lsb, msb, bank}
+
+	for i := 0; i < 3; i++ {
+		ok := m.Store(addr+uint(i), ba[i])
+		f = f && ok
+	}
+
 	return f
 }
 

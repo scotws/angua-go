@@ -1,7 +1,7 @@
 // py65816 A 65816 MPU emulator in Go
 // Scot W. Stevenson <scot.stevenson@gmail.com>
 // First version: 26. Sep 2017
-// This version: 15. Mar 2018
+// This version: 21. Mar 2018
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -56,9 +56,9 @@ func verbose(s string) {
 	}
 }
 
-// convNum Convert a legal number string to an uint. Note we accept ':' and '.'
-// as delimiters, use $ or 0x for hex numbers, % for binary numbers, and nothing
-// for decimal numbers.
+// convNum Converts a number string -- hex, binary, or decimal -- to an uint.
+// We accept ':' and '.' as delimiters, use $ or 0x for hex numbers, % for
+// binary numbers, and nothing for decimal numbers.
 func convNum(s string) uint {
 
 	ss := stripDelimiters(s)
@@ -95,10 +95,9 @@ func convNum(s string) uint {
 	}
 }
 
-// fmtAddr takes a 65816 address as a uint and returns  a hex number string with
+// fmtAddr takes a 65816 address as a uint and returns a hex number string with
 // a ':' between the bank byte and the rest of the address. Hex digits are
 // capitalized. Assumes we are sure that the address is valid
-// TODO write test
 func fmtAddr(addr uint) string {
 	s1 := fmt.Sprintf("%06X", addr)
 	s2 := s1[0:2] + ":" + s1[2:len(s1)]
@@ -110,6 +109,22 @@ func fmtAddr(addr uint) string {
 // because we force uint
 func isValidAddr(a uint) bool {
 	return a <= maxAddr
+}
+
+// mask takes a number and a number of bytes and makes sure that the resulting
+// number is not larger than what can be expressed with those bytes. If no bytes
+// or more than three are requested, we return the original number
+func mask(num uint, b uint8) uint {
+	switch {
+	case b == 1:
+		return num && 0xFF
+	case b == 2:
+		return num && 0xFFFF
+	case b == 3:
+		return num && 0xFFFFFF
+	default:
+		return num
+	}
 }
 
 // stripDelimiters removes '.' and ':' which users can use as number delimiters.
