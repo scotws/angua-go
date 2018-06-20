@@ -1,0 +1,33 @@
+Manifesto for the Rlyeh 65816 Emulator 
+Scot W. Stevenson <scot.stevenson@gmail.com>
+First version: 20. Jun 2018
+This version: 20. Jun 2018
+
+This is the original manifesto for the Rlyeh 65816 Emulator. It contains 
+the rough ideas about what the project's aims are and structure should look
+like, and is superceded by all other documents. It is mainly included for
+historical interest.
+
+
+MOTIVATION
+
+There are currently very few emulators for the 65816. The example of the py65
+emulator for the 6502/65c02 shows that a good emulator lowers the barrier to
+experimenting with the chip.
+
+
+WHY GO?
+
+The first choice of language would seem to be Python, which is widely known.
+However, one aspect of Rlyeh is speed. Also, the aim is to have extensive
+built-in support for testing and introspection, which might be easier with
+coroutines. 
+
+
+INTERFACE
+
+Rlyeh is intended to allow both scripting and interactive
+
+
+
+
