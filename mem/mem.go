@@ -1,4 +1,4 @@
-// go65816 Memory System
+// Rlyeh Memory System
 // Scot W. Stevenson <scot.stevenson@gmail.com>
 // First version: 09. Mar 2018
 // This version: 21. Mar 2018

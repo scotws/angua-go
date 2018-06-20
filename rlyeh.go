@@ -1,4 +1,4 @@
-// py65816 A 65816 MPU emulator in Go
+// Rlyeh - A 65816 MPU emulator in Go
 // Scot W. Stevenson <scot.stevenson@gmail.com>
 // First version: 26. Sep 2017
 // This version: 21. Mar 2018

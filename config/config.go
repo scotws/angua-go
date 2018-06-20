@@ -1,4 +1,4 @@
-// Configuration loading routines for go65816
+// Configuration loading routines for Rlyeh
 // Part of the go65816 package
 // Scot W. Stevenson scot.stevenson@gmail.com
 // First version: 26. Sep 2017
