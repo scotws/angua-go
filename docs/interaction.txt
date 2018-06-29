@@ -1,0 +1,60 @@
+Notes on Rlyeh interaction 
+Scot W. Stevenson <scot.stevenson@gmail.com>
+First version: 20. Jun 2018
+This version: 20. Jun 2018
+
+Rlyeh is built to be used either through script files (*.cmd) or interactively
+with the same syntax. 
+
+SUGGESTED SYNTAX
+
+        ";" 
+        "assert" <CONDITION> "else" <ACTION>
+        "assemble" [ "at" ] <ADDR>
+        "beep"
+        "break" 
+        "define" <RANGE> [ "as" ] [ "ram" | "rom" ]
+                 <ADDR> [ "as" ] [ "putc" | "getc" ]
+        "disassemble" <RANGE>
+        "dump" <RANGE>
+        "halt"
+        "if" <CONDITION> "then" <ACTION> [ "else" <ACTION> ]
+        "load" <FILE> "to" <ADDR>
+        "quit"
+        "echo" [ <STRING> ]
+        "reset"
+        "resume"
+        "run" <ADDR> [ "to" <ADDR> ]
+        "save" <RANGE> "to" <FILE>
+               "machine" "to" <FILE>
+        "show" <REGISTER> 
+               "state"
+        "set" <REGISTER> [ "to" ] <VALUE> 
+              "mode" [ "native" | "emulate" ]
+        "trace" "on" [ "to" <FILE> ] 
+                "off"
+        "when" <CONDITION> "then" <ACTION>
+
+<ACTION> :
+        "beep"
+        "break"
+        "echo"
+        "halt"
+        "load"
+        "save"
+        "trace"
+        "dump"
+        "disassemble"
+<ADDR> :
+        Decimal, hex, or binary 24-bit number 
+<CONDITION> :
+        <ADDR> "is" <VALUE>
+        <REGISTER> "is" <VALUE>
+        <RANGE> "equals" [ <RANGE> | <FILE> ]
+<RANGE> : 
+        <ADDR> "to" <ADDR>
+<REGISTER>:
+        [ "A" | "B" | "X" | "Y" | "SP" | "DP" | "PC" | "S" ]
+<VALUE> : 
+        Decimal, hex, or binary number
+

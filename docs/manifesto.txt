@@ -1,7 +1,7 @@
 Manifesto for the Rlyeh 65816 Emulator 
 Scot W. Stevenson <scot.stevenson@gmail.com>
 First version: 20. Jun 2018
-This version: 20. Jun 2018
+This version: 21. Jun 2018
 
 This is the original manifesto for the Rlyeh 65816 Emulator. It contains 
 the rough ideas about what the project's aims are and structure should look
@@ -18,15 +18,21 @@ experimenting with the chip.
 
 WHY GO?
 
-The first choice of language would seem to be Python, which is widely known.
-However, one aspect of Rlyeh is speed. Also, the aim is to have extensive
-built-in support for testing and introspection, which might be easier with
-coroutines. 
+There are two goals we can follow with an emulator of this type: A program that
+is actually used instead of hardware, or a tool to develop programs on
+hardware. In the first case, speed is a priority, in the second case,
+extensive checks and ease of retooling is. 
+
+The Go version of Rlyeh assumes that you will not necessarily be creating your
+own 65816 hardware -- the MPU is actually somewhat harder to work with than the
+little sisters, the 65c02 and 6502. Therefore, we're assuming that a lot of
+people will be using the emulator as a primary way to program the 65816, and
+have speed as a priority. 
 
 
 INTERFACE
 
-Rlyeh is intended to allow both scripting and interactive
+Rlyeh is intended to allow both scripting and interactive use.
 
 
 
