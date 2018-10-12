@@ -33,14 +33,14 @@ type Memory struct {
 
 // --- CHUNK METHODS ---
 
-// contains takes a memory address and checks if it is in this chunk,
+// Contains takes a memory address and checks if it is in this chunk,
 // returning a bool. Assumes that the address has been confirmed to be a valid
 // 65816 address as a uint
 func (c Chunk) Contains(addr uint) bool {
 	return c.Start <= addr && addr <= c.End
 }
 
-// fetch gets one byte of memory from the data of a chunk and returns it.
+// Fetch gets one byte of memory from the data of a chunk and returns it.
 // Assumes we have already made sure that the address is in this chunk
 func (c Chunk) Fetch(addr uint) byte {
 	return c.Data[addr-c.Start]
@@ -62,7 +62,7 @@ func (c Chunk) Store(addr uint, b byte) {
 
 // --- MEMORY METHODS ---
 
-// contains takes an 65816 address as an uint and checks to see if it is
+// Contains takes an 65816 address as an uint and checks to see if it is
 // valid, returning a bool
 func (m Memory) Contains(addr uint) bool {
 
