@@ -28,8 +28,8 @@ import (
 	"strconv"
 	"strings"
 
-	"go65816/config"
-	"go65816/mem"
+	"angua/config"
+	"angua/mem"
 )
 
 const (
