@@ -1,5 +1,5 @@
 // Test file for mem.go
-// Part of the Rlyeh package
+// Part of the Angua package
 // Scot W. Stevenson <scot.stevenson@gmail.com>
 // First version 09. Mar 2018
 // This version 21. Mar 2018

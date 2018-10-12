@@ -1,5 +1,5 @@
 // Test file for config.go
-// Part of the Rlyeh package
+// Part of the Angua package
 // Scot W. Stevenson <scot.stevenson@gmail.com>
 // First version 26. Sep 2017
 // This version 15. Mar 2018

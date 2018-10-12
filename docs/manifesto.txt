@@ -1,9 +1,9 @@
-Manifesto for the Rlyeh 65816 Emulator 
+Manifesto for the Angua 65816 Emulator 
 Scot W. Stevenson <scot.stevenson@gmail.com>
 First version: 20. Jun 2018
 This version: 21. Jun 2018
 
-This is the original manifesto for the Rlyeh 65816 Emulator. It contains 
+This is the original manifesto for the Angua 65816 Emulator. It contains 
 the rough ideas about what the project's aims are and structure should look
 like, and is superceded by all other documents. It is mainly included for
 historical interest.
@@ -23,7 +23,7 @@ is actually used instead of hardware, or a tool to develop programs on
 hardware. In the first case, speed is a priority, in the second case,
 extensive checks and ease of retooling is. 
 
-The Go version of Rlyeh assumes that you will not necessarily be creating your
+The Go version of Angua assumes that you will not necessarily be creating your
 own 65816 hardware -- the MPU is actually somewhat harder to work with than the
 little sisters, the 65c02 and 6502. Therefore, we're assuming that a lot of
 people will be using the emulator as a primary way to program the 65816, and
@@ -32,7 +32,7 @@ have speed as a priority.
 
 INTERFACE
 
-Rlyeh is intended to allow both scripting and interactive use.
+Angua is intended to allow both scripting and interactive use.
 
 
 

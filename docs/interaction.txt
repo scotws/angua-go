@@ -1,9 +1,9 @@
-Notes on Rlyeh interaction 
+Notes on Angua interaction 
 Scot W. Stevenson <scot.stevenson@gmail.com>
 First version: 20. Jun 2018
-This version: 20. Jun 2018
+This version: 13. Oct 2018
 
-Rlyeh is built to be used either through script files (*.cmd) or interactively
+Angua is built to be used either through script files (*.cmd) or interactively
 with the same syntax. 
 
 SUGGESTED SYNTAX

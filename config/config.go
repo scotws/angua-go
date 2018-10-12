@@ -1,4 +1,4 @@
-// Configuration loading routines for Rlyeh
+// Configuration loading routines for Angua
 // Part of the go65816 package
 // Scot W. Stevenson scot.stevenson@gmail.com
 // First version: 26. Sep 2017
