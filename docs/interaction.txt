@@ -1,0 +1,119 @@
+Notes on interaction 
+Scot W. Stevenson <scot.stevenson@gmail.com>
+First version: 20. Jun 2018  ( Python version of Angua )
+This version: 06. Nov 2018 
+
+Angua is built to be used either through script files (*.cfg) or interactively
+with the same syntax from a command line interface. 
+
+
+=== DEFINED SYNTAX ===
+
+--- BASIC ELEMENTS ---
+
+<ALPHA> : ( "A"..."Z" | "a" ... "z" )+
+<CHAR> : <UNICODE_CHAR>
+
+<BIN_DIGIT> : "0","1"
+<DEC_DIGIT> : "0".."9"+
+<HEX_DIGIT> : (<DEC_DIGIT> | "A"..."F" | "a" ... "f" )+
+
+<FILE> : <OS DEFINITION>
+
+<FLAG> : ( "Z" | "N" | "C" | "V" | "E" | "D" | "M" | "I" | "X" )
+
+<FUNCTION> : <ALPHA> ( <DEC_DIGIT> | <ALPHA> )
+
+<BIN_NUM> : "%" <BIN_DIGIT>+
+<DEC_NUM> : <DEC_DIGIT>+
+<HEX_NUM> : "$" <HEX_DIGIT>+    ; can contain ':' and '.'
+        
+<NUM> : ( <BIN_NUM> | <DEC_NUM> | <HEX_NUM> )
+
+<REGISTER> : ( "A" | "B" | "X" | "Y" | "SP" | "DP" | "PC" | "S" | "DBR" | "PBR" )
+
+<BYTE> : <NUM>  ; size 8 bit
+<WORD> : <NUM>  ; size 16 bit
+<ADDR> : <NUM>  ; size 24 bit
+
+<VALUE> : ( <BYTE> | <WORD> )
+        
+<ADDR_RANGE> : ( <ADDR> "to" <ADDR> | "bank" <BYTE> )
+
+<COMMENT> : ";" <CHAR>+
+
+
+--- DIRECTIVES ---
+
+"abort"
+
+"beep"
+"boot"
+
+"clear" "flag" <FLAG>
+        "address" <ADDR>
+        "breakpoint" <ADDR>
+        "memory" <ADDR_RANGE>
+        "register" <REGISTER>
+
+"disasm" <ADDR_RANGE>
+
+"dump" 
+        "stack"
+        "zeropage"
+        <ADDR_RANGE>
+
+"echo" <CHAR>+ 
+"halt"
+"init" [ <FILE> ] 
+"irq"
+"load" <FILE> [ "to" ] <ADDR>
+"memory" <ADDR_RANGE> [ "is" ] ( "ram" | "rom" )
+"nmi"
+"quit"
+"reading" <ADDR> [ "calls" ] <FUNCTION>
+"reset"
+"resume"
+"run" <ADDR>
+"save" <ADDR_RANGE> [ "to" ] <FILE>
+
+"set"   
+        "address" <ADDR> [ "to" ] ( <VALUE> | <ADDR> )
+        "breakpoint" <ADDR> 
+        "flag" <FLAG>
+        "mode" ( "native" | "emulated" )
+        "register" <REGISTER> [ "to" ] <VALUE> 
+
+"show"
+        "breakpoints"
+        "config"
+        "register" <REGISTER>
+        "memory"
+        "vectors"
+
+"status"
+"store" ( <BYTE> | <WORD> ) [ "in" ] ( <REGISTER> | <ADDR> )
+"step" [ "from" <ADDR> ]
+"writing" <ADDR> [ "calls" ] <FUNCTION>
+
+
+=== POSSIBLE VARIENTS ===
+
+SUGGESTED SYNTAX
+
+        "assert" <CONDITION> "else" <ACTION>
+        "assemble" [ "at" ] <ADDR>
+        "break" 
+        "halt"
+        "if" <CONDITION> "then" <ACTION> [ "else" <ACTION> ]
+        "set" <REGISTER> [ "to" ] <VALUE> 
+              "mode" [ "native" | "emulate" ]
+        "trace" "on" [ "to" <FILE> ] 
+                "off"
+        "when" <CONDITION> "then" <ACTION>
+
+<ACTION> :
+        "break"
+        "halt"
+        "trace"
+        "disassemble"
