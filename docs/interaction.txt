@@ -1,7 +1,7 @@
 Notes on Angua interaction 
 Scot W. Stevenson <scot.stevenson@gmail.com>
 First version: 20. Jun 2018
-This version: 13. Oct 2018
+This version: 19. Oct 2018
 
 Angua is built to be used either through script files (*.cmd) or interactively
 with the same syntax. 
@@ -17,11 +17,11 @@ SUGGESTED SYNTAX
                  <ADDR> [ "as" ] [ "putc" | "getc" ]
         "disassemble" <RANGE>
         "dump" <RANGE>
-        "halt"
-        "if" <CONDITION> "then" <ACTION> [ "else" <ACTION> ]
-        "load" <FILE> "to" <ADDR>
-        "quit"
         "echo" [ <STRING> ]
+        "if" <CONDITION> "then" <ACTION> [ "else" <ACTION> ]
+        "halt"
+        "load" <FILE> "at" <ADDR>
+        "quit"
         "reset"
         "resume"
         "run" <ADDR> [ "to" <ADDR> ]
@@ -33,6 +33,7 @@ SUGGESTED SYNTAX
               "mode" [ "native" | "emulate" ]
         "trace" "on" [ "to" <FILE> ] 
                 "off"
+        "walk" <ADDR> [ "to" <ADDR> ]
         "when" <CONDITION> "then" <ACTION>
 
 <ACTION> :
@@ -45,16 +46,28 @@ SUGGESTED SYNTAX
         "trace"
         "dump"
         "disassemble"
+
 <ADDR> :
         Decimal, hex, or binary 24-bit number 
+
 <CONDITION> :
         <ADDR> "is" <VALUE>
         <REGISTER> "is" <VALUE>
         <RANGE> "equals" [ <RANGE> | <FILE> ]
+
 <RANGE> : 
         <ADDR> "to" <ADDR>
+
 <REGISTER>:
         [ "A" | "B" | "X" | "Y" | "SP" | "DP" | "PC" | "S" ]
+
 <VALUE> : 
         Decimal, hex, or binary number
 
+
+EXAMPLE OF A SESSION
+
+        define $00:0000 to $00:dfff as ram
+        define $00:e000 to $00:ffff as rom
+        load "test.asm" to $00:e000
+        when PC == $e1000 then break

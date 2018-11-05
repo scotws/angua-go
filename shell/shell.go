@@ -40,7 +40,6 @@ func main() {
 	var fBatch = false
 
 	shell := ishell.New()
-
 	shell.Println("Sample shell")
 
 	shell.AddCmd(&ishell.Cmd{
