@@ -75,6 +75,7 @@ with the same syntax from a command line interface.
 "irq"
 "load" <FILE> [ "to" ] <ADDR>
 "memory" <ADDR_RANGE> [ "is" ] ( "ram" | "rom" )
+"mode" ( "native" | "emulated" )
 "nmi"
 "reading" <ADDR> [ "calls" ] <FUNCTION>
 "reset"
@@ -86,7 +87,6 @@ with the same syntax from a command line interface.
         "address" <ADDR> [ "to" ] ( <VALUE> | <ADDR> )
         "breakpoint" <ADDR> 
         "flag" <FLAG>
-        "mode" ( "native" | "emulated" )
         "register" <REGISTER> [ "to" ] <VALUE> 
 
 "show"

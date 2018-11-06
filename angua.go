@@ -33,17 +33,19 @@ import (
 
 const (
 	maxAddr     = 1<<24 - 1
-	shellBanner = "Angua 65816 Emulator"
+	shellBanner = "Angua 65816 Emulator\n(c) 2018 Scot W. Stevenson"
 )
 
 var (
-	confs  []string
 	memory mem.Memory
+
+	haveMachine bool = false
 
 	specials = make(map[uint]string)
 
-	// Flags passed. Add "-c" to load config file and "-b" for batch mode
-	beVerbose = flag.Bool("v", false, "Verbose, print more output")
+	// Flags passed. Add "-c" to load config file
+	beVerbose   = flag.Bool("v", false, "Verbose, print more output")
+	inBatchMode = flag.Bool("b", false, "Start in batch mode")
 )
 
 // -----------------------------------------------------------------
@@ -130,9 +132,12 @@ func main() {
 
 	// Start interactive shell. Note that by default, this provides the
 	// directives "exit", "help", and "clear"
-
 	shell := ishell.New()
 	shell.Println(shellBanner)
+	shell.SetPrompt("> ")
+
+	// We create a history file
+	shell.SetHomeHistoryPath(".angua_shell_history")
 
 	shell.AddCmd(&ishell.Cmd{
 		Name: "abort",
@@ -155,6 +160,20 @@ func main() {
 		Help: "Boot the machine. Same effect as turning on the power",
 		Func: func(c *ishell.Context) {
 			c.Println("(DUMMY boot the machine)")
+		},
+	})
+
+	shell.AddCmd(&ishell.Cmd{
+		Name: "destroy",
+		Help: "destroy the machine",
+		Func: func(c *ishell.Context) {
+			if !haveMachine {
+				c.Println("ERROR: No machine present")
+			} else {
+				c.Println("(DUMMY destroy the machine)")
+				haveMachine = false
+				shell.Process("beep")
+			}
 		},
 	})
 
@@ -194,7 +213,14 @@ func main() {
 		Name: "init",
 		Help: "initialize a new machine",
 		Func: func(c *ishell.Context) {
+
+			if haveMachine {
+				c.Println("ERROR: Already have machine")
+				return
+			}
+
 			c.Println("(DUMMY init)")
+			haveMachine = true
 		},
 	})
 
@@ -211,6 +237,23 @@ func main() {
 		Help: "load contents of a file to memory",
 		Func: func(c *ishell.Context) {
 			c.Println("(DUMMY load)")
+		},
+	})
+
+	shell.AddCmd(&ishell.Cmd{
+		Name: "memory",
+		Help: "define a memory chunk",
+		Func: func(c *ishell.Context) {
+			c.Println("(DUMMY Memory)")
+		},
+	})
+
+	shell.AddCmd(&ishell.Cmd{
+		Name:     "mode",
+		Help:     "set CPU mode",
+		LongHelp: "Options: 'native', 'emulated'",
+		Func: func(c *ishell.Context) {
+			c.Println("(DUMMY mode )")
 		},
 	})
 
@@ -274,7 +317,24 @@ func main() {
 		Name: "show",
 		Help: "display information on various parts of the system",
 		Func: func(c *ishell.Context) {
-			c.Println("(DUMMY show)")
+			if len(c.Args) != 1 {
+				c.Println("ERROR: Need an argument")
+			} else {
+				subcmd := c.Args[0]
+
+				switch subcmd {
+				case "config":
+					c.Println("(DUMMY show config)")
+				case "memory":
+					c.Println("(DUMMY show memory)")
+				case "specials":
+					c.Println("(DUMMY show specials)")
+				case "vectors":
+					c.Println("(DUMMY show vectors)")
+				default:
+					c.Println("ERROR: Option", subcmd, "unknown")
+				}
+			}
 		},
 	})
 
