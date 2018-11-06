@@ -159,6 +159,14 @@ func main() {
 	})
 
 	shell.AddCmd(&ishell.Cmd{
+		Name: "disasm",
+		Help: "Disassemble a range of memory",
+		Func: func(c *ishell.Context) {
+			c.Println("(DUMMY disassemble memory)")
+		},
+	})
+
+	shell.AddCmd(&ishell.Cmd{
 		Name: "dump",
 		Help: "Print hex dump of range",
 		Func: func(c *ishell.Context) {
@@ -171,6 +179,126 @@ func main() {
 		Help: "Print following text to end of line",
 		Func: func(c *ishell.Context) {
 			c.Println(strings.Join(c.Args, " "))
+		},
+	})
+
+	shell.AddCmd(&ishell.Cmd{
+		Name: "halt",
+		Help: "Halt the machine",
+		Func: func(c *ishell.Context) {
+			c.Println("(DUMMY halt the machine)")
+		},
+	})
+
+	shell.AddCmd(&ishell.Cmd{
+		Name: "init",
+		Help: "initialize a new machine",
+		Func: func(c *ishell.Context) {
+			c.Println("(DUMMY init)")
+		},
+	})
+
+	shell.AddCmd(&ishell.Cmd{
+		Name: "irq",
+		Help: "trigger an Interrupt Request (IRQ)",
+		Func: func(c *ishell.Context) {
+			c.Println("(DUMMY IRQ)")
+		},
+	})
+
+	shell.AddCmd(&ishell.Cmd{
+		Name: "load",
+		Help: "load contents of a file to memory",
+		Func: func(c *ishell.Context) {
+			c.Println("(DUMMY load)")
+		},
+	})
+
+	shell.AddCmd(&ishell.Cmd{
+		Name: "nmi",
+		Help: "trigger a Non Maskable Interrupt (NMI)",
+		Func: func(c *ishell.Context) {
+			c.Println("(DUMMY NMI)")
+		},
+	})
+
+	shell.AddCmd(&ishell.Cmd{
+		Name: "reading",
+		Help: "set a special address",
+		Func: func(c *ishell.Context) {
+			c.Println("(DUMMY reading)")
+		},
+	})
+
+	shell.AddCmd(&ishell.Cmd{
+		Name: "reset",
+		Help: "trigger a RESET signal",
+		Func: func(c *ishell.Context) {
+			c.Println("(DUMMY reset)")
+		},
+	})
+
+	shell.AddCmd(&ishell.Cmd{
+		Name: "resume",
+		Help: "resume after a halt",
+		Func: func(c *ishell.Context) {
+			c.Println("(DUMMY resume)")
+		},
+	})
+
+	shell.AddCmd(&ishell.Cmd{
+		Name: "run",
+		Help: "run from a given address",
+		Func: func(c *ishell.Context) {
+			c.Println("(DUMMY run)")
+		},
+	})
+
+	shell.AddCmd(&ishell.Cmd{
+		Name: "save",
+		Help: "save an address range to file",
+		Func: func(c *ishell.Context) {
+			c.Println("(DUMMY run)")
+		},
+	})
+
+	shell.AddCmd(&ishell.Cmd{
+		Name: "set",
+		Help: "set various parameters",
+		Func: func(c *ishell.Context) {
+			c.Println("(DUMMY set)")
+		},
+	})
+
+	shell.AddCmd(&ishell.Cmd{
+		Name: "show",
+		Help: "display information on various parts of the system",
+		Func: func(c *ishell.Context) {
+			c.Println("(DUMMY show)")
+		},
+	})
+
+	shell.AddCmd(&ishell.Cmd{
+		Name: "status",
+		Help: "display status of the machine",
+		Func: func(c *ishell.Context) {
+			c.Println("(DUMMY status)")
+		},
+	})
+
+	shell.AddCmd(&ishell.Cmd{
+		Name: "store",
+		Help: "store byte at a given address",
+		Func: func(c *ishell.Context) {
+			c.Println("(DUMMY store)")
+		},
+	})
+
+	shell.AddCmd(&ishell.Cmd{
+		Name: "writing",
+		Help: "define a function to be triggered when address written to",
+		Func: func(c *ishell.Context) {
+			c.Println("(DUMMY writing)")
 		},
 	})
 

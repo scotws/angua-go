@@ -1,6 +1,6 @@
 Notes on interaction 
 Scot W. Stevenson <scot.stevenson@gmail.com>
-First version: 20. Jun 2018  ( Python version of Angua )
+First version: 20. Jun 2018  (Python version of Angua)
 This version: 06. Nov 2018 
 
 Angua is built to be used either through script files (*.cfg) or interactively
