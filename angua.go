@@ -1,7 +1,7 @@
 // Angua - A 65816 MPU emulator in Go
 // Scot W. Stevenson <scot.stevenson@gmail.com>
 // First version: 26. Sep 2017
-// This version: 21. Mar 2018
+// This version: 06. Nov 2018
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -19,22 +19,17 @@
 package main
 
 import (
-	"bufio"
-	"encoding/binary"
 	"flag"
 	"fmt"
 	"log"
-	"os"
 	"strconv"
 	"strings"
 
-	"angua/config"
 	"angua/mem"
 )
 
 const (
-	configFile = "config.cfg"
-	maxAddr    = 1<<24 - 1
+	maxAddr = 1<<24 - 1
 )
 
 var (
@@ -107,24 +102,9 @@ func fmtAddr(addr uint) string {
 // isValidAddr takes an uint and makes sure that as an address, it is not larger
 // than can be stated with 24 bits We don't need to test for negative numbers
 // because we force uint
+// TODO Move this to CPU and make special for 16 and 24 bits
 func isValidAddr(a uint) bool {
 	return a <= maxAddr
-}
-
-// mask takes a number and a number of bytes and makes sure that the resulting
-// number is not larger than what can be expressed with those bytes. If no bytes
-// or more than three are requested, we return the original number
-func mask(num uint, b uint8) uint {
-	switch {
-	case b == 1:
-		return num && 0xFF
-	case b == 2:
-		return num && 0xFFFF
-	case b == 3:
-		return num && 0xFFFFFF
-	default:
-		return num
-	}
 }
 
 // stripDelimiters removes '.' and ':' which users can use as number delimiters.
@@ -142,82 +122,7 @@ func main() {
 
 	flag.Parse()
 
-	// --- Load configuration ---
-
-	verbose("Reading configuration file")
-
-	cf, err := os.Open(configFile)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer cf.Close()
-
-	source := bufio.NewScanner(cf)
-
-	for source.Scan() {
-		confs = append(confs, source.Text())
-	}
-
-	for _, l := range confs {
-
-		if config.IsComment(l) {
-			continue
-		}
-
-		if config.IsEmpty(l) {
-			continue
-		}
-
-		ws := strings.Fields(l)
-
-		switch {
-
-		case config.DefinesSpecial(ws[0]):
-			name := ws[1]
-			addr := convNum(ws[2])
-			specials[addr] = name
-
-			verbose(fmt.Sprintf("- Defined special address '%s' at %s", name, fmtAddr(addr)))
-
-		case config.DefinesChunk(ws[0]):
-			ty := ws[1]
-			a1 := convNum(ws[2]) // start address
-			a2 := convNum(ws[3]) // end address
-			lb := ws[4]
-
-			size := a2 - a1 + 1
-			da := make([]byte, size)
-
-			// If this is ROM, load contents of binary file
-			if ty == "rom" {
-
-				if len(ws) < 6 {
-					log.Fatal(fmt.Sprintf("Can't load ROM file for chunk '%s'", lb))
-				}
-
-				f, err := os.Open(ws[5])
-				if err != nil {
-					log.Fatal(err)
-				}
-				defer f.Close()
-
-				err = binary.Read(f, binary.LittleEndian, &da)
-				if err != nil {
-					log.Fatal(err)
-				}
-			}
-
-			c := mem.Chunk{a1, a2, ty, lb, da}
-			memory.Chunks = append(memory.Chunks, c)
-			verbose(fmt.Sprintf("- Added chunk %s to memory (%d bytes)", lb, size))
-
-		default:
-			log.Printf("Error in %s (unknown keyword '%s'), skipping", configFile, ws[0])
-		}
-
-	}
-
-	verbose("Configuration file finished")
+	// TODO --- Load configuration ---
 
 	fmt.Println(" ---- (TESTING) ----")
 
@@ -237,5 +142,4 @@ func main() {
 
 	memory.Hexdump(0xa000, 0xa020)
 
-	// --- FEHLT ---
 }
