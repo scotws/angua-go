@@ -1,11 +1,11 @@
-// Angua Interactive Shell
+// Test for ishell
 // Scot W. Stevenson
 // First version 30. June 2018
 // This version 06. Nov 2018
 
 // See https://github.com/abiosoft/ishell
 
-package shell
+package main
 
 import (
 	"os"
@@ -35,37 +35,26 @@ func procRange(s []string) (string, bool) {
 	return r, f
 }
 
-func NewShell() {
+func main() {
 
 	var fBatch = false
 
-	// Create a new shell. By default, this includes the commands
-	// "exit", "help", and "clear"
-
 	shell := ishell.New()
-	shell.Println("Angua Shell")
+	shell.Println("Sample shell")
 
 	shell.AddCmd(&ishell.Cmd{
-		Name: "abort",
-		Help: "Trigger the abort vector",
+		Name: "hi",
+		Help: "Say hello to user",
 		Func: func(c *ishell.Context) {
-			c.Println("(DUMMY trigger abort vector)")
+			c.Println("Hello!")
 		},
 	})
 
 	shell.AddCmd(&ishell.Cmd{
 		Name: "beep",
-		Help: "Print a beeping noise",
+		Help: "Print beeping noise",
 		Func: func(c *ishell.Context) {
 			c.Println("\a")
-		},
-	})
-
-	shell.AddCmd(&ishell.Cmd{
-		Name: "boot",
-		Help: "Boot the machine. Same effect as turning on the power",
-		Func: func(c *ishell.Context) {
-			c.Println("(DUMMY boot the machine)")
 		},
 	})
 
@@ -82,7 +71,7 @@ func NewShell() {
 		},
 	})
 
-	// TODO Decide if echo should take parameter in quotes
+	// Decide if echo should take parameter in quote
 	shell.AddCmd(&ishell.Cmd{
 		Name: "echo",
 		Help: "Print following text to end of line",
@@ -98,6 +87,28 @@ func NewShell() {
 		Func: func(c *ishell.Context) {
 			yellow := color.New(color.FgYellow).SprintFunc()
 			c.Println(yellow(c.Args[0]))
+		},
+	})
+
+	// This doesn't work with the batch command
+	shell.AddCmd(&ishell.Cmd{
+		Name: "mode",
+		Help: "Set mode of MPU (native or emulated)",
+		Func: func(c *ishell.Context) {
+			if !fBatch {
+				choice := c.MultiChoice([]string{
+					"native",
+					"emulated",
+				}, "Pick new mode")
+				if choice == 0 {
+					c.Println("(NATIVE MODE)")
+				} else {
+					c.Println("(EMULATED)")
+				}
+
+			} else {
+				c.Println("ERROR: 'mode' not available in batch mode")
+			}
 		},
 	})
 

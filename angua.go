@@ -26,17 +26,23 @@ import (
 	"strings"
 
 	"angua/mem"
+
+	// "github.com/fatih/color"
+	"gopkg.in/abiosoft/ishell.v2"
 )
 
 const (
-	maxAddr = 1<<24 - 1
+	maxAddr     = 1<<24 - 1
+	shellBanner = "Angua 65816 Emulator"
 )
 
 var (
 	confs  []string
 	memory mem.Memory
 
-	specials  = make(map[uint]string)
+	specials = make(map[uint]string)
+
+	// Flags passed. Add "-c" to load config file and "-b" for batch mode
 	beVerbose = flag.Bool("v", false, "Verbose, print more output")
 )
 
@@ -122,24 +128,54 @@ func main() {
 
 	flag.Parse()
 
-	// TODO --- Load configuration ---
+	// Start interactive shell. Note that by default, this provides the
+	// directives "exit", "help", and "clear"
 
-	fmt.Println(" ---- (TESTING) ----")
+	shell := ishell.New()
+	shell.Println(shellBanner)
 
-	bs := []byte{0xFF, 0xee, 0xdd}
+	shell.AddCmd(&ishell.Cmd{
+		Name: "abort",
+		Help: "Trigger the abort vector",
+		Func: func(c *ishell.Context) {
+			c.Println("(DUMMY trigger abort vector)")
+		},
+	})
 
-	_ = memory.Write(0xa000, bs)
+	shell.AddCmd(&ishell.Cmd{
+		Name: "beep",
+		Help: "Print a beeping noise",
+		Func: func(c *ishell.Context) {
+			c.Println("\a")
+		},
+	})
 
-	n, ok := memory.FetchMore(0xa000, 3)
+	shell.AddCmd(&ishell.Cmd{
+		Name: "boot",
+		Help: "Boot the machine. Same effect as turning on the power",
+		Func: func(c *ishell.Context) {
+			c.Println("(DUMMY boot the machine)")
+		},
+	})
 
-	if ok {
-		fmt.Println("All is well")
-	} else {
-		fmt.Println("This sucks")
-	}
+	shell.AddCmd(&ishell.Cmd{
+		Name: "dump",
+		Help: "Print hex dump of range",
+		Func: func(c *ishell.Context) {
+			c.Println("(DUMMY dump)")
+		},
+	})
 
-	fmt.Printf("Number: %d (%06X)\n", n, n)
+	shell.AddCmd(&ishell.Cmd{
+		Name: "echo",
+		Help: "Print following text to end of line",
+		Func: func(c *ishell.Context) {
+			c.Println(strings.Join(c.Args, " "))
+		},
+	})
 
-	memory.Hexdump(0xa000, 0xa020)
+	// TODO check for batch mode
+	shell.Run()
+	shell.Close()
 
 }

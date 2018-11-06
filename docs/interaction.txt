@@ -50,6 +50,8 @@ with the same syntax from a command line interface.
 "beep"
 "boot"
 
+; CHECK: ishell provides "clear" for the screen by default
+
 "clear" "flag" <FLAG>
         "address" <ADDR>
         "breakpoint" <ADDR>
@@ -64,13 +66,16 @@ with the same syntax from a command line interface.
         <ADDR_RANGE>
 
 "echo" <CHAR>+ 
+
+"exit"  ; (Provided by ishell)
+
 "halt"
+"help"
 "init" [ <FILE> ] 
 "irq"
 "load" <FILE> [ "to" ] <ADDR>
 "memory" <ADDR_RANGE> [ "is" ] ( "ram" | "rom" )
 "nmi"
-"quit"
 "reading" <ADDR> [ "calls" ] <FUNCTION>
 "reset"
 "resume"
