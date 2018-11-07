@@ -20,12 +20,13 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"log"
 	"strings"
 
+	"angua/cpu16"
 	"angua/cpu8"
 	"angua/mem"
+	"angua/xo"
 
 	"gopkg.in/abiosoft/ishell.v2"
 )
@@ -36,8 +37,11 @@ const (
 )
 
 var (
+	// Though the main routine knows about memory and the various CPU types,
+	// it hands the messy details over to the Executive Officer (xo)
 	memory mem.Memory
-	cpu    cpu8.Cpu8
+	cpuEmu *cpu8.Cpu8
+	cpuNat *cpu16.Cpu16
 
 	haveMachine bool = false
 
@@ -152,8 +156,14 @@ func main() {
 				return
 			}
 
+			// TODO set up memory by reading cfg file
+			// TODO Send pointers to cpuEmu and cpuNat to the xo
+			// TODO Start the xo as a go routine
+
 			c.Println("(DUMMY init)")
 			haveMachine = true
+
+			go xo.MakeItSo(cpuEmu, cpuNat)
 		},
 	})
 
@@ -294,13 +304,6 @@ func main() {
 			c.Println("(DUMMY writing)")
 		},
 	})
-
-	// TODO TEST Start a CPU
-	cpu.Execute(00)
-	cpu.Execute(01)
-	cpu.Execute(02)
-
-	fmt.Println("PC: ", cpu.PC, " X: ", cpu.X)
 
 	// TODO check for batch mode
 	shell.Run()

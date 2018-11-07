@@ -7,6 +7,7 @@ package cpu8
 
 import (
 	"fmt"
+	"time"
 )
 
 const (
@@ -87,7 +88,24 @@ type Cpu8 struct {
 	StatReg
 }
 
+// Step executes a single instruction from PC. This is called by the Run method
+func (c *Cpu8) Step() {
+	fmt.Println("CPU8: DUMMY: Step")
+}
+
+// Run is the main loop of the Cpu8. It is called as a go routine from XO
+func (c *Cpu8) Run() {
+	fmt.Println("CPU8: DUMMY: Run")
+
+	for {
+		time.Sleep(20 * time.Second)
+		fmt.Println("<CPU8 is running smooth>")
+	}
+}
+
+/*
 // TODO test version to Execute one opcode
 func (c *Cpu8) Execute(b byte) {
 	opcodes8[b](c)
 }
+*/
