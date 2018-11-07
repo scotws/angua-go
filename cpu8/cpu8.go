@@ -100,7 +100,15 @@ func (c *Cpu8) Run() {
 	for {
 		time.Sleep(20 * time.Second)
 		fmt.Println("<CPU8 is running smooth>")
+		c.Status()
 	}
+
+	fmt.Println("*** CPU8: DUMMY: Halted ***")
+}
+
+// Status prints the status of the machine
+func (c *Cpu8) Status() {
+	fmt.Println("CPU8: DUMMY: Status")
 }
 
 /*

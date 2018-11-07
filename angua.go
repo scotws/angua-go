@@ -34,12 +34,16 @@ import (
 const (
 	maxAddr     = 1<<24 - 1
 	shellBanner = "Angua 65816 Emulator\n(c) 2018 Scot W. Stevenson"
+
+	// Commands for XO
+	HALT   = 1
+	STATUS = 2
 )
 
 var (
 	// Though the main routine knows about memory and the various CPU types,
 	// it hands the messy details over to the Executive Officer (xo)
-	memory mem.Memory
+	memory *mem.Memory
 	cpuEmu *cpu8.Cpu8
 	cpuNat *cpu16.Cpu16
 
@@ -67,6 +71,10 @@ func main() {
 
 	flag.Parse()
 
+	// We communicate with the XO through the command channel once its main
+	// routine (xo.MakeItSo) is up and running
+	cmd := make(chan int, 2)
+
 	// Start interactive shell. Note that by default, this provides the
 	// directives "exit", "help", and "clear"
 	shell := ishell.New()
@@ -80,7 +88,7 @@ func main() {
 		Name: "abort",
 		Help: "Trigger the abort vector",
 		Func: func(c *ishell.Context) {
-			c.Println("(DUMMY trigger abort vector)")
+			c.Println("CLI: DUMMY: trigger abort vector")
 		},
 	})
 
@@ -96,7 +104,7 @@ func main() {
 		Name: "boot",
 		Help: "Boot the machine. Same effect as turning on the power",
 		Func: func(c *ishell.Context) {
-			c.Println("(DUMMY boot the machine)")
+			c.Println("CLI: DUMMY: boot the machine")
 		},
 	})
 
@@ -111,6 +119,8 @@ func main() {
 				haveMachine = false
 				shell.Process("beep")
 			}
+
+			// TODO Call HALT and close channel to XO
 		},
 	})
 
@@ -143,6 +153,9 @@ func main() {
 		Help: "Halt the machine",
 		Func: func(c *ishell.Context) {
 			c.Println("(DUMMY halt the machine)")
+
+			// Send XO the halt signal
+			cmd <- HALT
 		},
 	})
 
@@ -160,10 +173,12 @@ func main() {
 			// TODO Send pointers to cpuEmu and cpuNat to the xo
 			// TODO Start the xo as a go routine
 
-			c.Println("(DUMMY init)")
+			c.Println("CLI: DUMMY: init")
 			haveMachine = true
 
-			go xo.MakeItSo(cpuEmu, cpuNat)
+			xo.Init(cpuEmu, cpuNat)
+
+			go xo.MakeItSo(cpuEmu, cpuNat, cmd)
 		},
 	})
 
@@ -171,7 +186,7 @@ func main() {
 		Name: "irq",
 		Help: "trigger an Interrupt Request (IRQ)",
 		Func: func(c *ishell.Context) {
-			c.Println("(DUMMY IRQ)")
+			c.Println("CLI: DUMMY: IRQ")
 		},
 	})
 
@@ -286,6 +301,7 @@ func main() {
 		Help: "display status of the machine",
 		Func: func(c *ishell.Context) {
 			c.Println("(DUMMY status)")
+
 		},
 	})
 
