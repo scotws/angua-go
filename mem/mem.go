@@ -249,6 +249,7 @@ func (m Memory) Store(addr uint, b byte) bool {
 // length (three bytes) are stored. Anything above that is silently discarded.
 // If the number of bytes to store is anything but 1, 2, or 3, we return a false
 // flag with memory untouched
+// TODO move the LSB functions to common package
 func (m Memory) StoreMore(addr uint, num uint, len uint) bool {
 
 	if len < 1 || len > 3 {

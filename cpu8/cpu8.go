@@ -10,8 +10,6 @@ import (
 )
 
 const (
-	maxAddr = 1<<16 - 1
-
 	// Interrupt vectors
 	irqAddr   = 0xFFFE
 	resetAddr = 0xFFFC
@@ -21,9 +19,6 @@ const (
 
 type reg8 uint8
 type reg16 uint16
-
-type addr8 uint8
-type addr16 uint16
 
 // --------------------------------------------------
 // Status Register
@@ -66,18 +61,14 @@ func (s *StatReg) TestZ(b byte) {
 }
 
 // TestN takes a byte and sets the N flag to true if bit 7 is one else to flase
-func (s *StatReg) TestZ(b byte) {
-	if b == 0 {
-		s.FlagZ = true
-	} else {
-		s.FlagZ = false
-	}
+func (s *StatReg) TestN(b byte) {
+	// TODO
 }
 
 // --------------------------------------------------
 // CPU
 
-type CpuEmulated struct {
+type Cpu8 struct {
 	A reg8
 	B reg8 // Special hidden register of the 65816
 	X reg8
@@ -94,4 +85,9 @@ type CpuEmulated struct {
 	PC reg16 // Program counter
 
 	StatReg
+}
+
+// TODO test version to Execute one opcode
+func (c *Cpu8) Execute(b byte) {
+	opcodes8[b](c)
 }

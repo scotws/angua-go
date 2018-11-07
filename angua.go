@@ -1,7 +1,7 @@
 // Angua - A 65816 MPU emulator in Go
 // Scot W. Stevenson <scot.stevenson@gmail.com>
 // First version: 26. Sep 2017
-// This version: 06. Nov 2018
+// This version: 07. Nov 2018
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -22,12 +22,11 @@ import (
 	"flag"
 	"fmt"
 	"log"
-	"strconv"
 	"strings"
 
+	"angua/cpu8"
 	"angua/mem"
 
-	// "github.com/fatih/color"
 	"gopkg.in/abiosoft/ishell.v2"
 )
 
@@ -38,6 +37,7 @@ const (
 
 var (
 	memory mem.Memory
+	cpu    cpu8.Cpu8
 
 	haveMachine bool = false
 
@@ -48,79 +48,12 @@ var (
 	inBatchMode = flag.Bool("b", false, "Start in batch mode")
 )
 
-// -----------------------------------------------------------------
-// TOP LEVEL HELPER FUNCTIONS
-
 // verbose takes a string and prints it on the standard output through logger if
 // the user awants us to be verbose
 func verbose(s string) {
 	if *beVerbose {
 		log.Print(s)
 	}
-}
-
-// convNum Converts a number string -- hex, binary, or decimal -- to an uint.
-// We accept ':' and '.' as delimiters, use $ or 0x for hex numbers, % for
-// binary numbers, and nothing for decimal numbers.
-func convNum(s string) uint {
-
-	ss := stripDelimiters(s)
-
-	switch {
-
-	case strings.HasPrefix(ss, "$"):
-		n, err := strconv.ParseInt(ss[1:], 16, 0)
-		if err != nil {
-			log.Fatal("config.sys: Can't convert ", ss, " as hex number")
-		}
-		return uint(n)
-
-	case strings.HasPrefix(ss, "0x"):
-		n, err := strconv.ParseInt(ss[2:], 16, 0)
-		if err != nil {
-			log.Fatal("config.sys: Can't convert ", ss, " as hex number")
-		}
-		return uint(n)
-
-	case strings.HasPrefix(ss, "%"):
-		n, err := strconv.ParseInt(ss[1:], 2, 0)
-		if err != nil {
-			log.Fatal("config.sys: Can't convert ", ss, " as binary number")
-		}
-		return uint(n)
-
-	default:
-		n, err := strconv.ParseInt(ss, 10, 0)
-		if err != nil {
-			log.Fatal("config.sys: Can't convert ", ss, " as decimal number")
-		}
-		return uint(n)
-	}
-}
-
-// fmtAddr takes a 65816 address as a uint and returns a hex number string with
-// a ':' between the bank byte and the rest of the address. Hex digits are
-// capitalized. Assumes we are sure that the address is valid
-func fmtAddr(addr uint) string {
-	s1 := fmt.Sprintf("%06X", addr)
-	s2 := s1[0:2] + ":" + s1[2:len(s1)]
-	return s2
-}
-
-// isValidAddr takes an uint and makes sure that as an address, it is not larger
-// than can be stated with 24 bits We don't need to test for negative numbers
-// because we force uint
-// TODO Move this to CPU and make special for 16 and 24 bits
-func isValidAddr(a uint) bool {
-	return a <= maxAddr
-}
-
-// stripDelimiters removes '.' and ':' which users can use as number delimiters.
-// Also removes spaces
-func stripDelimiters(s string) string {
-	s1 := strings.Replace(s, ":", "", -1)
-	s2 := strings.Replace(s1, ".", "", -1)
-	return strings.TrimSpace(s2)
 }
 
 // -----------------------------------------------------------------
@@ -361,6 +294,13 @@ func main() {
 			c.Println("(DUMMY writing)")
 		},
 	})
+
+	// TODO TEST Start a CPU
+	cpu.Execute(00)
+	cpu.Execute(01)
+	cpu.Execute(02)
+
+	fmt.Println("PC: ", cpu.PC, " X: ", cpu.X)
 
 	// TODO check for batch mode
 	shell.Run()
