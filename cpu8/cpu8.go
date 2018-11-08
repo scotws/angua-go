@@ -103,7 +103,7 @@ func (c *Cpu8) Run() {
 		c.Status()
 	}
 
-	fmt.Println("*** CPU8: DUMMY: Halted ***")
+	// fmt.Println("*** CPU8: DUMMY: Halted ***")
 }
 
 // Status prints the status of the machine
