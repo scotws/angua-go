@@ -23,35 +23,32 @@ import (
 	"log"
 	"strings"
 
+	"angua/common"
 	"angua/cpu16"
 	"angua/cpu8"
 	"angua/mem"
-	"angua/xo"
+	"angua/xo" // TODO Remove this
 
 	"gopkg.in/abiosoft/ishell.v2"
 )
 
 const (
-	maxAddr     = 1<<24 - 1
+	// TODO make this pretty
 	shellBanner = "Angua 65816 Emulator\n(c) 2018 Scot W. Stevenson"
-
-	// Commands for XO
-	HALT   = 1
-	STATUS = 2
 )
 
 var (
-	// Though the main routine knows about memory and the various CPU types,
-	// it hands the messy details over to the Executive Officer (xo)
 	memory *mem.Memory
 	cpuEmu *cpu8.Cpu8
 	cpuNat *cpu16.Cpu16
 
 	haveMachine bool = false
 
-	specials = make(map[uint]string)
+	// TODO figure out how to handle special addresses
+	// specials = make(map[uint]string)
 
-	// Flags passed. Add "-c" to load config file
+	// Flags passed.
+	// TODO Add "-c" to load config file
 	beVerbose   = flag.Bool("v", false, "Verbose, print more output")
 	inBatchMode = flag.Bool("b", false, "Start in batch mode")
 )
@@ -73,7 +70,13 @@ func main() {
 
 	// We communicate with the XO through the command channel once its main
 	// routine (xo.MakeItSo) is up and running
+	// TODO see if we really need to have this buffered
 	cmd := make(chan int, 2)
+
+	// The enable channels single the various processors that it is time for
+	// them to run
+	enable8 = make(chan struct{})
+	enable16 = make(chan struct{})
 
 	// Start interactive shell. Note that by default, this provides the
 	// directives "exit", "help", and "clear"
@@ -155,7 +158,7 @@ func main() {
 			c.Println("(DUMMY halt the machine)")
 
 			// Send XO the halt signal
-			cmd <- HALT
+			cmd <- common.HALT
 		},
 	})
 

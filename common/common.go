@@ -1,7 +1,7 @@
 // Common files and type for Angua
 // Scot W. Stevenson <scot.stevenson@gmail.com>
 // This version: 07. Nov 2018
-// First version: 07. Nov 2018
+// First version: 09. Nov 2018
 
 // This package contains base definitions and helper functions for all
 // parts of Angua
@@ -17,6 +17,27 @@ import (
 
 const (
 	maxAddr = 1<<24 - 1
+
+	// Commands from the CLI to the CPU
+	HALT   = 0 // Stop the CPU
+	RESUME = 1 // Continue processing from current PC address
+	RUN    = 1 // Synonym for RESUME
+	STEP   = 2 // Run one step
+	STATUS = 3 // Print status information to stdout
+
+	// Interrupts, resets, power toggle. These are sent by the CLI to the
+	// CPU which then pretends that this condition just happened
+	BOOT  = 4 // Power on
+	RESET = 5 // Reset line
+	IRQ   = 6 // Maskable interrupt
+	NMI   = 7 // Non-maskable interrupt
+	ABORT = 8 // Abort signal to chip
+
+	// Reserved for future use
+	VERBOSE = 9
+	LACONIC = 10 // Turns verbose off
+	TRACE   = 11 // Print out trace information
+	NOTRACE = 12 // Turn off trace information
 )
 
 type Data8 uint8

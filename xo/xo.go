@@ -3,6 +3,9 @@
 // First version: 07. Nov 2018
 // This version: 07. Nov 2018
 
+// TODO Move the functionality to the CLI
+// TODO Start a "Switcher" goroutine to switch from CPU to CPU
+
 package xo
 
 import (

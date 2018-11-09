@@ -1,8 +1,27 @@
 TODO file for Angua
 Scot W. Stevenson <scot.stevenson@gmail.com>
 First version: 16. Mar 2018
-This version: 16. Mar 2018
+This version: 09. Nov 2018
 
-MEMORY SUBSYSTEM
-        - Code Memory.StoreMore for multiple bytes
+------------------
+FIRST, get one CPU (emulated) set up and running
+
+- Remove XO again, instead, have goroutine "Switcher" running as part of
+  angua that handles cpu8 <-> cpu16 switches
+
+- Get a basic routine running in cpu8.Run() so that it runs while
+  waiting for input
+
+- Rewrite mem with common, make things RW threadsafe, move conversion to
+  little endian to common routines; make methods to chuck and memory
+  pointers
+
+NEAR GOAL: Tali Forth 2 must run on the emulated version without a hitch
+FAR GOAL: Tali Forth 2 must be able to run tests on the emulated version
+
+------------------
+NEXT, get the CPU16 (native) to work
+
+NEAR GOAL: Get Liara Forth to run on the native version
+
 
