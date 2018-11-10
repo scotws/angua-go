@@ -1,7 +1,7 @@
 // Common files and type for Angua
 // Scot W. Stevenson <scot.stevenson@gmail.com>
 // This version: 07. Nov 2018
-// First version: 09. Nov 2018
+// First version: 10. Nov 2018
 
 // This package contains base definitions and helper functions for all
 // parts of Angua
@@ -40,12 +40,97 @@ const (
 	NOTRACE = 12 // Turn off trace information
 )
 
-type Data8 uint8
-type Data16 uint16
+// ==== INTERFACES ===
 
-type Addr8 uint8 // For Direct Page
+type Lsber interface {
+	Lsb() byte
+}
+
+type Msber interface {
+	Msb() byte
+}
+
+type Banker interface {
+	Bank() byte
+}
+
+// LilEnder is an interface for types that have a routine to convert numbers to
+// little endian byte arrarys
+type LilEnder interface {
+	LilEnd() []byte
+}
+
+// ==== DATA TYPES ===
+
+// We define special data types for addresses and data instead of using generic
+// unit16 etc or even just int to make sure that the logic is right. At some
+// point we might be forced to collapse Addr16 and Data16 together. Note that Go
+// doesn't let us add methods to existing types such as byte or uint16
+
+// --- Addr8 (byte) ---
+
+type Addr8 uint8
+
+func (a Addr8) Lsb() byte {
+	return byte(a)
+}
+
+func (a Addr8) LilEnd() []byte {
+	return []byte{byte(a)}
+}
+
+// HexString returns the value of the address as a byte in uppercase hex
+// notation, but without a hex prefix such as "$" or "0x"
+func (a Addr8) HexString() string {
+	return fmt.Sprintf("%X", uint8(a))
+}
+
+// --- Addr16 (double word) ---
+
 type Addr16 uint16
+
+func (a Addr16) Lsb() byte {
+	return byte(a & 0x00FF)
+}
+
+func (a Addr16) Msb() byte {
+	return byte((a & 0xFF00) >> 8)
+}
+
+func (a Addr16) LilEnd() []byte {
+	return []byte{a.Lsb(), a.Msb()}
+}
+
+func (a Addr16) HexString() string {
+	return fmt.Sprintf("%X%X", a.Msb(), a.Lsb())
+}
+
+// --- Addr24 (double word) ---
+
 type Addr24 uint32 // We don't have a 24 bit type
+
+func (a Addr24) Lsb() byte {
+	return byte(a & 0x0000FF)
+}
+
+func (a Addr24) Msb() byte {
+	return byte((a & 0x00FF00) >> 8)
+}
+
+func (a Addr24) Bank() byte {
+	return byte((a & 0xFF0000) >> 16)
+}
+
+func (a Addr24) LilEnd() []byte {
+	return []byte{a.Lsb(), a.Msb(), a.Bank()}
+}
+
+// HexString returns a string representation of the Addr24 address with the hex
+// numbers converted to uppercase and a ":" delimiter between the bank byte and
+// the rest of the address. There is no prefix such as "$" or "0x"
+func (a Addr24) HexString() string {
+	return fmt.Sprintf("%X:%X%X", a.Bank(), a.Msb(), a.Lsb())
+}
 
 // Ensure24 is a method of Addr24 that makes sure the upper byte of the
 // underlying uint32 is actually zero
@@ -53,77 +138,47 @@ func (a Addr24) Ensure24() Addr24 {
 	return a & 0x00FFFFFF
 }
 
-// Lsb takes a variant of int and returns the Least Significant Byte (LSB), that
-// is, the lowest 8 bits, as a byte
-func Lsb(n interface{}) byte {
+// --- Data8 ---
 
-	var r byte
+type Data8 uint8
 
-	switch n := n.(type) {
-	case uint8:
-		r = n
-	case Addr8:
-		r = byte(n)
-	case Addr16:
-		r = byte(n & 0xFF)
-	case Addr24:
-		r = byte(n & 0xFF)
-	case Data8:
-		r = byte(n)
-	case Data16:
-		r = byte(n & 0xFF)
-	default:
-		log.Fatalf("ERROR: Lsb: Type %T doesn't have a Lsb", n)
-	}
-
-	return r
+func (d Data8) Lsb() byte {
+	return byte(d)
 }
 
-// Msb takes an int and returns the Most Significant Byte (MSB), that
-// is, the second 8 bits as a byte.
-func Msb(n interface{}) byte {
-	var r byte
-
-	switch n := n.(type) {
-	case uint8:
-		log.Fatalf("ERROR: Type %T doesn't have a MSB", n)
-	case Addr8:
-		log.Fatalf("ERROR: Type %T doesn't have a MSB", n)
-	case Addr16:
-		r = byte((n & 0xFF00) >> 8)
-	case Addr24:
-		r = byte((n & 0x00FF00) >> 8)
-	case Data8:
-		log.Fatalf("ERROR: Type %T doesn't have a MSB", n)
-	case Data16:
-		r = byte((n & 0xff00) >> 8)
-	default:
-		log.Fatalf("ERROR: Type %T doesn't have a MSB", n)
-	}
-
-	return r
+func (d Data8) LilEnd() []byte {
+	return []byte{byte(d)}
 }
 
-// Bank takes an int and returns the Bank Byte (Bank), that
-// is, the highest 8 bits as a byte.
-func Bank(n interface{}) byte {
-	var r byte
-
-	switch n := n.(type) {
-	case uint8, Addr8, Addr16, Data8, Data16:
-		log.Fatalf("ERROR: Type %T doesn't have a bank byte", n)
-	case Addr24:
-		r = byte((n & 0xFF0000) >> 16)
-	default:
-		log.Fatalf("ERROR: Type %T doesn't have a bank byte", n)
-	}
-
-	return r
+func (d Data8) HexString() string {
+	return fmt.Sprintf("%X", uint8(d))
 }
+
+// --- Data16 ---
+
+type Data16 uint16
+
+func (d Data16) Lsb() byte {
+	return byte(d & 0x00FF)
+}
+
+func (d Data16) Msb() byte {
+	return byte((d & 0xFF00) >> 8)
+}
+
+func (d Data16) LilEnd() []byte {
+	return []byte{d.Lsb(), d.Msb()}
+}
+
+func (d Data16) HexString() string {
+	return fmt.Sprintf("%X%X", d.Msb(), d.Lsb())
+}
+
+// === General Helper Functions ===
 
 // convNum Converts a number string -- hex, binary, or decimal -- to an uint.
 // We accept ':' and '.' as delimiters, use $ or 0x for hex numbers, % for
-// binary numbers, and nothing for decimal numbers.
+// binary numbers, and nothing for decimal numbers. Note octal is not supported
 func ConvNum(s string) uint {
 
 	ss := StripDelimiters(s)
@@ -163,6 +218,8 @@ func ConvNum(s string) uint {
 // fmtAddr takes a 65816 24 bit address as a uint and returns a hex number
 // string with a ':' between the bank byte and the rest of the address. Hex
 // digits are capitalized. Assumes we are sure that the address is valid
+// TODO See if we need this since we have the methods that do the same directly
+// on the data
 func FmtAddr(a Addr24) string {
 	s1 := fmt.Sprintf("%06X", a)
 	s2 := s1[0:2] + ":" + s1[2:len(s1)]
