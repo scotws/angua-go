@@ -160,14 +160,19 @@ func main() {
 	})
 
 	shell.AddCmd(&ishell.Cmd{
-		Name: "init",
-		Help: "initialize a new machine",
+		Name:     "init",
+		Help:     "initialize a new machine",
+		LongHelp: "Options: '<CONFIG FILE>', 'default', ''",
 		Func: func(c *ishell.Context) {
 
 			if haveMachine {
 				c.Println("ERROR: Already have machine")
 				return
 			}
+
+			// Three variants: Without a parameter or with the words
+			// "defalt", load the default.cfg file from configs;
+			// with a filename, load the file cfom configs
 
 			// TODO set up memory by reading cfg file
 			// TODO Send pointers to cpuEmu and cpuNat to the xo
