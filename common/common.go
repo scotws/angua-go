@@ -82,7 +82,7 @@ func (a Addr8) LilEnd() []byte {
 // HexString returns the value of the address as a byte in uppercase hex
 // notation, but without a hex prefix such as "$" or "0x"
 func (a Addr8) HexString() string {
-	return fmt.Sprintf("%X", uint8(a))
+	return fmt.Sprintf("%02X", uint8(a))
 }
 
 // --- Addr16 (double word) ---
@@ -102,7 +102,7 @@ func (a Addr16) LilEnd() []byte {
 }
 
 func (a Addr16) HexString() string {
-	return fmt.Sprintf("%X%X", a.Msb(), a.Lsb())
+	return fmt.Sprintf("%02X%02X", a.Msb(), a.Lsb())
 }
 
 // --- Addr24 (double word) ---
@@ -129,7 +129,7 @@ func (a Addr24) LilEnd() []byte {
 // numbers converted to uppercase and a ":" delimiter between the bank byte and
 // the rest of the address. There is no prefix such as "$" or "0x"
 func (a Addr24) HexString() string {
-	return fmt.Sprintf("%X:%X%X", a.Bank(), a.Msb(), a.Lsb())
+	return fmt.Sprintf("%02X:%02X%02X", a.Bank(), a.Msb(), a.Lsb())
 }
 
 // Ensure24 is a method of Addr24 that makes sure the upper byte of the
@@ -151,7 +151,7 @@ func (d Data8) LilEnd() []byte {
 }
 
 func (d Data8) HexString() string {
-	return fmt.Sprintf("%X", uint8(d))
+	return fmt.Sprintf("%02X", uint8(d))
 }
 
 // --- Data16 ---
@@ -171,7 +171,7 @@ func (d Data16) LilEnd() []byte {
 }
 
 func (d Data16) HexString() string {
-	return fmt.Sprintf("%X%X", d.Msb(), d.Lsb())
+	return fmt.Sprintf("%02X%02X", d.Msb(), d.Lsb())
 }
 
 // === General Helper Functions ===
