@@ -1,13 +1,14 @@
 // Angua CPU System - Emulated Mode (8-bit) CPU
 // Scot W. Stevenson
 // First version: 06. Nov 2018
-// First version: 09. Nov 2018
+// First version: 10. Nov 2018
 
 package cpu8
 
 import (
 	"fmt"
 	"log"
+	"time"
 
 	"angua/common"
 )
@@ -39,8 +40,9 @@ type StatReg struct {
 }
 
 var (
-	enable8 = make(chan struct{})
-	cmd     = make(chan int, 2)
+	enable8    = make(<-chan struct{}) // Receive signal to run
+	cmd        = make(<-chan int, 2)   // Receive commands from CLI
+	reqSwitch8 = make(chan<- struct{}) // Send signal to change CPU
 
 	verbose bool // Print lots of information
 	trace   bool // Print even more information
@@ -108,12 +110,13 @@ func (c *Cpu8) Step() {
 func (c *Cpu8) Run() {
 
 	fmt.Println("CPU8: DUMMY: Run")
+	c.Halted = true
 
 	for {
 		// This channel is used to block the CPU until it receives the
 		// signal to run again
 		<-enable8
-		fmt.Println("CPU8: DUMMY: CPU8 enabled by CLI")
+		fmt.Println("CPU8: DUMMY: CPU8 enabled")
 
 		// If we have received a signal to run, then we're not halted
 		c.Halted = false
@@ -184,6 +187,10 @@ func (c *Cpu8) Run() {
 				// This is where the CPU actually runs an
 				// instruction
 				c.Step()
+				fmt.Println("CPU8: DUMMY: Main loop")
+				time.Sleep(10 * time.Second)
+				c.Halted = true
+				reqSwitch8 <- struct{}{} // Pretend switch
 			}
 		}
 	}

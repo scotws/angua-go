@@ -181,11 +181,7 @@ func main() {
 			c.Println("CLI: DUMMY: init")
 			haveMachine = true
 
-			// TODO remove the xo package
-
-			xo.Init(cpuEmu, cpuNat)
-
-			go xo.MakeItSo(cpuEmu, cpuNat, cmd)
+			go switcher.Run(CpuEMU, CpuNat)
 		},
 	})
 
