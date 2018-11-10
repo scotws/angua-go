@@ -7,12 +7,13 @@ package cpu8
 
 import (
 	"fmt"
+	"log"
 
 	"angua/common"
 )
 
 const (
-	// Interrupt vectors
+	// Interrupt vectors for emulated mode
 	irqAddr   = 0xFFFE
 	resetAddr = 0xFFFC
 	nmiAddr   = 0xFFFA
@@ -41,8 +42,8 @@ var (
 	enable8 = make(chan struct{})
 	cmd     = make(chan int, 2)
 
-	Verbose bool // Print lots of information
-	Trace   bool // Print even more information
+	verbose bool // Print lots of information
+	trace   bool // Print even more information
 )
 
 // GetStatusReg creates a status byte out of the flags of the Status Register
@@ -136,14 +137,15 @@ func (c *Cpu8) Run() {
 				case common.HALT:
 					fmt.Println("CPU8: DUMMY: Received cmd HALT")
 					c.Halted = true
+
 				case common.RESUME, common.RUN:
 					fmt.Println("CPU8: DUMMY: Received cmd RESUME/RUN")
-					SingleStep = false
+					c.SingleStep = false
 					c.Halted = false
 
 				case common.STEP:
 					fmt.Println("CPU8: DUMMY: Received cmd STEP")
-					StingleStep = true
+					c.SingleStep = true
 
 				case common.STATUS:
 					fmt.Println("CPU8: DUMMY: Received cmd STATUS")
@@ -186,11 +188,6 @@ func (c *Cpu8) Run() {
 		}
 	}
 
-}
-
-// Status prints the status of the machine
-func (c *Cpu8) Status() {
-	fmt.Println("CPU8: DUMMY: Status")
 }
 
 // Status prints the status of the machine

@@ -1,7 +1,7 @@
 // Angua - A 65816 MPU emulator in Go
 // Scot W. Stevenson <scot.stevenson@gmail.com>
 // First version: 26. Sep 2017
-// This version: 07. Nov 2018
+// This version: 10. Nov 2018
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -44,9 +44,6 @@ var (
 
 	haveMachine bool = false
 
-	// TODO figure out how to handle special addresses
-	// specials = make(map[uint]string)
-
 	// Flags passed.
 	// TODO Add "-c" to load config file
 	beVerbose   = flag.Bool("v", false, "Verbose, print more output")
@@ -75,8 +72,8 @@ func main() {
 
 	// The enable channels single the various processors that it is time for
 	// them to run
-	enable8 = make(chan struct{})
-	enable16 = make(chan struct{})
+	// enable8 := make(chan struct{})
+	// enable16 := make(chan struct{})
 
 	// Start interactive shell. Note that by default, this provides the
 	// directives "exit", "help", and "clear"
@@ -178,6 +175,8 @@ func main() {
 
 			c.Println("CLI: DUMMY: init")
 			haveMachine = true
+
+			// TODO remove the xo package
 
 			xo.Init(cpuEmu, cpuNat)
 

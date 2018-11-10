@@ -21,23 +21,23 @@ const (
 	// Commands from the CLI to the CPU
 	HALT   = 0 // Stop the CPU
 	RESUME = 1 // Continue processing from current PC address
-	RUN    = 1 // Synonym for RESUME
-	STEP   = 2 // Run one step
-	STATUS = 3 // Print status information to stdout
+	RUN    = 2 // Synonym for RESUME
+	STEP   = 3 // Run one step
+	STATUS = 4 // Print status information to stdout
 
 	// Interrupts, resets, power toggle. These are sent by the CLI to the
 	// CPU which then pretends that this condition just happened
-	BOOT  = 4 // Power on
-	RESET = 5 // Reset line
-	IRQ   = 6 // Maskable interrupt
-	NMI   = 7 // Non-maskable interrupt
-	ABORT = 8 // Abort signal to chip
+	BOOT  = 5 // Power on
+	RESET = 6 // Reset line
+	IRQ   = 7 // Maskable interrupt
+	NMI   = 8 // Non-maskable interrupt
+	ABORT = 9 // Abort signal to chip
 
 	// Reserved for future use
-	VERBOSE = 9
-	LACONIC = 10 // Turns verbose off
-	TRACE   = 11 // Print out trace information
-	NOTRACE = 12 // Turn off trace information
+	VERBOSE = 10
+	LACONIC = 11 // Turns verbose off
+	TRACE   = 12 // Print out trace information
+	NOTRACE = 13 // Turn off trace information
 )
 
 // ==== INTERFACES ===

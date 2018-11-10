@@ -7,10 +7,6 @@
 
 package cpu16
 
-const (
-	maxAddr = 1<<24 - 1
-)
-
 type reg8 uint8
 type reg16 uint16
 
