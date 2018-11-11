@@ -22,6 +22,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"runtime"
 	"strings"
 
 	"angua/common"
@@ -298,10 +299,26 @@ func main() {
 	})
 
 	shell.AddCmd(&ishell.Cmd{
-		Name: "status",
-		Help: "display status of the machine",
+		Name:     "status",
+		Help:     "display status of the machine",
+		LongHelp: "Options: 'system' or ''",
 		Func: func(c *ishell.Context) {
-			c.Println("(DUMMY status)")
+			if len(c.Args) != 1 {
+				cmd <- common.STATUS
+			} else {
+				subcmd := c.Args[0]
+
+				switch subcmd {
+				case "system":
+					// Print status on the runtime
+					// environment
+					fmt.Println("Host system CPU cores available:", runtime.NumCPU())
+					fmt.Println("Host system goroutines running:", runtime.NumGoroutine())
+					fmt.Println("Host system Go version:", runtime.Version())
+				default:
+					c.Println("ERROR: Option", subcmd, "unknown")
+				}
+			}
 
 		},
 	})

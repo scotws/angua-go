@@ -26,7 +26,7 @@ var (
 func heartBeat() {
 	for {
 		fmt.Println("<Switcher is alive>")
-		time.Sleep(20 * time.Second)
+		time.Sleep(2 * time.Minute)
 	}
 }
 
@@ -38,6 +38,7 @@ func Run(c8 *cpu8.Cpu8) {
 
 // Run instructs the Switcher to start the CPU at the given value in the PC This
 // is the main Switcher loop that runs as a loop as a go routine
+// TODO add a verbose flag to log if switcher is alive and waiting
 func Daemon(c8 *cpu8.Cpu8, c16 *cpu16.Cpu16, cmd <-chan int) {
 
 	fmt.Println("Switcher: DUMMY: Daemon running")

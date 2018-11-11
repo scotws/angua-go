@@ -201,7 +201,8 @@ func (c *Cpu16) Run(cmd <-chan int, enable16 <-chan struct{}, reqSwitchTo8 chan<
 
 // Status prints the status of the machine
 func (c *Cpu16) Status() {
-	fmt.Println("CPU16: DUMMY: Status")
+	fmt.Println("CPU mode: Native (16 bit)")
+	fmt.Println("PC:", c.PC, "A:", c.A, "X:", c.X, "Y:", c.Y)
 }
 
 /*
