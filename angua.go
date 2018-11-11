@@ -244,9 +244,13 @@ func main() {
 				opc, ok := man.SANDict[subcmd]
 				if ok {
 					man.PrintOpcodeInfo(opc.Opcode)
-				} else {
-					c.Println("ERROR: Opcode or mnemonic", subcmd, "unknown")
+					return
 				}
+
+				// TODO Okay, it isn't. Then see if it is an
+				// opcode
+
+				c.Println("ERROR: Opcode or mnemonic", subcmd, "unknown")
 			}
 
 		},
