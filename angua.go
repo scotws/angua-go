@@ -29,6 +29,7 @@ import (
 	"angua/cpu16"
 	"angua/cpu8"
 	// "angua/mem"
+	"angua/man"
 	"angua/switcher"
 
 	"gopkg.in/abiosoft/ishell.v2"
@@ -73,6 +74,10 @@ func main() {
 	// the same channel, but because one of them is inactive, that's not a
 	// problem
 	cmd := make(chan int, 2)
+
+	// Generate Dictionaries
+	// TODO store and load them instead
+	go man.GenerateDicts()
 
 	// Start interactive shell. Note that by default, this provides the
 	// directives "exit", "help", and "clear"
@@ -230,7 +235,20 @@ func main() {
 		Help:     "Print information on 65816 instructions",
 		LongHelp: "Format 'man [ <OPCODE> | <MNEMONIC> ]'",
 		Func: func(c *ishell.Context) {
-			c.Println("CLI: DUMMY: man")
+			if len(c.Args) != 1 {
+				c.Println("ERROR: Need opcode or SAN mnemonic")
+			} else {
+				subcmd := c.Args[0]
+
+				// First see if this is a mnemonic
+				opc, ok := man.SANDict[subcmd]
+				if ok {
+					man.PrintOpcodeInfo(opc.Opcode)
+				} else {
+					c.Println("ERROR: Opcode or mnemonic", subcmd, "unknown")
+				}
+			}
+
 		},
 	})
 
