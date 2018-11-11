@@ -1,7 +1,7 @@
 # The Angua emulator for the 65816 (Go version)
 Scot W. Stevenson <scot.stevenson@gmail.com>
-First version: 
-This version: 08. Nov 2018
+First version: 26. Sep 2017
+This version: 11. Nov 2018
 
 Angua is an emulator for the 65816 CPU, a 8/16-bit hybrid processor that is the
 sibling of the famous 6502 8-bit processor of the Apple II, VIC-20, C64, and
@@ -20,3 +20,8 @@ not that familiar with Go will be able to understand the code that way.
 
 No serious attempt has been made at this point to make the system more efficient
 or fast -- in the compiler we trust. 
+
+The emulator comes with online help. Type "help" to get a list of shell
+commands, "<COMMAND> help" for more information on individual shell commands,
+and "man <MNEMONIC>" or "man <OPCODE>" for information on mnemonics and opcodes.
+

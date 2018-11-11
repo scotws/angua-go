@@ -46,4 +46,36 @@ already initialized machine.
 Examples:
 		init			; uses configs/default.cfg
 		init my65816.cfg	; runs file configs/myconfig65816.cfg`
+
+	longHelpLoad = `Load binary file to memory location
+
+Given a filename, load it as binary data to the specified memory range.
+
+Examples:
+		load myOS.bin to $00:FFFF
+		load myStuff.bin to bank 2`
+
+	longHelpMan = `Query built-in manual pages
+
+The manual pages include information on SAN mnemonics and opcodes as well as other
+topics. A better name for this command would have been "help", but it was already
+taken by the shell software.
+
+Information on the opcodes includes their SAN and traditional mnemonics, size in
+bytes, execution time in cycles formal name, MPU models they are available on,
+and notes.  
+
+Options:
+		<SAN MNEMONIC>  - Returns information on the instruction
+		<OPCODE>        - Returns information on the instruction
+		all             - Gives a list of all instructions
+		json <FILENAME> - Saves a JSON file with the information to file
+
+Why the "json" option? The information about the opcodes can be used for other
+projects, and sooner or later you'll want to have it.
+
+Examples:
+		man jmp.xi		; information on the opcode
+		man 0x00		; information on brk instruction
+		man json opcodes.json   ; saves databank to file`
 )

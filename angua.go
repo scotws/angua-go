@@ -63,6 +63,9 @@ func verbose(s string) {
 
 func main() {
 
+	// Generate Dictionaries in the background
+	go man.GenerateDicts()
+
 	flag.Parse()
 
 	// memory := &mem.Memory{}
@@ -74,10 +77,6 @@ func main() {
 	// the same channel, but because one of them is inactive, that's not a
 	// problem
 	cmd := make(chan int, 2)
-
-	// Generate Dictionaries
-	// TODO store and load them instead
-	go man.GenerateDicts()
 
 	// Start interactive shell. Note that by default, this provides the
 	// directives "exit", "help", and "clear"
@@ -224,8 +223,8 @@ func main() {
 
 	shell.AddCmd(&ishell.Cmd{
 		Name:     "load",
-		Help:     "load contents of a file to memory",
-		LongHelp: "Format: 'load <FILENAME> to <ADDRESS RANGE>'",
+		Help:     "Load binary file to memory",
+		LongHelp: longHelpLoad,
 		Func: func(c *ishell.Context) {
 			c.Println("CLI: DUMMY: load")
 		},
@@ -234,7 +233,7 @@ func main() {
 	shell.AddCmd(&ishell.Cmd{
 		Name:     "man",
 		Help:     "Print information on 65816 instructions",
-		LongHelp: "Format 'man [ <OPCODE> | <MNEMONIC> ]'",
+		LongHelp: longHelpMan,
 		Func: func(c *ishell.Context) {
 			if len(c.Args) != 1 {
 				c.Println("ERROR: Need opcode or SAN mnemonic")
