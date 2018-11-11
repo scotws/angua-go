@@ -1,7 +1,7 @@
 // Angua - A 65816 MPU emulator in Go
 // Scot W. Stevenson <scot.stevenson@gmail.com>
 // First version: 26. Sep 2017
-// This version: 10. Nov 2018
+// This version: 11. Nov 2018
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -20,14 +20,15 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"strings"
 
 	"angua/common"
 	"angua/cpu16"
 	"angua/cpu8"
-	"angua/mem"
-	"angua/xo" // TODO Remove this
+	// "angua/mem"
+	"angua/switcher"
 
 	"gopkg.in/abiosoft/ishell.v2"
 )
@@ -38,10 +39,6 @@ const (
 )
 
 var (
-	memory *mem.Memory
-	cpuEmu *cpu8.Cpu8
-	cpuNat *cpu16.Cpu16
-
 	haveMachine bool = false
 
 	// Flags passed.
@@ -65,15 +62,14 @@ func main() {
 
 	flag.Parse()
 
+	// memory := &mem.Memory{}
+	cpuEmu := &cpu8.Cpu8{}
+	cpuNat := &cpu16.Cpu16{}
+
 	// We communicate with the XO through the command channel once its main
 	// routine (xo.MakeItSo) is up and running
 	// TODO see if we really need to have this buffered
 	cmd := make(chan int, 2)
-
-	// The enable channels single the various processors that it is time for
-	// them to run
-	// enable8 := make(chan struct{})
-	// enable16 := make(chan struct{})
 
 	// Start interactive shell. Note that by default, this provides the
 	// directives "exit", "help", and "clear"
@@ -180,8 +176,9 @@ func main() {
 
 			c.Println("CLI: DUMMY: init")
 			haveMachine = true
+			go switcher.Daemon(cpuEmu, cpuNat, cmd)
+			c.Println("CLI: DUMMY: Switcher Daemon launched")
 
-			go switcher.Run(CpuEMU, CpuNat)
 		},
 	})
 
@@ -230,7 +227,7 @@ func main() {
 		Name: "reading",
 		Help: "set a special address",
 		Func: func(c *ishell.Context) {
-			c.Println("(DUMMY reading)")
+			c.Println("(CLI: DUMMY reading)")
 		},
 	})
 
@@ -238,7 +235,7 @@ func main() {
 		Name: "reset",
 		Help: "trigger a RESET signal",
 		Func: func(c *ishell.Context) {
-			c.Println("(DUMMY reset)")
+			c.Println("(CLI: DUMMY reset)")
 		},
 	})
 
@@ -246,7 +243,7 @@ func main() {
 		Name: "resume",
 		Help: "resume after a halt",
 		Func: func(c *ishell.Context) {
-			c.Println("(DUMMY resume)")
+			c.Println("(CLI: DUMMY resume)")
 		},
 	})
 
@@ -254,7 +251,8 @@ func main() {
 		Name: "run",
 		Help: "run from a given address",
 		Func: func(c *ishell.Context) {
-			c.Println("(DUMMY run)")
+			fmt.Println("(CLI: DUMMY run: Triggering cpuEmu)")
+			switcher.Run(cpuEmu)
 		},
 	})
 
@@ -262,7 +260,7 @@ func main() {
 		Name: "save",
 		Help: "save an address range to file",
 		Func: func(c *ishell.Context) {
-			c.Println("(DUMMY run)")
+			c.Println("(CLI: DUMMY run)")
 		},
 	})
 
@@ -270,7 +268,7 @@ func main() {
 		Name: "set",
 		Help: "set various parameters",
 		Func: func(c *ishell.Context) {
-			c.Println("(DUMMY set)")
+			c.Println("(CLI: DUMMY set)")
 		},
 	})
 

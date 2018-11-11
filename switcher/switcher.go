@@ -13,6 +13,13 @@ import (
 	"angua/cpu8"
 )
 
+var (
+	reqSwitchTo8  = make(chan struct{})
+	reqSwitchTo16 = make(chan struct{})
+	enable8       = make(chan struct{})
+	enable16      = make(chan struct{})
+)
+
 // heartBeat is a testing routine to print a string every 10 seconds to
 // show that the go routine is working. It is called as a go routine from the
 // switcher for testing
@@ -23,45 +30,48 @@ func heartBeat() {
 	}
 }
 
-func Init(c8 *cpu8.Cpu8) {
-	enable8 := make(chan<- struct{})
+func Run(c8 *cpu8.Cpu8) {
+	fmt.Println("Switcher: DUMMY: Run")
 	enable8 <- struct{}{}
+	return
 }
 
 // Run instructs the Switcher to start the CPU at the given value in the PC This
 // is the main Switcher loop that runs as a loop as a go routine
-func Run(c8 *cpu8.Cpu8, c16 *cpu16.Cpu16) {
+func Daemon(c8 *cpu8.Cpu8, c16 *cpu16.Cpu16, cmd <-chan int) {
 
-	fmt.Println("Switcher: DUMMY: Run")
-
-	reqSwitch8 := make(<-chan struct{})
-	reqSwitch16 := make(<-chan struct{})
-	enable8 := make(chan<- struct{})
-	enable16 := make(chan<- struct{})
+	fmt.Println("Switcher: DUMMY: Daemon running")
 
 	go heartBeat()
 
-	select {
+	go c8.Run(cmd, enable8, reqSwitchTo16)
+	go c16.Run(cmd, enable16, reqSwitchTo8)
 
-	case <-reqSwitch8:
-		embiggen(c8, c16)
-		enable16 <- struct{}{}
+	for {
+		select {
 
-	case <-reqSwitch16:
-		debiggen(c8, c16)
-		enable8 <- struct{}{}
+		case <-reqSwitchTo16:
+			fmt.Println("Switcher: DUMMY: cpu8 requests switch to Native Mode")
+			goEmulated(c8, c16)
+			enable16 <- struct{}{}
+
+		case <-reqSwitchTo8:
+			fmt.Println("Switcher: DUMMY: cpu16 requests switch to Emulated Mode")
+			goNative(c8, c16)
+			enable8 <- struct{}{}
+		}
 	}
 
 }
 
-// Embiggen changes the CPU from 8 bit (emulated) to 16 bit (native)
+// goNative changes the CPU from 8 bit (emulated) to 16 bit (native)
 // This is triggered by a request from the cpu8 via a channel
-func embiggen(c8 *cpu8.Cpu8, c16 *cpu16.Cpu16) {
-	fmt.Println("Switcher: DUMMY: Embiggen")
+func goNative(c8 *cpu8.Cpu8, c16 *cpu16.Cpu16) {
+	fmt.Println("Switcher: DUMMY: goEmulated, cpu16 -> cpu8")
 }
 
-// Debiggen changes the CPU from 16 bit (native) to 8 bit (emulated)
+// goEmulated changes the CPU from 16 bit (native) to 8 bit (emulated)
 // This is triggered by a request from the cpu16 via a channel
-func debiggen(c8 *cpu8.Cpu8, c16 *cpu16.Cpu16) {
-	fmt.Println("Switcher: DUMMY: Debiggen")
+func goEmulated(c8 *cpu8.Cpu8, c16 *cpu16.Cpu16) {
+	fmt.Println("Switcher: DUMMY: goEmulated, cpu8 -> cpu16")
 }

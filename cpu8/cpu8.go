@@ -40,9 +40,9 @@ type StatReg struct {
 }
 
 var (
-	enable8    = make(<-chan struct{}) // Receive signal to run
-	cmd        = make(<-chan int, 2)   // Receive commands from CLI
-	reqSwitch8 = make(chan<- struct{}) // Send signal to change CPU
+	enable8       = make(chan struct{}) // Receive signal to run
+	cmd           = make(chan int, 2)   // Receive commands from CLI
+	reqSwitchTo16 = make(chan struct{}) // Send signal to change CPU
 
 	verbose bool // Print lots of information
 	trace   bool // Print even more information
@@ -107,7 +107,7 @@ func (c *Cpu8) Step() {
 // Run is the main loop of the Cpu8. It takes two channels from the CLI: A
 // boolean which enables running the processor and blocks it when waiting for
 // input (which means the other CPU is running or everything is halted).
-func (c *Cpu8) Run() {
+func (c *Cpu8) Run(cmd <-chan int, enable8 <-chan struct{}, reqSwitchTo16 chan<- struct{}) {
 
 	fmt.Println("CPU8: DUMMY: Run")
 	c.Halted = true
@@ -115,8 +115,8 @@ func (c *Cpu8) Run() {
 	for {
 		// This channel is used to block the CPU until it receives the
 		// signal to run again
+		fmt.Println("CPU8: DUMMY: CPU8 enabled, waiting for enable8")
 		<-enable8
-		fmt.Println("CPU8: DUMMY: CPU8 enabled")
 
 		// If we have received a signal to run, then we're not halted
 		c.Halted = false
@@ -126,6 +126,8 @@ func (c *Cpu8) Run() {
 		// instruction.
 		// TODO figure out single step mode
 		for !c.Halted {
+
+			fmt.Println("CPU8: DUMMY: Not halted, in command loop")
 
 			select {
 			case order := <-cmd:
@@ -184,13 +186,15 @@ func (c *Cpu8) Run() {
 				}
 
 			default:
-				// This is where the CPU actually runs an
-				// instruction
+				// This is where the CPU actually runs one
+				// instruction. We pretend for testing that at
+				// some point we are told to switch
 				c.Step()
 				fmt.Println("CPU8: DUMMY: Main loop")
 				time.Sleep(10 * time.Second)
 				c.Halted = true
-				reqSwitch8 <- struct{}{} // Pretend switch
+				fmt.Println("CPU8: DUMMY: Attempting switch to Native Mode")
+				reqSwitchTo16 <- struct{}{} // Pretend switch
 			}
 		}
 	}
