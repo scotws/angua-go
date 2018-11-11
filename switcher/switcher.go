@@ -26,7 +26,7 @@ var (
 func heartBeat() {
 	for {
 		fmt.Println("<Switcher is alive>")
-		time.Sleep(2 * time.Minute)
+		time.Sleep(5 * time.Minute)
 	}
 }
 

@@ -101,7 +101,7 @@ type Cpu8 struct {
 
 // Step executes a single instruction from PC. This is called by the Run method
 func (c *Cpu8) Step() {
-	fmt.Println("CPU8: DUMMY: Step")
+	fmt.Println("CPU8: DUMMY: <EXECUTING ONE INSTRUCTION>")
 }
 
 // Run is the main loop of the Cpu8. It takes two channels from the CLI: A
@@ -115,7 +115,7 @@ func (c *Cpu8) Run(cmd <-chan int, enable8 <-chan struct{}, reqSwitchTo16 chan<-
 	for {
 		// This channel is used to block the CPU until it receives the
 		// signal to run again
-		fmt.Println("CPU8: DUMMY: CPU8 enabled, waiting for enable8")
+		fmt.Println("CPU8: DUMMY: CPU8 enabled, halted, waiting for enable8")
 		<-enable8
 
 		// If we have received a signal to run, then we're not halted

@@ -101,7 +101,7 @@ type Cpu16 struct {
 
 // Step executes a single instruction from PC. This is called by the Run method
 func (c *Cpu16) Step() {
-	fmt.Println("CPU16: DUMMY: Step")
+	fmt.Println("CPU16: DUMMY: <EXECUTING ONE INSTRUCTION>")
 }
 
 // Run is the main loop of the Cpu8. It takes two channels from the CLI: A
@@ -115,7 +115,7 @@ func (c *Cpu16) Run(cmd <-chan int, enable16 <-chan struct{}, reqSwitchTo8 chan<
 	for {
 		// This channel is used to block the CPU until it receives the
 		// signal to run again
-		fmt.Println("CPU16: DUMMY: CPU16 enabled, waiting for enable16")
+		fmt.Println("CPU16: DUMMY: CPU16 enabled, halted, waiting for enable16")
 		<-enable16
 
 		// If we have received a signal to run, then we're not halted
@@ -131,14 +131,10 @@ func (c *Cpu16) Run(cmd <-chan int, enable16 <-chan struct{}, reqSwitchTo8 chan<
 			case order := <-cmd:
 				// If we were given a command by the operating system,
 				// we execute it first
-				// TODO add a switch that handles our input,
-				// especially the HALT signal
-				fmt.Println("CPU16: DUMMY: Received command", order, "from CLI")
-
 				switch order {
 
 				case common.HALT:
-					fmt.Println("CPU16: DUMMY: Received cmd HALT")
+					fmt.Println("CPU16: DUMMY: Received *** HALT ***")
 					c.Halted = true
 
 				case common.RESUME, common.RUN:
@@ -151,11 +147,10 @@ func (c *Cpu16) Run(cmd <-chan int, enable16 <-chan struct{}, reqSwitchTo8 chan<
 					c.SingleStep = true
 
 				case common.STATUS:
-					fmt.Println("CPU16: DUMMY: Received cmd STATUS")
 					c.Status()
 
 				case common.BOOT:
-					fmt.Println("CPU16: DUMMY: Received cmd BOOT")
+					fmt.Println("CPU16: DUMMY: Received *** BOOT ***")
 				case common.RESET:
 					fmt.Println("CPU16: DUMMY: Received cmd RESET")
 				case common.IRQ:

@@ -44,6 +44,7 @@ var (
 
 	// Flags passed.
 	// TODO Add "-c" to load config file
+	// TODO Add "-d" to print debug information
 	beVerbose   = flag.Bool("v", false, "Verbose, print more output")
 	inBatchMode = flag.Bool("b", false, "Start in batch mode")
 )
@@ -67,9 +68,10 @@ func main() {
 	cpuEmu := &cpu8.Cpu8{}
 	cpuNat := &cpu16.Cpu16{}
 
-	// We communicate with the XO through the command channel once its main
-	// routine (xo.MakeItSo) is up and running
-	// TODO see if we really need to have this buffered
+	// We communicate with the system through the command channel, which is
+	// buffered because lots of other stuff might be going on. Both CPUs see
+	// the same channel, but because one of them is inactive, that's not a
+	// problem
 	cmd := make(chan int, 2)
 
 	// Start interactive shell. Note that by default, this provides the
@@ -79,19 +81,22 @@ func main() {
 	shell.SetPrompt("> ")
 
 	// We create a history file
+	// TODO point this out in the documentation
 	shell.SetHomeHistoryPath(".angua_shell_history")
 
 	shell.AddCmd(&ishell.Cmd{
 		Name: "abort",
-		Help: "Trigger the abort vector",
+		Help: "Trigger the ABORT vector",
 		Func: func(c *ishell.Context) {
-			c.Println("CLI: DUMMY: trigger abort vector")
+			c.Println("Sending ABORT signal to machine ...")
+			cmd <- common.ABORT
 		},
 	})
 
 	shell.AddCmd(&ishell.Cmd{
-		Name: "beep",
-		Help: "Print a beeping noise",
+		Name:     "beep",
+		Help:     "Print a beeping noise",
+		LongHelp: "No, seriously, it only produces a beeping sound.",
 		Func: func(c *ishell.Context) {
 			c.Println("\a")
 		},
@@ -101,7 +106,8 @@ func main() {
 		Name: "boot",
 		Help: "Boot the machine. Same effect as turning on the power",
 		Func: func(c *ishell.Context) {
-			c.Println("CLI: DUMMY: boot the machine")
+			c.Println("Sending BOOT signal to machine ...")
+			cmd <- common.BOOT
 		},
 	})
 
@@ -112,12 +118,12 @@ func main() {
 			if !haveMachine {
 				c.Println("ERROR: No machine present")
 			} else {
-				c.Println("(DUMMY destroy the machine)")
+				c.Println("CLI: DUMMY: destroy the machine")
 				haveMachine = false
 				shell.Process("beep")
 			}
 
-			// TODO Call HALT and close channel to XO
+			// TODO Call HALT
 		},
 	})
 
@@ -125,7 +131,7 @@ func main() {
 		Name: "disasm",
 		Help: "Disassemble a range of memory",
 		Func: func(c *ishell.Context) {
-			c.Println("(DUMMY disassemble memory)")
+			c.Println("CLI: DUMMY: disassemble memory")
 		},
 	})
 
@@ -133,7 +139,7 @@ func main() {
 		Name: "dump",
 		Help: "Print hex dump of range",
 		Func: func(c *ishell.Context) {
-			c.Println("(DUMMY dump)")
+			c.Println("CLI: DUMMY: dump")
 		},
 	})
 
@@ -145,13 +151,15 @@ func main() {
 		},
 	})
 
+	// TODO Set a flag to signal that system is halted so commands
+	// like status make more sense. Also, we need some way of remembering
+	// which CPU we last left off with so we can start in the right mode
+	// Note that RESUME is currently broken
 	shell.AddCmd(&ishell.Cmd{
 		Name: "halt",
 		Help: "Halt the machine",
 		Func: func(c *ishell.Context) {
-			c.Println("(DUMMY halt the machine)")
-
-			// Send XO the halt signal
+			c.Println("Requesting HALT from machine ...")
 			cmd <- common.HALT
 		},
 	})
@@ -172,14 +180,21 @@ func main() {
 			// with a filename, load the file cfom configs
 
 			// TODO set up memory by reading cfg file
-			// TODO Send pointers to cpuEmu and cpuNat to the xo
-			// TODO Start the xo as a go routine
 
-			c.Println("CLI: DUMMY: init")
+			c.Println("Initializing machine ...")
 			haveMachine = true
-			go switcher.Daemon(cpuEmu, cpuNat, cmd)
-			c.Println("CLI: DUMMY: Switcher Daemon launched")
 
+			// Start the Switcher Daemon which in turn launches the
+			// CPUs. It will handle any requests to switch from
+			// native to emulated mode and back again without our
+			// intervention
+			go switcher.Daemon(cpuEmu, cpuNat, cmd)
+
+			if *beVerbose {
+				c.Println("Switcher daemon launched")
+			}
+
+			c.Println("*** System initialized, start with 'run' or 'boot' ***")
 		},
 	})
 
@@ -187,13 +202,15 @@ func main() {
 		Name: "irq",
 		Help: "trigger an Interrupt Request (IRQ)",
 		Func: func(c *ishell.Context) {
-			c.Println("CLI: DUMMY: IRQ")
+			c.Println("Triggering maskable interrupt request (IRQ) ...")
+			cmd <- common.IRQ
 		},
 	})
 
 	shell.AddCmd(&ishell.Cmd{
-		Name: "load",
-		Help: "load contents of a file to memory",
+		Name:     "load",
+		Help:     "load contents of a file to memory",
+		LongHelp: "Format: 'load <FILENAME> to <ADDRESS RANGE>'",
 		Func: func(c *ishell.Context) {
 			c.Println("(DUMMY load)")
 		},
@@ -220,7 +237,8 @@ func main() {
 		Name: "nmi",
 		Help: "trigger a Non Maskable Interrupt (NMI)",
 		Func: func(c *ishell.Context) {
-			c.Println("(DUMMY NMI)")
+			c.Println("Triggering non-maskable interrupt (NMI) ...")
+			cmd <- common.NMI
 		},
 	})
 
@@ -228,7 +246,7 @@ func main() {
 		Name: "reading",
 		Help: "set a special address",
 		Func: func(c *ishell.Context) {
-			c.Println("(CLI: DUMMY reading)")
+			c.Println("CLI: DUMMY reading")
 		},
 	})
 
@@ -236,21 +254,25 @@ func main() {
 		Name: "reset",
 		Help: "trigger a RESET signal",
 		Func: func(c *ishell.Context) {
-			c.Println("(CLI: DUMMY reset)")
+			c.Println("Triggering RESET signal ...")
+			cmd <- common.RESET
 		},
 	})
 
+	// TODO this doesn't work at all, see RUN
 	shell.AddCmd(&ishell.Cmd{
 		Name: "resume",
 		Help: "resume after a halt",
 		Func: func(c *ishell.Context) {
-			c.Println("(CLI: DUMMY resume)")
+			c.Println("Resuming at current PC location ...")
+			cmd <- common.RESUME
 		},
 	})
 
 	shell.AddCmd(&ishell.Cmd{
-		Name: "run",
-		Help: "run from a given address",
+		Name:     "run",
+		Help:     "Run machine created with 'init'",
+		LongHelp: "System starts as a boot in Emulated Mode.",
 		Func: func(c *ishell.Context) {
 			fmt.Println("(CLI: DUMMY run: Triggering cpuEmu)")
 			switcher.Run(cpuEmu)
@@ -289,6 +311,8 @@ func main() {
 					c.Println("(DUMMY show memory)")
 				case "specials":
 					c.Println("(DUMMY show specials)")
+				case "system":
+					c.Println("(Use 'status system' to show host information)")
 				case "vectors":
 					c.Println("(DUMMY show vectors)")
 				default:
@@ -310,8 +334,8 @@ func main() {
 
 				switch subcmd {
 				case "system":
-					// Print status on the runtime
-					// environment
+					fmt.Println("Host architecture:", runtime.GOARCH)
+					fmt.Println("Host operating system:", runtime.GOOS)
 					fmt.Println("Host system CPU cores available:", runtime.NumCPU())
 					fmt.Println("Host system goroutines running:", runtime.NumGoroutine())
 					fmt.Println("Host system Go version:", runtime.Version())
