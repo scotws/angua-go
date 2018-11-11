@@ -151,6 +151,15 @@ func main() {
 		},
 	})
 
+	shell.AddCmd(&ishell.Cmd{
+		Name:     "fill",
+		Help:     "Fill a bock of memory with a byte",
+		LongHelp: "Format: 'fill <ADDRESS RANGE> with <BYTE>'",
+		Func: func(c *ishell.Context) {
+			c.Println("CLI: DUMMY: fill")
+		},
+	})
+
 	// TODO Set a flag to signal that system is halted so commands
 	// like status make more sense. Also, we need some way of remembering
 	// which CPU we last left off with so we can start in the right mode
@@ -212,7 +221,16 @@ func main() {
 		Help:     "load contents of a file to memory",
 		LongHelp: "Format: 'load <FILENAME> to <ADDRESS RANGE>'",
 		Func: func(c *ishell.Context) {
-			c.Println("(DUMMY load)")
+			c.Println("CLI: DUMMY: load")
+		},
+	})
+
+	shell.AddCmd(&ishell.Cmd{
+		Name:     "man",
+		Help:     "Print information on 65816 instructions",
+		LongHelp: "Format 'man [ <OPCODE> | <MNEMONIC> ]'",
+		Func: func(c *ishell.Context) {
+			c.Println("CLI: DUMMY: man")
 		},
 	})
 
