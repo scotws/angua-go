@@ -101,7 +101,7 @@ func main() {
 	shell.AddCmd(&ishell.Cmd{
 		Name:     "beep",
 		Help:     "Print a beeping noise",
-		LongHelp: "No, seriously, it only produces a beeping sound.",
+		LongHelp: longHelpBeep,
 		Func: func(c *ishell.Context) {
 			c.Println("\a")
 		},
@@ -141,8 +141,9 @@ func main() {
 	})
 
 	shell.AddCmd(&ishell.Cmd{
-		Name: "dump",
-		Help: "Print hex dump of range",
+		Name:     "dump",
+		Help:     "Print hex dump of range",
+		LongHelp: longHelpDump,
 		Func: func(c *ishell.Context) {
 			c.Println("CLI: DUMMY: dump")
 		},
@@ -159,7 +160,7 @@ func main() {
 	shell.AddCmd(&ishell.Cmd{
 		Name:     "fill",
 		Help:     "Fill a bock of memory with a byte",
-		LongHelp: "Format: 'fill <ADDRESS RANGE> with <BYTE>'",
+		LongHelp: longHelpFill,
 		Func: func(c *ishell.Context) {
 			c.Println("CLI: DUMMY: fill")
 		},
@@ -181,7 +182,7 @@ func main() {
 	shell.AddCmd(&ishell.Cmd{
 		Name:     "init",
 		Help:     "initialize a new machine",
-		LongHelp: "Options: '<CONFIG FILE>', 'default', ''",
+		LongHelp: longHelpInit,
 		Func: func(c *ishell.Context) {
 
 			if haveMachine {
@@ -249,6 +250,12 @@ func main() {
 
 				// TODO Okay, it isn't. Then see if it is an
 				// opcode
+
+				// TODO Okay, still not good. Then see about
+				// another command such as 'all' or 'list'
+
+				// TODO finally, maybe we're looking to export
+				// the dictionary as a JSON file 'json'
 
 				c.Println("ERROR: Opcode or mnemonic", subcmd, "unknown")
 			}
