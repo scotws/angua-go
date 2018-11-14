@@ -1,7 +1,7 @@
 // Angua Memory System
 // Scot W. Stevenson <scot.stevenson@gmail.com>
 // First version: 09. Mar 2018
-// This version: 21. Mar 2018
+// This version: 14. Nov 2018
 
 package mem
 
@@ -11,18 +11,16 @@ import (
 	"strings"
 	"sync"
 	"unicode"
-)
 
-const (
-	maxAddr = 1<<24 - 1
+	"angua/common"
 )
 
 type Chunk struct {
-	Start      uint   // stores 65816 addr
-	End        uint   // stores 65816 addr
-	Type       string // "ram" or "rom"
-	Label      string // internal use only
-	sync.Mutex        // Make write of data array thread safe
+	Start      common.Addr24 // stores 65816 addr
+	End        common.Addr24 // stores 65816 addr
+	Type       string        // "ram" or "rom"
+	Label      string        // internal use only
+	sync.Mutex               // Make write of data array thread safe
 	Data       []byte
 }
 
@@ -35,26 +33,26 @@ type Memory struct {
 
 // Contains takes a memory address and checks if it is in this chunk,
 // returning a bool. Assumes that the address has been confirmed to be a valid
-// 65816 address as a uint
-func (c Chunk) Contains(addr uint) bool {
+// 65816 address as a Addr24
+func (c Chunk) Contains(addr common.Addr24) bool {
 	return c.Start <= addr && addr <= c.End
 }
 
 // Fetch gets one byte of memory from the data of a chunk and returns it.
 // Assumes we have already made sure that the address is in this chunk
-func (c Chunk) Fetch(addr uint) byte {
+func (c Chunk) Fetch(addr common.Addr24) byte {
 	return c.Data[addr-c.Start]
 }
 
 // Size returns the, uh, size of a chunk in bytes
 func (c Chunk) Size() uint {
-	return c.End - c.Start + 1
+	return uint(c.End - c.Start + 1)
 }
 
 // Store takes a byte and an address and stores the byte at the address in the
 // chunk. Assumes that we already checked that the address is in fact in this
 // chunk. We use the Mutex here out of paranoia to make sure it's thread safe
-func (c Chunk) Store(addr uint, b byte) {
+func (c Chunk) Store(addr common.Addr24, b byte) {
 	c.Lock()
 	c.Data[addr-c.Start] = b
 	c.Unlock()
@@ -62,9 +60,9 @@ func (c Chunk) Store(addr uint, b byte) {
 
 // --- MEMORY METHODS ---
 
-// Contains takes an 65816 address as an uint and checks to see if it is
+// Contains takes an 65816 addressand checks to see if it is
 // valid, returning a bool
-func (m Memory) Contains(addr uint) bool {
+func (m Memory) Contains(addr common.Addr24) bool {
 
 	result := false
 
@@ -82,7 +80,7 @@ func (m Memory) Contains(addr uint) bool {
 // the byte with a true flag for success. If the address is not memory, it
 // returns a zero value and a false flag. We use a Mutex at chunk level, not
 // memory level
-func (m Memory) Fetch(addr uint) (byte, bool) {
+func (m Memory) Fetch(addr common.Addr24) (byte, bool) {
 	var b byte
 	var found bool = false
 
@@ -101,7 +99,7 @@ func (m Memory) Fetch(addr uint) (byte, bool) {
 // -- should be fetched and returned as an integer, retrieving those bytes as
 // little endian. Also returns a bool to show if all fetches were to legal
 // addresses. Assumes that the address itself was vetted.
-func (m Memory) FetchMore(addr uint, num uint) (uint, bool) {
+func (m Memory) FetchMore(addr common.Addr24, num uint) (uint, bool) {
 
 	const maxint = 3
 	var legal bool = true
@@ -113,7 +111,7 @@ func (m Memory) FetchMore(addr uint, num uint) (uint, bool) {
 		log.Fatal(fmt.Sprintf("Illegal attempt to read %d bytes from %06X", num, addr))
 	}
 
-	for i := uint(0); i <= num-1; i++ {
+	for i := common.Addr24(0); i <= common.Addr24(num-1); i++ {
 		b, ok := m.Fetch(addr + i)
 
 		if !ok {
@@ -133,7 +131,7 @@ func (m Memory) FetchMore(addr uint, num uint) (uint, bool) {
 // the line, and the library function starts the count with zero, not the
 // address. Also, we want uppercase letters for hex values
 // TODO Return result as a string instead of printing it
-func (m Memory) Hexdump(addr1, addr2 uint) {
+func (m Memory) Hexdump(addr1, addr2 common.Addr24) {
 
 	var r rune
 	var count uint
@@ -151,7 +149,8 @@ func (m Memory) Hexdump(addr1, addr2 uint) {
 			hb.Reset()
 			cb.Reset()
 
-			fmt.Fprintf(&hb, "%06X ", addr1+count)
+			// TODO move this to common print function
+			fmt.Fprintf(&hb, "%06X ", addr1+common.Addr24(count))
 		}
 
 		// We ignore the ok flag here
@@ -198,12 +197,12 @@ func (m Memory) List() string {
 // Read returns a slice of memory as bytes and a flag to show if all bytes were
 // part of legal memory when given a starting address and the a size. Assumes
 // that the addresses have been correctly formatted and vetted
-func (m Memory) Read(addr uint, size uint) ([]byte, bool) {
+func (m Memory) Read(addr common.Addr24, size uint) ([]byte, bool) {
 
 	var allLegal bool = true
 	var bs []byte
 
-	for i := addr; i <= addr+size; i++ {
+	for i := addr; i <= addr+common.Addr24(size); i++ {
 		b, ok := m.Fetch(i)
 
 		if !ok {
@@ -229,7 +228,7 @@ func (m Memory) Size() uint {
 // Store takes an address and a byte and saves them to memory. If the addr is
 // not part of legal memory, we return a false flag, otherwise a true. If the
 // addr is part of ROM, do the same thing
-func (m Memory) Store(addr uint, b byte) bool {
+func (m Memory) Store(addr common.Addr24, b byte) bool {
 	var f bool = false
 
 	for _, c := range m.Chunks {
@@ -250,7 +249,7 @@ func (m Memory) Store(addr uint, b byte) bool {
 // If the number of bytes to store is anything but 1, 2, or 3, we return a false
 // flag with memory untouched
 // TODO move the LSB functions to common package
-func (m Memory) StoreMore(addr uint, num uint, len uint) bool {
+func (m Memory) StoreMore(addr common.Addr24, num uint, len uint) bool {
 
 	if len < 1 || len > 3 {
 		return false
@@ -265,7 +264,7 @@ func (m Memory) StoreMore(addr uint, num uint, len uint) bool {
 	ba := [...]byte{lsb, msb, bank}
 
 	for i := 0; i < 3; i++ {
-		ok := m.Store(addr+uint(i), ba[i])
+		ok := m.Store(addr+common.Addr24(i), ba[i])
 		f = f && ok
 	}
 
@@ -275,10 +274,10 @@ func (m Memory) StoreMore(addr uint, num uint, len uint) bool {
 // Write takes a 65816 address and a slice of bytes and story those bytes start
 // at that address. If all addresses were legal, it returns a true flag,
 // otherwise a false
-func (m Memory) Write(addr uint, bs []byte) bool {
+func (m Memory) Write(addr common.Addr24, bs []byte) bool {
 	var legal bool = true
 
-	for i := addr; i < addr+uint(len(bs)); i++ {
+	for i := addr; i < addr+common.Addr24(len(bs)); i++ {
 		ok := m.Store(i, bs[i-addr])
 
 		if !ok {

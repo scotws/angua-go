@@ -2,19 +2,21 @@
 // Part of the Angua package
 // Scot W. Stevenson <scot.stevenson@gmail.com>
 // First version 09. Mar 2018
-// This version 21. Mar 2018
+// This version 14. Nov 2018
 
 package mem
 
 import (
 	"testing"
+
+	"angua/common"
 )
 
 // Test if we get the right size of a Chunk
 func TestChunkSize(t *testing.T) {
 	type ip struct {
-		start uint
-		end   uint
+		start common.Addr24
+		end   common.Addr24
 	}
 	var tests = []struct {
 		input ip
@@ -41,7 +43,7 @@ func TestContainsAddr(t *testing.T) {
 		tc = Chunk{Start: 0x400, End: 0x800}
 
 		tests = []struct {
-			input uint
+			input common.Addr24
 			want  bool
 		}{
 			{0x400, true},
@@ -65,7 +67,7 @@ func TestFetch(t *testing.T) {
 		mydata = make([]byte, 0x400) // 1 KiB length
 
 		tests = []struct {
-			input uint
+			input common.Addr24
 			want  byte
 		}{
 			{0x100, 0},
@@ -88,7 +90,7 @@ func TestStoreNFetch(t *testing.T) {
 		mydata = make([]byte, 0x400) // 1 KiB buffer
 
 		tests = []struct {
-			addr uint
+			addr common.Addr24
 			b    byte
 		}{
 			{0x100, 0xEE},
@@ -112,7 +114,7 @@ func TestStoreNFetch(t *testing.T) {
 // Test storing of a multi-byte number in little-endian format
 func TestStoreMore(t *testing.T) {
 	type ip struct {
-		addr uint
+		addr common.Addr24
 		num  uint
 		len  uint
 	}
