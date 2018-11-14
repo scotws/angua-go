@@ -9,15 +9,15 @@ import (
 	"fmt"
 	"time"
 
-	"angua/cpu16"
-	"angua/cpu8"
+	"angua/emulated"
+	"angua/native"
 )
 
 var (
-	reqSwitchTo8  = make(chan struct{})
-	reqSwitchTo16 = make(chan struct{})
-	enable8       = make(chan struct{})
-	enable16      = make(chan struct{})
+	reqSwitchToEmu = make(chan struct{})
+	reqSwitchToNat = make(chan struct{})
+	enableEmu      = make(chan struct{})
+	enableNat      = make(chan struct{})
 )
 
 // heartBeat is a testing routine to print a string every 10 seconds to
@@ -30,49 +30,49 @@ func heartBeat() {
 	}
 }
 
-func Run(c8 *cpu8.Cpu8) {
+func Run(cEmu *emulated.Emulated) {
 	fmt.Println("Switcher: DUMMY: Run")
-	enable8 <- struct{}{}
+	enableEmu <- struct{}{}
 	return
 }
 
 // Run instructs the Switcher to start the CPU at the given value in the PC This
 // is the main Switcher loop that runs as a loop as a go routine
 // TODO add a verbose flag to log if switcher is alive and waiting
-func Daemon(c8 *cpu8.Cpu8, c16 *cpu16.Cpu16, cmd <-chan int) {
+func Daemon(cEmu *emulated.Emulated, cNat *native.Native, cmd <-chan int) {
 
 	fmt.Println("Switcher: DUMMY: Daemon running")
 
 	go heartBeat()
 
-	go c8.Run(cmd, enable8, reqSwitchTo16)
-	go c16.Run(cmd, enable16, reqSwitchTo8)
+	go cEmu.Run(cmd, enableEmu, reqSwitchToNat)
+	go cNat.Run(cmd, enableNat, reqSwitchToEmu)
 
 	for {
 		select {
 
-		case <-reqSwitchTo16:
-			fmt.Println("Switcher: DUMMY: cpu8 requests switch to Native Mode")
-			goEmulated(c8, c16)
-			enable16 <- struct{}{}
+		case <-reqSwitchToNat:
+			fmt.Println("Switcher: DUMMY: emulated requests switch to Native Mode")
+			goEmulated(cEmu, cNat)
+			enableNat <- struct{}{}
 
-		case <-reqSwitchTo8:
-			fmt.Println("Switcher: DUMMY: cpu16 requests switch to Emulated Mode")
-			goNative(c8, c16)
-			enable8 <- struct{}{}
+		case <-reqSwitchToEmu:
+			fmt.Println("Switcher: DUMMY: native requests switch to Emulated Mode")
+			goNative(cEmu, cNat)
+			enableEmu <- struct{}{}
 		}
 	}
 
 }
 
 // goNative changes the CPU from 8 bit (emulated) to 16 bit (native)
-// This is triggered by a request from the cpu8 via a channel
-func goNative(c8 *cpu8.Cpu8, c16 *cpu16.Cpu16) {
-	fmt.Println("Switcher: DUMMY: goEmulated, cpu16 -> cpu8")
+// This is triggered by a request from the emulated via a channel
+func goNative(cEmu *emulated.Emulated, cNat *native.Native) {
+	fmt.Println("Switcher: DUMMY: goEmulated, native -> emulated")
 }
 
 // goEmulated changes the CPU from 16 bit (native) to 8 bit (emulated)
-// This is triggered by a request from the cpu16 via a channel
-func goEmulated(c8 *cpu8.Cpu8, c16 *cpu16.Cpu16) {
-	fmt.Println("Switcher: DUMMY: goEmulated, cpu8 -> cpu16")
+// This is triggered by a request from the native via a channel
+func goEmulated(cEmu *emulated.Emulated, cNat *native.Native) {
+	fmt.Println("Switcher: DUMMY: goEmulated, emulated -> native")
 }

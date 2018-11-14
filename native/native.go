@@ -1,9 +1,9 @@
 // Angua CPU System - Native Mode (16 bit) CPU
 // Scot W. Stevenson <scot.stevenson@gmail.com>
 // First version: 06. Nov 2018
-// First version: 10. Nov 2018
+// First version: 14. Nov 2018
 
-package cpu16
+package native
 
 import (
 	"fmt"
@@ -40,9 +40,9 @@ type StatReg struct {
 }
 
 var (
-	enable16     = make(<-chan struct{}) // Receive signal to run
-	cmd          = make(<-chan int, 2)   // Receive commands from CLI
-	reqSwitchTo8 = make(chan<- struct{}) // Send signal to change CPU
+	enableNat      = make(<-chan struct{}) // Receive signal to run
+	cmd            = make(<-chan int, 2)   // Receive commands from CLI
+	reqSwitchToEmu = make(chan<- struct{}) // Send signal to change CPU
 
 	verbose bool // Print lots of information
 	trace   bool // Print even more information
@@ -81,7 +81,7 @@ func (s *StatReg) TestN(b byte) {
 // --------------------------------------------------
 // CPU
 
-type Cpu16 struct {
+type Native struct {
 	A   reg16 // 16 bit accumulator
 	B   reg8  // B register
 	X   reg16 // index register
@@ -100,23 +100,23 @@ type Cpu16 struct {
 }
 
 // Step executes a single instruction from PC. This is called by the Run method
-func (c *Cpu16) Step() {
-	fmt.Println("CPU16: DUMMY: <EXECUTING ONE INSTRUCTION>")
+func (c *Native) Step() {
+	fmt.Println("NATIVE: DUMMY: <EXECUTING ONE INSTRUCTION>")
 }
 
 // Run is the main loop of the Cpu8. It takes two channels from the CLI: A
 // boolean which enables running the processor and blocks it when waiting for
 // input (which means the other CPU is running or everything is halted).
-func (c *Cpu16) Run(cmd <-chan int, enable16 <-chan struct{}, reqSwitchTo8 chan<- struct{}) {
+func (c *Native) Run(cmd <-chan int, enableNat <-chan struct{}, reqSwitchToEmu chan<- struct{}) {
 
-	fmt.Println("CPU16: DUMMY: Run")
+	fmt.Println("NATIVE: DUMMY: Run")
 	c.Halted = true
 
 	for {
 		// This channel is used to block the CPU until it receives the
 		// signal to run again
-		fmt.Println("CPU16: DUMMY: CPU16 enabled, halted, waiting for enable16")
-		<-enable16
+		fmt.Println("NATIVE: DUMMY: NATIVE enabled, halted, waiting for enableNat")
+		<-enableNat
 
 		// If we have received a signal to run, then we're not halted
 		c.Halted = false
@@ -134,47 +134,47 @@ func (c *Cpu16) Run(cmd <-chan int, enable16 <-chan struct{}, reqSwitchTo8 chan<
 				switch order {
 
 				case common.HALT:
-					fmt.Println("CPU16: DUMMY: Received *** HALT ***")
+					fmt.Println("NATIVE: DUMMY: Received *** HALT ***")
 					c.Halted = true
 
 				case common.RESUME, common.RUN:
-					fmt.Println("CPU16: DUMMY: Received cmd RESUME/RUN")
+					fmt.Println("NATIVE: DUMMY: Received cmd RESUME/RUN")
 					c.SingleStep = false
 					c.Halted = false
 
 				case common.STEP:
-					fmt.Println("CPU16: DUMMY: Received cmd STEP")
+					fmt.Println("NATIVE: DUMMY: Received cmd STEP")
 					c.SingleStep = true
 
 				case common.STATUS:
 					c.Status()
 
 				case common.BOOT:
-					fmt.Println("CPU16: DUMMY: Received *** BOOT ***")
+					fmt.Println("NATIVE: DUMMY: Received *** BOOT ***")
 				case common.RESET:
-					fmt.Println("CPU16: DUMMY: Received cmd RESET")
+					fmt.Println("NATIVE: DUMMY: Received cmd RESET")
 				case common.IRQ:
-					fmt.Println("CPU16: DUMMY: Received cmd IRQ")
+					fmt.Println("NATIVE: DUMMY: Received cmd IRQ")
 				case common.NMI:
-					fmt.Println("CPU16: DUMMY: Received cmd NMI")
+					fmt.Println("NATIVE: DUMMY: Received cmd NMI")
 				case common.ABORT:
-					fmt.Println("CPU16: DUMMY: Received cmd ABORT")
+					fmt.Println("NATIVE: DUMMY: Received cmd ABORT")
 
 				case common.VERBOSE:
-					fmt.Println("CPU16: DUMMY: Received cmd VERBOSE")
+					fmt.Println("NATIVE: DUMMY: Received cmd VERBOSE")
 					verbose = true
 				case common.LACONIC:
-					fmt.Println("CPU16: DUMMY: Received cmd LACONIC")
+					fmt.Println("NATIVE: DUMMY: Received cmd LACONIC")
 					verbose = false
 				case common.TRACE:
-					fmt.Println("CPU16: DUMMY: Received cmd TRACE")
+					fmt.Println("NATIVE: DUMMY: Received cmd TRACE")
 					trace = true
 				case common.NOTRACE:
-					fmt.Println("CPU16: DUMMY: Received cmd NOTRACE")
+					fmt.Println("NATIVE: DUMMY: Received cmd NOTRACE")
 					trace = false
 
 				default:
-					log.Fatal("ERROR: CPU16: Got unknown command", order, "from CLI")
+					log.Fatal("ERROR: NATIVE: Got unknown command", order, "from CLI")
 
 				}
 
@@ -183,11 +183,11 @@ func (c *Cpu16) Run(cmd <-chan int, enable16 <-chan struct{}, reqSwitchTo8 chan<
 				// instruction. We pretend for testing that at
 				// some point we are told to switch
 				c.Step()
-				fmt.Println("CPU16: DUMMY: Main loop")
+				fmt.Println("NATIVE: DUMMY: Main loop")
 				time.Sleep(10 * time.Second)
 				c.Halted = true
-				fmt.Println("CPU16: DUMMY: Attempting switch to Emulated Mode")
-				reqSwitchTo8 <- struct{}{} // Pretend switch
+				fmt.Println("NATIVE: DUMMY: Attempting switch to Emulated Mode")
+				reqSwitchToEmu <- struct{}{} // Pretend switch
 			}
 		}
 	}
@@ -195,14 +195,7 @@ func (c *Cpu16) Run(cmd <-chan int, enable16 <-chan struct{}, reqSwitchTo8 chan<
 }
 
 // Status prints the status of the machine
-func (c *Cpu16) Status() {
+func (c *Native) Status() {
 	fmt.Println("CPU mode: Native (16 bit)")
 	fmt.Println("PC:", c.PC, "A:", c.A, "X:", c.X, "Y:", c.Y)
 }
-
-/*
-// TODO test version to Execute one opcode
-func (c *Cpu8) Execute(b byte) {
-	opcodes8[b](c)
-}
-*/

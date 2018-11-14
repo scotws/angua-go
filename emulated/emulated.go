@@ -3,7 +3,7 @@
 // First version: 06. Nov 2018
 // First version: 10. Nov 2018
 
-package cpu8
+package emulated
 
 import (
 	"fmt"
@@ -81,7 +81,7 @@ func (s *StatReg) TestN(b byte) {
 // --------------------------------------------------
 // CPU
 
-type Cpu8 struct {
+type Emulated struct {
 	A   reg8  // 8 bit accumulator
 	B   reg8  // Special hidden register of the 65816
 	X   reg8  // index register
@@ -100,22 +100,22 @@ type Cpu8 struct {
 }
 
 // Step executes a single instruction from PC. This is called by the Run method
-func (c *Cpu8) Step() {
-	fmt.Println("CPU8: DUMMY: <EXECUTING ONE INSTRUCTION>")
+func (c *Emulated) Step() {
+	fmt.Println("EMULATED: DUMMY: <EXECUTING ONE INSTRUCTION>")
 }
 
-// Run is the main loop of the Cpu8. It takes two channels from the CLI: A
+// Run is the main loop of the Emulated. It takes two channels from the CLI: A
 // boolean which enables running the processor and blocks it when waiting for
 // input (which means the other CPU is running or everything is halted).
-func (c *Cpu8) Run(cmd <-chan int, enable8 <-chan struct{}, reqSwitchTo16 chan<- struct{}) {
+func (c *Emulated) Run(cmd <-chan int, enable8 <-chan struct{}, reqSwitchTo16 chan<- struct{}) {
 
-	fmt.Println("CPU8: DUMMY: Run")
+	fmt.Println("EMULATED: DUMMY: Run")
 	c.Halted = true
 
 	for {
 		// This channel is used to block the CPU until it receives the
 		// signal to run again
-		fmt.Println("CPU8: DUMMY: CPU8 enabled, halted, waiting for enable8")
+		fmt.Println("EMULATED: DUMMY: EMULATED enabled, halted, waiting for enable8")
 		<-enable8
 
 		// If we have received a signal to run, then we're not halted
@@ -127,7 +127,7 @@ func (c *Cpu8) Run(cmd <-chan int, enable8 <-chan struct{}, reqSwitchTo16 chan<-
 		// TODO figure out single step mode
 		for !c.Halted {
 
-			fmt.Println("CPU8: DUMMY: Not halted, in command loop")
+			fmt.Println("EMULATED: DUMMY: Not halted, in command loop")
 
 			select {
 			case order := <-cmd:
@@ -135,53 +135,53 @@ func (c *Cpu8) Run(cmd <-chan int, enable8 <-chan struct{}, reqSwitchTo16 chan<-
 				// we execute it first
 				// TODO add a switch that handles our input,
 				// especially the HALT signal
-				fmt.Println("CPU8: DUMMY: Received command", order, "from CLI")
+				fmt.Println("EMULATED: DUMMY: Received command", order, "from CLI")
 
 				switch order {
 
 				case common.HALT:
-					fmt.Println("CPU8: DUMMY: Received cmd HALT")
+					fmt.Println("EMULATED: DUMMY: Received cmd HALT")
 					c.Halted = true
 
 				case common.RESUME, common.RUN:
-					fmt.Println("CPU8: DUMMY: Received cmd RESUME/RUN")
+					fmt.Println("EMULATED: DUMMY: Received cmd RESUME/RUN")
 					c.SingleStep = false
 					c.Halted = false
 
 				case common.STEP:
-					fmt.Println("CPU8: DUMMY: Received cmd STEP")
+					fmt.Println("EMULATED: DUMMY: Received cmd STEP")
 					c.SingleStep = true
 
 				case common.STATUS:
-					fmt.Println("CPU8: DUMMY: Received cmd STATUS")
+					fmt.Println("EMULATED: DUMMY: Received cmd STATUS")
 					c.Status()
 
 				case common.BOOT:
-					fmt.Println("CPU8: DUMMY: Received cmd BOOT")
+					fmt.Println("EMULATED: DUMMY: Received cmd BOOT")
 				case common.RESET:
-					fmt.Println("CPU8: DUMMY: Received cmd RESET")
+					fmt.Println("EMULATED: DUMMY: Received cmd RESET")
 				case common.IRQ:
-					fmt.Println("CPU8: DUMMY: Received cmd IRQ")
+					fmt.Println("EMULATED: DUMMY: Received cmd IRQ")
 				case common.NMI:
-					fmt.Println("CPU8: DUMMY: Received cmd NMI")
+					fmt.Println("EMULATED: DUMMY: Received cmd NMI")
 				case common.ABORT:
-					fmt.Println("CPU8: DUMMY: Received cmd ABORT")
+					fmt.Println("EMULATED: DUMMY: Received cmd ABORT")
 
 				case common.VERBOSE:
-					fmt.Println("CPU8: DUMMY: Received cmd VERBOSE")
+					fmt.Println("EMULATED: DUMMY: Received cmd VERBOSE")
 					verbose = true
 				case common.LACONIC:
-					fmt.Println("CPU8: DUMMY: Received cmd LACONIC")
+					fmt.Println("EMULATED: DUMMY: Received cmd LACONIC")
 					verbose = false
 				case common.TRACE:
-					fmt.Println("CPU8: DUMMY: Received cmd TRACE")
+					fmt.Println("EMULATED: DUMMY: Received cmd TRACE")
 					trace = true
 				case common.NOTRACE:
-					fmt.Println("CPU8: DUMMY: Received cmd NOTRACE")
+					fmt.Println("EMULATED: DUMMY: Received cmd NOTRACE")
 					trace = false
 
 				default:
-					log.Fatal("ERROR: cpu8: Got unknown command", order, "from CLI")
+					log.Fatal("ERROR: EMULATED: Got unknown command", order, "from CLI")
 
 				}
 
@@ -190,10 +190,10 @@ func (c *Cpu8) Run(cmd <-chan int, enable8 <-chan struct{}, reqSwitchTo16 chan<-
 				// instruction. We pretend for testing that at
 				// some point we are told to switch
 				c.Step()
-				fmt.Println("CPU8: DUMMY: Main loop")
+				fmt.Println("EMULATED: DUMMY: Main loop")
 				time.Sleep(10 * time.Second)
 				c.Halted = true
-				fmt.Println("CPU8: DUMMY: Attempting switch to Native Mode")
+				fmt.Println("EMULATED: DUMMY: Attempting switch to Native Mode")
 				reqSwitchTo16 <- struct{}{} // Pretend switch
 			}
 		}
@@ -202,13 +202,13 @@ func (c *Cpu8) Run(cmd <-chan int, enable8 <-chan struct{}, reqSwitchTo16 chan<-
 }
 
 // Status prints the status of the machine
-func (c *Cpu8) Status() {
-	fmt.Println("CPU8: DUMMY: Status")
+func (c *Emulated) Status() {
+	fmt.Println("EMULATED: DUMMY: Status")
 }
 
 /*
 // TODO test version to Execute one opcode
-func (c *Cpu8) Execute(b byte) {
+func (c *Emulated) Execute(b byte) {
 	opcodes8[b](c)
 }
 */

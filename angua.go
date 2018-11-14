@@ -26,8 +26,8 @@ import (
 	"strings"
 
 	"angua/common"
-	"angua/cpu16"
-	"angua/cpu8"
+	"angua/emulated"
+	"angua/native"
 	// "angua/mem"
 	"angua/man"
 	"angua/switcher"
@@ -69,8 +69,8 @@ func main() {
 	flag.Parse()
 
 	// memory := &mem.Memory{}
-	cpuEmu := &cpu8.Cpu8{}
-	cpuNat := &cpu16.Cpu16{}
+	cpuEmu := &emulated.Emulated{}
+	cpuNat := &native.Native{}
 
 	// We communicate with the system through the command channel, which is
 	// buffered because lots of other stuff might be going on. Both CPUs see
