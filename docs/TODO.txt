@@ -1,17 +1,17 @@
 TODO file for Angua
 Scot W. Stevenson <scot.stevenson@gmail.com>
 First version: 16. Mar 2018
-This version: 11. Nov 2018
+This version: 14. Nov 2018
 
 NEXT UP:
 
+- Set up NATIVE CPU
+- Add basic fetch/decode/execute routine from memory
 - Add FLAG DEBUG so we have the option to print diagnostic information
 - Add FLAG VERBOSE to call to Switcher (starts heartbeat)
 - Add commands HALT and RESUME
-
-- Rewrite MEMORY SYSTEM with common, make things RW threadsafe, move conversion to
-  little endian to common routines; make methods to chuck and memory
-  pointers
+- Add instructions NOP and STP
+- Test emu/nat and 8/16 switching before we have new words
 
 
 FAR GOALS: 

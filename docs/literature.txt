@@ -1,0 +1,8 @@
+Literatur used and recommended 
+Scot W. Stevenson <scot.stevenson@gmail.com>
+First version: 14. Nov 2018
+This version: 14. Nov 2018
+
+TODO include this into the manual
+
+http://6502.org/tutorials/65c816opcodes.html
