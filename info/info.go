@@ -1,12 +1,12 @@
-// Manual (built-in help) system Angua
+// Info (built-in help) system for Angua
 // Scot W. Stevenson <scot.stevenson@gmail.com>
 // First version: 11. Nov 2018
-// This version: 11. Nov 2018
+// This version: 14. Nov 2018
 
-// man is a package to provide an online manual system to look up instructions
+// info is a package to provide an online manual system to look up instructions
 // while using the Angua emulator for the 65816. As a spin off, it allows the
 // export as a JSON file for other uses
-package man
+package info
 
 import (
 	"fmt"
@@ -32,7 +32,7 @@ const (
 	mpuAll   = "6502 65c02 65802/65816"
 )
 
-type ManEntry struct {
+type InfoEntry struct {
 	Opcode       byte     // 65816 machine language opcode
 	MneSAN       string   // Simpler Assembler Notation (SAN) mnemonic
 	MneTrad      string   // Traditional notation mnemonic
@@ -49,64 +49,64 @@ type ManEntry struct {
 }
 
 var (
-	OpcodeDict = make(map[byte]ManEntry)   // Dictionary organized by Opcodes
-	SANDict    = make(map[string]ManEntry) // Dictionary organized by SAN mnemonics
-	ModeDict   = make(map[int]string)      // Dictionary to print Addressing Modes
+	OpcodeDict = make(map[byte]InfoEntry)   // Dictionary organized by Opcodes
+	SANDict    = make(map[string]InfoEntry) // Dictionary organized by SAN mnemonics
+	ModeDict   = make(map[int]string)       // Dictionary to print Addressing Modes
 )
 
 // generateDicts creates the Dictionaries on the fly during boot. This is
 // intended to run a goroutine while booting
 func GenerateDicts() {
 
-	OpcodeDict[0x00] = ManEntry{0x00, "brk", "BRK", "Software Break", StackInterrupt,
+	OpcodeDict[0x00] = InfoEntry{0x00, "brk", "BRK", "Software Break", StackInterrupt,
 		2, 7, 338, []string{mpu6502, mpu65c02, mpu65816}, false, false,
 		[]string{"B", "D", "I"}, "PC incremented by 2 for signature byte"}
 
-	OpcodeDict[0x18] = ManEntry{0x18, "clc", "CLC", "Clear Carry Flag", Implied,
+	OpcodeDict[0x18] = InfoEntry{0x18, "clc", "CLC", "Clear Carry Flag", Implied,
 		1, 2, 343, []string{mpu6502, mpu65c02, mpu65816}, false, false,
 		[]string{"C"}, "On 65816/65802, used to switch to Native Mode"}
 
-	OpcodeDict[0x50] = ManEntry{0x50, "bvc", "BVC", "Branch if Overflow Clear", ProgCountRel,
+	OpcodeDict[0x50] = InfoEntry{0x50, "bvc", "BVC", "Branch if Overflow Clear", ProgCountRel,
 		2, 2, 341, []string{mpu6502, mpu65c02, mpu65816}, false, false,
 		[]string{""}, "Also set by Set Overflow Signal to chip"}
 
-	OpcodeDict[0x70] = ManEntry{0x70, "bvs", "BVS", "Branch if Overflow Set", ProgCountRel,
+	OpcodeDict[0x70] = InfoEntry{0x70, "bvs", "BVS", "Branch if Overflow Set", ProgCountRel,
 		2, 2, 342, []string{mpu6502, mpu65c02, mpu65816}, false, false,
 		[]string{""}, "Also set by Set Overflow Signal to chip"}
 
-	OpcodeDict[0x3A] = ManEntry{0x3A, "dec.a", "DEC A", "Decrement", Accumulator,
+	OpcodeDict[0x3A] = InfoEntry{0x3A, "dec.a", "DEC A", "Decrement", Accumulator,
 		1, 2, 352, []string{mpu6502, mpu65c02, mpu65816}, false, false,
 		[]string{"N", "Z"}, "Does not affect carry flag C"}
 
-	OpcodeDict[0x9C] = ManEntry{0x9C, "stz", "STZ ????", "Store Zero to Memory",
+	OpcodeDict[0x9C] = InfoEntry{0x9C, "stz", "STZ ????", "Store Zero to Memory",
 		Absolute, 3, 4, 405, []string{mpu65c02, mpu65816}, true, false,
 		[]string{""}, "Flags unaffected by store instructions"}
 
-	OpcodeDict[0x74] = ManEntry{0x74, "stz.dx", "STZ ??,X", "Store Zero to Memory",
+	OpcodeDict[0x74] = InfoEntry{0x74, "stz.dx", "STZ ??,X", "Store Zero to Memory",
 		DirPageIndexX, 2, 4, 405, []string{mpu65c02, mpu65816}, true, false,
 		[]string{""}, "Flags unaffected by store instructions"}
 
-	OpcodeDict[0x82] = ManEntry{0x82, "bra.l", "BRL", "Branch Always Long", ProgCountRelLong,
+	OpcodeDict[0x82] = InfoEntry{0x82, "bra.l", "BRL", "Branch Always Long", ProgCountRelLong,
 		3, 4, 340, []string{mpu65816}, true, false,
 		[]string{""}, "Relocateable, but JMP Absolute one cycle faster"}
 
-	OpcodeDict[0x8E] = ManEntry{0x8E, "stx", "STX ????", "Store Index Register X to Memory",
+	OpcodeDict[0x8E] = InfoEntry{0x8E, "stx", "STX ????", "Store Index Register X to Memory",
 		Absolute, 3, 4, 403, []string{mpuAll}, true, false,
 		[]string{""}, "Flags unaffected by store instructions"}
 
-	OpcodeDict[0xA3] = ManEntry{0xA3, "lda.s", "LDA ??,S", "Load Accumulator from Memory",
+	OpcodeDict[0xA3] = InfoEntry{0xA3, "lda.s", "LDA ??,S", "Load Accumulator from Memory",
 		StackRel, 2, 4, 363, []string{mpu65816}, true, false,
 		[]string{"N", "Z"}, "(none)"}
 
-	OpcodeDict[0xA9] = ManEntry{0xA9, "lda.#", "LDA #??", "Load Accumulator from Memory",
+	OpcodeDict[0xA9] = InfoEntry{0xA9, "lda.#", "LDA #??", "Load Accumulator from Memory",
 		Immediate, 2, 2, 363, []string{mpuAll}, true, true,
 		[]string{"N", "Z"}, "On 65802/65816, 16 bit of data compared if flag X clear"}
 
-	OpcodeDict[0xE0] = ManEntry{0xE0, "cpx.#", "CPX #??", "Compare Index Register X with Memory",
+	OpcodeDict[0xE0] = InfoEntry{0xE0, "cpx.#", "CPX #??", "Compare Index Register X with Memory",
 		Immediate, 2, 2, 350, []string{mpu6502, mpu65c02, mpu65816}, true, true,
 		[]string{"N", "Z", "C"}, "On 65802/65816, 16 bit of data compared if flag X clear"}
 
-	OpcodeDict[0xEA] = ManEntry{0xEA, "nop", "NOP", "No Operation",
+	OpcodeDict[0xEA] = InfoEntry{0xEA, "nop", "NOP", "No Operation",
 		Implied, 1, 2, 369, []string{mpu6502, mpu65c02, mpu65816}, false, false,
 		[]string{""}, "For more than one nop, see other instructions"}
 

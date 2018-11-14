@@ -29,7 +29,7 @@ import (
 	"angua/emulated"
 	"angua/native"
 	// "angua/mem"
-	"angua/man"
+	"angua/info"
 	"angua/switcher"
 
 	"gopkg.in/abiosoft/ishell.v2"
@@ -63,8 +63,8 @@ func verbose(s string) {
 
 func main() {
 
-	// Generate Dictionaries in the background
-	go man.GenerateDicts()
+	// Generate Dictionaries for info system in the background
+	go info.GenerateDicts()
 
 	flag.Parse()
 
@@ -231,9 +231,9 @@ func main() {
 	})
 
 	shell.AddCmd(&ishell.Cmd{
-		Name:     "man",
+		Name:     "info",
 		Help:     "Print information on 65816 instructions",
-		LongHelp: longHelpMan,
+		LongHelp: longHelpInfo,
 		Func: func(c *ishell.Context) {
 			if len(c.Args) != 1 {
 				c.Println("ERROR: Need opcode or SAN mnemonic")
@@ -241,9 +241,9 @@ func main() {
 				subcmd := c.Args[0]
 
 				// First see if this is a mnemonic
-				opc, ok := man.SANDict[subcmd]
+				opc, ok := info.SANDict[subcmd]
 				if ok {
-					man.PrintOpcodeInfo(opc.Opcode)
+					info.PrintOpcodeInfo(opc.Opcode)
 					return
 				}
 

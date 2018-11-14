@@ -55,7 +55,7 @@ Examples:
 		load myOS.bin to $00:FFFF
 		load myStuff.bin to bank 2`
 
-	longHelpMan = `Query built-in manual pages
+	longHelpInfo = `Query built-in manual pages
 
 The manual pages include information on SAN mnemonics and opcodes as well as other
 topics. A better name for this command would have been "help", but it was already
@@ -75,7 +75,7 @@ Why the "json" option? The information about the opcodes can be used for other
 projects, and sooner or later you'll want to have it.
 
 Examples:
-		man jmp.xi		; information on the opcode
-		man 0x00		; information on brk instruction
-		man json opcodes.json   ; saves databank to file`
+		info jmp.xi		; information on the opcode
+		info 0x00		; information on brk instruction
+		info json opcodes.json   ; saves databank to file`
 )

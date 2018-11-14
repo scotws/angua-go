@@ -23,5 +23,5 @@ or fast -- in the compiler we trust.
 
 The emulator comes with online help. Type "help" to get a list of shell
 commands, "<COMMAND> help" for more information on individual shell commands,
-and "man <MNEMONIC>" or "man <OPCODE>" for information on mnemonics and opcodes.
+and "info <MNEMONIC>" or "info <OPCODE>" for information on mnemonics and opcodes.
 
