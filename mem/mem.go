@@ -20,7 +20,7 @@ type Chunk struct {
 	End        common.Addr24 // stores 65816 addr
 	Type       string        // "ram" or "rom"
 	Label      string        // internal use only
-	sync.Mutex               // Make write of data array thread safe
+	sync.Mutex               // Make chunks threadsafe
 	Data       []byte
 }
 
@@ -32,8 +32,7 @@ type Memory struct {
 // --- CHUNK METHODS ---
 
 // Contains takes a memory address and checks if it is in this chunk,
-// returning a bool. Assumes that the address has been confirmed to be a valid
-// 65816 address as a Addr24
+// returning a bool
 func (c Chunk) Contains(addr common.Addr24) bool {
 	return c.Start <= addr && addr <= c.End
 }
@@ -41,10 +40,15 @@ func (c Chunk) Contains(addr common.Addr24) bool {
 // Fetch gets one byte of memory from the data of a chunk and returns it.
 // Assumes we have already made sure that the address is in this chunk
 func (c Chunk) Fetch(addr common.Addr24) byte {
-	return c.Data[addr-c.Start]
+	c.Lock()
+	b := c.Data[addr-c.Start]
+	c.Unlock()
+	return b
 }
 
-// Size returns the, uh, size of a chunk in bytes
+// Size returns the, uh, size of a chunk in bytes as an uint. Does not check to
+// see if chunk addresses are valid, that is, c.End is larger than c.Start
+// TODO see if this should be an int
 func (c Chunk) Size() uint {
 	return uint(c.End - c.Start + 1)
 }
