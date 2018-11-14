@@ -1,7 +1,7 @@
 // Angua - A 65816 MPU emulator in Go
 // Scot W. Stevenson <scot.stevenson@gmail.com>
 // First version: 26. Sep 2017
-// This version: 11. Nov 2018
+// This version: 14. Nov 2018
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -24,12 +24,13 @@ import (
 	"log"
 	"runtime"
 	"strings"
+	"sync"
 
 	"angua/common"
 	"angua/emulated"
-	"angua/native"
-	// "angua/mem"
 	"angua/info"
+	"angua/mem"
+	"angua/native"
 	"angua/switcher"
 
 	"gopkg.in/abiosoft/ishell.v2"
@@ -58,6 +59,51 @@ func verbose(s string) {
 	}
 }
 
+// parseAddressRange takes a list of strings that either has a format in form of
+// "<BANK>:<ADDR16> to <BANK>:<ADDR16>" or "bank <BYTE>" and returns two
+// addresses in the common.Addr24 format and a bool for success for failure.
+func parseAddressRange(ws []string) (addr1, addr2 common.Addr24, ok bool) {
+
+	ok = true
+
+	// If the first word is "bank", then we are getting a full bank
+	if ws[0] == "bank" {
+
+		// Second word must be the bank byte. We brutally cut off
+		// everything but the lowest byte
+		bankNum := common.ConvNum(ws[1]) // Returns uint
+		bankByte := common.Addr24(bankNum).Lsb()
+		bankAddr := common.Addr24(bankByte) * 0x10000
+		addr1 = bankAddr
+		addr2 = bankAddr + 0xFFFF
+
+	} else {
+		// We at least need to addresses and the memory type, so that's
+		// three words length. We could parse more carefully but not at
+		// the moment
+		if len(ws) < 3 {
+			addr1 = 0
+			addr2 = 0
+			ok = false
+			return addr1, addr2, ok
+		}
+
+		addr1 = common.Addr24(common.ConvNum(ws[0]))
+
+		// We allow people to slide on the "to" though we don't
+		// advertise the fact. Later, once we have the error handling of
+		// ConvNum working, check ws[1] and if there is an error, skip
+		// to ws[2].
+
+		if ws[1] == "to" {
+			addr2 = common.Addr24(common.ConvNum(ws[2]))
+		} else {
+			addr2 = common.Addr24(common.ConvNum(ws[1]))
+		}
+	}
+	return addr1, addr2, ok
+}
+
 // -----------------------------------------------------------------
 // MAIN ROUTINE
 
@@ -68,7 +114,7 @@ func main() {
 
 	flag.Parse()
 
-	// memory := &mem.Memory{}
+	memory := &mem.Memory{}
 	cpuEmu := &emulated.Emulated{}
 	cpuNat := &native.Native{}
 
@@ -121,11 +167,12 @@ func main() {
 		Func: func(c *ishell.Context) {
 			if !haveMachine {
 				c.Println("ERROR: No machine present")
-			} else {
-				c.Println("CLI: DUMMY: destroy the machine")
-				haveMachine = false
-				shell.Process("beep")
+				return
 			}
+
+			c.Println("CLI: DUMMY: destroy the machine")
+			haveMachine = false
+			shell.Process("beep")
 
 			// TODO Call HALT
 		},
@@ -144,7 +191,19 @@ func main() {
 		Help:     "Print hex dump of range",
 		LongHelp: longHelpDump,
 		Func: func(c *ishell.Context) {
-			c.Println("CLI: DUMMY: dump")
+
+			if !haveMachine {
+				c.Println("ERROR: No machine present")
+				return
+			}
+
+			// The arg string is passed without "dump"
+			a1, a2, ok := parseAddressRange(c.Args)
+			if !ok {
+				c.Println("ERROR parsing address range")
+				return
+			}
+			memory.Hexdump(a1, a2)
 		},
 	})
 
@@ -263,10 +322,35 @@ func main() {
 	})
 
 	shell.AddCmd(&ishell.Cmd{
+		// Memory commands take the form of
+		// 	 memory <ADDRESS RANGE> ["is"] ("rom" | "ram")
+		// TODO Add labels
 		Name: "memory",
 		Help: "define a memory chunk",
 		Func: func(c *ishell.Context) {
-			c.Println("(DUMMY Memory)")
+
+			// We can break this up from the end by making sure that the
+			// last word is either "ram" or "rom", and feeding the beginning
+			// to the address range finder
+			memType := c.Args[len(c.Args)-1]
+
+			if memType != "ram" && memType != "rom" {
+				c.Println("ERROR: Last word must be memory type ('ram' or 'rom')")
+				return
+			}
+
+			// The arg string is passed without "memory"
+			a1, a2, ok := parseAddressRange(c.Args)
+			if !ok {
+				c.Println("ERROR parsing address range")
+				return
+			}
+
+			newChunk := mem.Chunk{a1, a2, memType, "<NONE>", sync.Mutex{}, []byte{}}
+			memory.Chunks = append(memory.Chunks, newChunk)
+
+			// We can at least allow stuff like hexdumps of memory
+			haveMachine = true
 		},
 	})
 
@@ -342,8 +426,9 @@ func main() {
 	})
 
 	shell.AddCmd(&ishell.Cmd{
-		Name: "show",
-		Help: "display information on various parts of the system",
+		Name:     "show",
+		Help:     "display information on various parts of the system",
+		LongHelp: longHelpShow,
 		Func: func(c *ishell.Context) {
 			if len(c.Args) != 1 {
 				c.Println("ERROR: Need an argument")
@@ -351,10 +436,12 @@ func main() {
 				subcmd := c.Args[0]
 
 				switch subcmd {
+				case "breakpoints":
+					c.Println("CLI: SHOW: DUMMY show breakpoints")
 				case "config":
 					c.Println("(DUMMY show config)")
 				case "memory":
-					c.Println("(DUMMY show memory)")
+					c.Println(memory.List())
 				case "specials":
 					c.Println("(DUMMY show specials)")
 				case "system":

@@ -78,4 +78,21 @@ Examples:
 		info jmp.xi		; information on the opcode
 		info 0x00		; information on brk instruction
 		info json opcodes.json   ; saves databank to file`
+
+	longHelpShow = `Show information on the system
+
+Show produces information on larger elements of the system.
+
+Options:
+
+		breakpoints	- Lists defined breakpoints
+		config		- Current configuration of machine
+		memory		- List of chunks in memory
+		specials	- Special addresses
+		vectors		- Boot and interrupt vectors
+
+For information on the computer angua is running on, use "status system". For
+information on the CPU, use "status". To see information on the stack, use
+"dump stack". For the contents of the Direct Page", use "dump direct". For
+a hex dump of a given range, use "dump <ADDRESS RANGE>".`
 )

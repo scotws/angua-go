@@ -189,10 +189,16 @@ func (m Memory) Hexdump(addr1, addr2 common.Addr24) {
 // List returns a list of all chunks in memory, as a string
 func (m Memory) List() string {
 	var r string
-	var template string = "%s %s %06X-%06X (%d bytes)\n"
+	var template string = "%s %s: %s (%d bytes) Label: '%s'\n"
 
 	for _, c := range m.Chunks {
-		r += fmt.Sprintf(template, c.Label, c.Type, c.Start, c.End, c.Size())
+		r += fmt.Sprintf(template,
+			c.Start.HexString(), c.End.HexString(),
+			c.Type, c.Size(), c.Label)
+	}
+
+	if r == "" {
+		r = "No memory defined. Use 'memory' command."
 	}
 
 	return r

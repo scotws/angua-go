@@ -1,7 +1,7 @@
 // Common files and type for Angua
 // Scot W. Stevenson <scot.stevenson@gmail.com>
 // This version: 07. Nov 2018
-// First version: 10. Nov 2018
+// First version: 14. Nov 2018
 
 // This package contains base definitions and helper functions for all
 // parts of Angua
@@ -179,6 +179,8 @@ func (d Data16) HexString() string {
 // convNum Converts a number string -- hex, binary, or decimal -- to an uint.
 // We accept ':' and '.' as delimiters, use $ or 0x for hex numbers, % for
 // binary numbers, and nothing for decimal numbers. Note octal is not supported
+// TODO We currently fail hard with a fatal log. When system is stable, replace
+// by a different error scheme
 func ConvNum(s string) uint {
 
 	ss := StripDelimiters(s)

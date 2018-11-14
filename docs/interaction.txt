@@ -62,7 +62,7 @@ with the same syntax from a command line interface.
 
 "dump" 
         "stack"
-        "zeropage"
+        "direct"        ; direct page
         <ADDR_RANGE>
 
 "echo" <CHAR>+ 
@@ -92,8 +92,8 @@ with the same syntax from a command line interface.
 "show"
         "breakpoints"
         "config"
-        "register" <REGISTER>
         "memory"
+        "specials"
         "vectors"
 
 "status"
