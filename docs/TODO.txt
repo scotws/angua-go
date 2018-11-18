@@ -1,23 +1,20 @@
 TODO file for Angua
 Scot W. Stevenson <scot.stevenson@gmail.com>
 First version: 16. Mar 2018
-This version: 14. Nov 2018
+This version: 18. Nov 2018
 
 NEXT UP:
 
+- Simplify to one CPU, remove Switcher
 - Set up NATIVE CPU
 - Add basic fetch/decode/execute routine from memory
 - Add FLAG DEBUG so we have the option to print diagnostic information
-- Add FLAG VERBOSE to call to Switcher (starts heartbeat)
 - Add commands HALT and RESUME
 - Add instructions NOP and STP
-- Test emu/nat and 8/16 switching before we have new words
+- Test 8/16 switching before we have new words
 
 
 FAR GOALS: 
 
-- EMULATED: Tali Forth 2 must run on the emulated version without a hitch
-- EMULATED: GOAL: Tali Forth 2 must be able to run tests on the emulated version
 - NATIVE: Get Liara Forth to run on the native version
-
 

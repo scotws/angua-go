@@ -1,7 +1,7 @@
 // Angua - A 65816 MPU emulator in Go
 // Scot W. Stevenson <scot.stevenson@gmail.com>
 // First version: 26. Sep 2017
-// This version: 14. Nov 2018
+// This version: 18. Nov 2018
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -27,10 +27,9 @@ import (
 	"sync"
 
 	"angua/common"
-	"angua/emulated"
+	"angua/cpu"
 	"angua/info"
 	"angua/mem"
-	"angua/native"
 	"angua/switcher"
 
 	"gopkg.in/abiosoft/ishell.v2"
@@ -115,8 +114,7 @@ func main() {
 	flag.Parse()
 
 	memory := &mem.Memory{}
-	cpuEmu := &emulated.Emulated{}
-	cpuNat := &native.Native{}
+	cpuNat := &cpu.CPU{}
 
 	// We communicate with the system through the command channel, which is
 	// buffered because lots of other stuff might be going on. Both CPUs see
@@ -257,16 +255,6 @@ func main() {
 			c.Println("Initializing machine ...")
 			haveMachine = true
 
-			// Start the Switcher Daemon which in turn launches the
-			// CPUs. It will handle any requests to switch from
-			// native to emulated mode and back again without our
-			// intervention
-			go switcher.Daemon(cpuEmu, cpuNat, cmd)
-
-			if *beVerbose {
-				c.Println("Switcher daemon launched")
-			}
-
 			c.Println("*** System initialized, start with 'run' or 'boot' ***")
 		},
 	})
@@ -351,15 +339,6 @@ func main() {
 
 			// We can at least allow stuff like hexdumps of memory
 			haveMachine = true
-		},
-	})
-
-	shell.AddCmd(&ishell.Cmd{
-		Name:     "mode",
-		Help:     "set CPU mode",
-		LongHelp: "Options: 'native', 'emulated'",
-		Func: func(c *ishell.Context) {
-			c.Println("(DUMMY mode )")
 		},
 	})
 
