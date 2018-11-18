@@ -14,14 +14,15 @@ import (
 )
 
 const (
-	// Interrupt vectors TODO check
-	irqAddr   = 0xFFFE
-	resetAddr = 0xFFFC
-	nmiAddr   = 0xFFFA
-	copAddr   = 0xFFF4
+	// Interrupt vectors. Note the reset vector is only for emulated mode
+	abortAddr = 0xFFE8
+	brkAddr   = 0xFFE6
+	copAddr   = 0xFFE4
+	irqAddr   = 0xFFEE
+	nmiAddr   = 0xFFEA
+	resetAddr = 0xFFFC // Routine must move to native mode ASAP
 
-	// Width of accumulator and registers. We would love to use bools or
-	// such, but this is Go
+	// Width of accumulator and registers
 	A8   = 0
 	A16  = 1
 	XY   = 0
