@@ -27,10 +27,9 @@ import (
 	"sync"
 
 	"angua/common"
-	"angua/cpu"
+	// "angua/cpu"
 	"angua/info"
 	"angua/mem"
-	"angua/switcher"
 
 	"gopkg.in/abiosoft/ishell.v2"
 )
@@ -114,7 +113,6 @@ func main() {
 	flag.Parse()
 
 	memory := &mem.Memory{}
-	cpuNat := &cpu.CPU{}
 
 	// We communicate with the system through the command channel, which is
 	// buffered because lots of other stuff might be going on. Both CPUs see
@@ -381,10 +379,9 @@ func main() {
 	shell.AddCmd(&ishell.Cmd{
 		Name:     "run",
 		Help:     "Run machine created with 'init'",
-		LongHelp: "System starts as a boot in Emulated Mode.",
+		LongHelp: "System starts as a boot.",
 		Func: func(c *ishell.Context) {
-			fmt.Println("(CLI: DUMMY run: Triggering cpuEmu)")
-			switcher.Run(cpuEmu)
+			fmt.Println("(CLI: DUMMY run)")
 		},
 	})
 
@@ -392,7 +389,7 @@ func main() {
 		Name: "save",
 		Help: "save an address range to file",
 		Func: func(c *ishell.Context) {
-			c.Println("(CLI: DUMMY run)")
+			c.Println("(CLI: DUMMY save)")
 		},
 	})
 

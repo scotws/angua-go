@@ -19,6 +19,13 @@ const (
 	resetAddr = 0xFFFC
 	nmiAddr   = 0xFFFA
 	copAddr   = 0xFFF4
+
+	// Width of accumulator and registers. We would love to use bools or
+	// such, but this is Go
+	A8   = 0
+	A16  = 1
+	XY   = 0
+	XY16 = 1
 )
 
 // --------------------------------------------------
@@ -60,18 +67,18 @@ func (s *StatReg) SetStatusReg(b byte) {
 	fmt.Println("DUMMY SetStatusRegister")
 }
 
-// TestZ takes a byte and sets the Z flag to true if the value is zero and to
+// TestZ takes an int and sets the Z flag to true if the value is zero and to
 // false otherwise
-func (s *StatReg) TestZ(b byte) {
-	if b == 0 {
+func (s *StatReg) TestZ(i int) {
+	if i == 0 {
 		s.FlagZ = true
 	} else {
 		s.FlagZ = false
 	}
 }
 
-// TestN takes a byte and sets the N flag to true if bit 7 is one else to flase
-func (s *StatReg) TestN(b byte) {
+// TestN takes a int and sets the N flag to true if bit 7 is one else to flase
+func (s *StatReg) TestN(i int) {
 	// TODO
 }
 
@@ -81,20 +88,20 @@ func (s *StatReg) TestN(b byte) {
 type CPU struct {
 	A8  common.Data8  // Accumulator 8 bit
 	A16 common.Data16 // Accumulator 16 bit
-
-	B common.Data8 // B register always 8 bit
-
+	B   common.Data8  // B register always 8 bit
 	X8  common.Data8  // X register 8 bit
 	X16 common.Data16 // X register 16 bit
 	Y8  common.Data8  // Y register 8 bit
 	Y16 common.Data16 // Y register 16 bit
-
 	DP  common.Data16 // Direct Page register, yes, 16 bit, not 8
 	SP  common.Data16 // Stack Pointer, 16 bit
 	P   byte          // Status Register
 	DBR common.Data8  // Data Bank Register, yes, available in emulated mode
 	PBR common.Data8  // Program Bank Register, yes, available in emulated mode
 	PC  common.Data16 // Program counter
+
+	ModeA  int // Current width of Accumulator, either A16 or A8
+	ModeXY int // Current width of X and Y registers, either XY16 or X8
 
 	Halted     bool // Signals if CPU stopped by CLI
 	SingleStep bool // Signals if we are in single step mode
@@ -118,18 +125,9 @@ func (c *CPU) Run(cmd <-chan int) {
 	// TODO REWRITE THIS WITHOUT MODES
 
 	for {
-		// This channel is used to block the CPU until it receives the
-		// signal to run again
-		fmt.Println("CPU: DUMMY: CPU enabled, halted, waiting for enableNat")
-		<-enableNat
-
-		// If we have received a signal to run, then we're not halted
-		c.Halted = false
-
 		// If we are not halted, we run the main CPU loop: See if we
 		// received a command from the CLI, if not, single step an
 		// instruction.
-		// TODO figure out single step mode
 		for !c.Halted {
 
 			select {
@@ -156,24 +154,31 @@ func (c *CPU) Run(cmd <-chan int) {
 
 				case common.BOOT:
 					fmt.Println("CPU: DUMMY: Received *** BOOT ***")
+
 				case common.RESET:
 					fmt.Println("CPU: DUMMY: Received cmd RESET")
+
 				case common.IRQ:
 					fmt.Println("CPU: DUMMY: Received cmd IRQ")
+
 				case common.NMI:
 					fmt.Println("CPU: DUMMY: Received cmd NMI")
+
 				case common.ABORT:
 					fmt.Println("CPU: DUMMY: Received cmd ABORT")
 
 				case common.VERBOSE:
 					fmt.Println("CPU: DUMMY: Received cmd VERBOSE")
 					verbose = true
+
 				case common.LACONIC:
 					fmt.Println("CPU: DUMMY: Received cmd LACONIC")
 					verbose = false
+
 				case common.TRACE:
 					fmt.Println("CPU: DUMMY: Received cmd TRACE")
 					trace = true
+
 				case common.NOTRACE:
 					fmt.Println("CPU: DUMMY: Received cmd NOTRACE")
 					trace = false
@@ -196,7 +201,6 @@ func (c *CPU) Run(cmd <-chan int) {
 
 }
 
-// Status prints the status of the machine
 func (c *CPU) Status() {
-	fmt.Println("PC:", c.PC, "A:", c.A, "X:", c.X, "Y:", c.Y)
+	fmt.Println("CPU: DUMMY: Request of status received")
 }
