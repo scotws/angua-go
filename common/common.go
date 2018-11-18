@@ -140,6 +140,8 @@ func (a Addr24) Ensure24() Addr24 {
 
 // --- Data8 ---
 
+// Data8 and Data16 are used for registers
+
 type Data8 uint8
 
 func (d Data8) Lsb() byte {
