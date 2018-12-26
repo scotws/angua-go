@@ -1,7 +1,7 @@
 // Common files and type for Angua
 // Scot W. Stevenson <scot.stevenson@gmail.com>
 // This version: 07. Nov 2018
-// First version: 14. Nov 2018
+// First version: 26. Dec 2018
 
 // This package contains base definitions and helper functions for all
 // parts of Angua
@@ -34,10 +34,10 @@ const (
 	ABORT = 9 // Abort signal to chip
 
 	// Reserved for future use
-	VERBOSE = 10
-	LACONIC = 11 // Turns verbose off
-	TRACE   = 12 // Print out trace information
-	NOTRACE = 13 // Turn off trace information
+	VERBOSE   = 10
+	NOVERBOSE = 11 // Turns verbose off
+	TRACE     = 12 // Print out trace information
+	NOTRACE   = 13 // Turn off trace information
 )
 
 // ==== INTERFACES ===
@@ -213,7 +213,7 @@ func ConvNum(s string) uint {
 	default:
 		n, err := strconv.ParseInt(ss, 10, 0)
 		if err != nil {
-			log.Fatal("ERROR: Can't convert ", ss, " as decimal number")
+			log.Fatal("ERROR: Can't convert ", ss, " to a decimal number")
 		}
 		return uint(n)
 	}

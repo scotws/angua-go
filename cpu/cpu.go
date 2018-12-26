@@ -1,7 +1,7 @@
 // Angua CPU System
 // Scot W. Stevenson <scot.stevenson@gmail.com>
 // First version: 06. Nov 2018
-// First version: 18. Nov 2018
+// First version: 26. Dec 2018
 
 package cpu
 
@@ -34,6 +34,8 @@ const (
 // Status Register
 
 // D for decimal mode and E for emulated are provided, but not functional
+// If you are coming from the 6502, notice that the BRK instruction is handled
+// differently
 
 type StatReg struct {
 	FlagN bool // Negative flag, true if highest bit is 1
@@ -42,9 +44,9 @@ type StatReg struct {
 	FlagD bool // Decimal mode, true is decimal, false is binary
 	FlagI bool // Interrupt disable, true is disabled
 	FlagZ bool // Zero flag
-	FlagC bool // Carry bit
+	FlagC bool // Carry flag
 
-	FlagE bool // Emulation, true is 6502 emulation mode
+	FlagE bool // Emulation flag, set signals is 6502 emulation mode
 }
 
 var (
@@ -79,9 +81,9 @@ func (s *StatReg) TestZ(i int) {
 	}
 }
 
-// TestN takes a int and sets the N flag to true if bit 7 is one else to flase
+// TestN takes a int and sets the N flag to true if highest bit is set else to flase
 func (s *StatReg) TestN(i int) {
-	// TODO
+	// TODO check based on register size
 }
 
 // --------------------------------------------------
@@ -90,22 +92,23 @@ func (s *StatReg) TestN(i int) {
 type CPU struct {
 	A8  common.Data8  // Accumulator 8 bit
 	A16 common.Data16 // Accumulator 16 bit
-	B   common.Data8  // B register always 8 bit
+	B   common.Data8  // B register (always 8 bit)
 	X8  common.Data8  // X register 8 bit
 	X16 common.Data16 // X register 16 bit
 	Y8  common.Data8  // Y register 8 bit
 	Y16 common.Data16 // Y register 16 bit
+
 	DP  common.Data16 // Direct Page register, yes, 16 bit, not 8
 	SP  common.Data16 // Stack Pointer, 16 bit
 	P   byte          // Status Register
-	DBR common.Data8  // Data Bank Register, yes, available in emulated mode
-	PBR common.Data8  // Program Bank Register, yes, available in emulated mode
+	DBR common.Data8  // Data Bank Register
+	PBR common.Data8  // Program Bank Register
 	PC  common.Data16 // Program counter
 
 	ModeA  int // Current width of Accumulator, either A16 or A8
 	ModeXY int // Current width of X and Y registers, either XY16 or X8
 
-	IsHalted       bool // Signals if CPU stopped by CLI
+	IsHalted       bool // Signals if CPU stopped by Angua CLI
 	IsWaiting      bool // CPU stopped by WAI instruction
 	IsStopped      bool // CPU stopped by STP instruction
 	SingleStepMode bool // Signals if we are in single step mode
@@ -118,21 +121,17 @@ func (c *CPU) Step() {
 	fmt.Println("CPU: DUMMY: <EXECUTING ONE INSTRUCTION>")
 }
 
-// Run is the main loop of the Cpu8. It takes two channels from the CLI: A
-// boolean which enables running the processor and blocks it when waiting for
-// input (which means the other CPU is running or everything is halted).
+// Run is the main loop of the CPU.
 func (c *CPU) Run(cmd <-chan int) {
 
 	fmt.Println("CPU: DUMMY: Run")
-	c.IsHalted = false
-	c.IsStopped = false
-	c.IsWaiting = false
-
-	// TODO REWRITE THIS WITHOUT MODES
+	c.IsHalted = false  // User freezes execution, resume with 'resume'
+	c.IsStopped = false // STP instruction
+	c.IsWaiting = false // WAI instruction
 
 	for {
 		// If we are not halted, we run the main CPU loop: See if we
-		// received a command from the CLI, if not, single step an
+		// received a command from the CLI; if not, single step an
 		// instruction.
 		for !c.IsHalted {
 
@@ -142,71 +141,70 @@ func (c *CPU) Run(cmd <-chan int) {
 				// we execute it first
 				switch order {
 
+				case common.ABORT:
+					fmt.Println("CPU: DUMMY: Received cmd ABORT")
+
+				case common.BOOT:
+					fmt.Println("CPU: DUMMY: Received cmd BOOT")
+
 				case common.HALT:
 					fmt.Println("CPU: DUMMY: Received *** HALT ***")
 					c.IsHalted = true
 
-				case common.RESUME, common.RUN:
-					fmt.Println("CPU: DUMMY: Received cmd RESUME/RUN")
-					c.SingleStepMode = false
-					c.IsHalted = false
-
-				case common.STEP:
-					fmt.Println("CPU: DUMMY: Received cmd STEP")
-					c.SingleStepMode = true
-
-				case common.STATUS:
-					c.Status()
-
-				case common.BOOT:
-					fmt.Println("CPU: DUMMY: Received *** BOOT ***")
-
-				case common.RESET:
-					fmt.Println("CPU: DUMMY: Received cmd RESET")
-
 				case common.IRQ:
 					fmt.Println("CPU: DUMMY: Received cmd IRQ")
-
-				case common.NMI:
-					fmt.Println("CPU: DUMMY: Received cmd NMI")
-
-				case common.ABORT:
-					fmt.Println("CPU: DUMMY: Received cmd ABORT")
-
-				case common.VERBOSE:
-					fmt.Println("CPU: DUMMY: Received cmd VERBOSE")
-					verbose = true
-
-				case common.LACONIC:
-					fmt.Println("CPU: DUMMY: Received cmd LACONIC")
-					verbose = false
-
-				case common.TRACE:
-					fmt.Println("CPU: DUMMY: Received cmd TRACE")
-					trace = true
 
 				case common.NOTRACE:
 					fmt.Println("CPU: DUMMY: Received cmd NOTRACE")
 					trace = false
 
+				case common.NOVERBOSE:
+					fmt.Println("CPU: DUMMY: Received cmd NOVERBOSE")
+					verbose = false
+
+				case common.NMI:
+					fmt.Println("CPU: DUMMY: Received cmd NMI")
+
+				case common.RESET:
+					fmt.Println("CPU: DUMMY: Received cmd RESET")
+
+				case common.RESUME:
+					fmt.Println("CPU: DUMMY: Received cmd RESUME")
+					c.IsHalted = false
+
+				case common.RUN:
+					fmt.Println("CPU: DUMMY: Received cmd RUN")
+					c.IsHalted = false
+
+				case common.STATUS:
+					fmt.Println("CPU: DUMMY: Received cmd STATUS")
+
+				case common.STEP:
+					fmt.Println("CPU: DUMMY: Received cmd STEP")
+					c.SingleStepMode = true
+
+				case common.TRACE:
+					fmt.Println("CPU: DUMMY: Received cmd TRACE")
+					trace = true
+
+				case common.VERBOSE:
+					fmt.Println("CPU: DUMMY: Received cmd VERBOSE")
+					verbose = true
+
 				default:
+					// TODO make this less brutal
 					log.Fatal("ERROR: CPU: Got unknown command", order, "from CLI")
 
 				}
 
 			default:
 				// This is where the CPU actually runs an
-				// instruction. We pretend for testing that at
-				// some point we are told to switch
+				// instruction
 				c.Step()
 				fmt.Println("CPU: DUMMY: Main loop")
-				time.Sleep(10 * time.Second)
+				time.Sleep(2 * time.Second)
 			}
 		}
 	}
 
-}
-
-func (c *CPU) Status() {
-	fmt.Println("CPU: DUMMY: Request of status received")
 }

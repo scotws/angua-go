@@ -130,9 +130,11 @@ func main() {
 	// TODO point this out in the documentation
 	shell.SetHomeHistoryPath(".angua_shell_history")
 
+	// Individual commands. Normal help is lower case with no punctuation.
+
 	shell.AddCmd(&ishell.Cmd{
 		Name:     "abort",
-		Help:     "Trigger the ABORT vector",
+		Help:     "trigger the ABORT vector",
 		LongHelp: longHelpAbort,
 		Func: func(c *ishell.Context) {
 			c.Println("Sending ABORT signal to machine ...")
@@ -142,7 +144,7 @@ func main() {
 
 	shell.AddCmd(&ishell.Cmd{
 		Name:     "beep",
-		Help:     "Print a beeping noise",
+		Help:     "make a beeping noise",
 		LongHelp: longHelpBeep,
 		Func: func(c *ishell.Context) {
 			c.Println("\a")
@@ -151,7 +153,7 @@ func main() {
 
 	shell.AddCmd(&ishell.Cmd{
 		Name:     "boot",
-		Help:     "Boot the machine. Same effect as turning on the power",
+		Help:     "boot the machine (cold restart)",
 		LongHelp: longHelpBoot,
 		Func: func(c *ishell.Context) {
 			c.Println("Sending BOOT signal to machine ...")
@@ -179,7 +181,7 @@ func main() {
 
 	shell.AddCmd(&ishell.Cmd{
 		Name:     "disasm",
-		Help:     "Disassemble a range of memory",
+		Help:     "disassemble a range of memory",
 		LongHelp: longHelpDisasm,
 		Func: func(c *ishell.Context) {
 			c.Println("CLI: DUMMY: disassemble memory")
@@ -188,7 +190,7 @@ func main() {
 
 	shell.AddCmd(&ishell.Cmd{
 		Name:     "dump",
-		Help:     "Print hex dump of range",
+		Help:     "print hex dump of a memory range",
 		LongHelp: longHelpDump,
 		Func: func(c *ishell.Context) {
 
@@ -209,7 +211,7 @@ func main() {
 
 	shell.AddCmd(&ishell.Cmd{
 		Name:     "echo",
-		Help:     "Print following text to end of line",
+		Help:     "print a string of text",
 		LongHelp: longHelpEcho,
 		Func: func(c *ishell.Context) {
 			c.Println(strings.Join(c.Args, " "))
@@ -218,7 +220,7 @@ func main() {
 
 	shell.AddCmd(&ishell.Cmd{
 		Name:     "fill",
-		Help:     "Fill a bock of memory with a byte",
+		Help:     "fill a block of memory with a byte",
 		LongHelp: longHelpFill,
 		Func: func(c *ishell.Context) {
 			c.Println("CLI: DUMMY: fill")
@@ -227,10 +229,10 @@ func main() {
 
 	shell.AddCmd(&ishell.Cmd{
 		Name:     "halt",
-		Help:     "Halt the machine",
+		Help:     "halt the machine (freeze)",
 		LongHelp: longHelpHalt,
 		Func: func(c *ishell.Context) {
-			c.Println("Requesting HALT from machine ...")
+			c.Println("Telling machine to halt ...")
 			cmd <- common.HALT
 		},
 	})
@@ -247,7 +249,7 @@ func main() {
 			}
 
 			// Three variants: Without a parameter or with the words
-			// "defalt", load the default.cfg file from configs;
+			// "default", load the default.cfg file from configs;
 			// with a filename, load the file cfom configs
 
 			// TODO set up memory by reading cfg file
@@ -261,7 +263,7 @@ func main() {
 
 	shell.AddCmd(&ishell.Cmd{
 		Name:     "irq",
-		Help:     "trigger an Interrupt Request (IRQ)",
+		Help:     "trigger an interrupt request (IRQ)",
 		LongHelp: longHelpIRQ,
 		Func: func(c *ishell.Context) {
 			c.Println("Triggering maskable interrupt request (IRQ) ...")
@@ -271,7 +273,7 @@ func main() {
 
 	shell.AddCmd(&ishell.Cmd{
 		Name:     "load",
-		Help:     "Load binary file to memory",
+		Help:     "load binary file to memory",
 		LongHelp: longHelpLoad,
 		Func: func(c *ishell.Context) {
 			c.Println("CLI: DUMMY: load")
@@ -280,7 +282,7 @@ func main() {
 
 	shell.AddCmd(&ishell.Cmd{
 		Name:     "info",
-		Help:     "Print information on 65816 instructions",
+		Help:     "print information on 65816 instructions",
 		LongHelp: longHelpInfo,
 		Func: func(c *ishell.Context) {
 			if len(c.Args) != 1 {
@@ -343,7 +345,7 @@ func main() {
 
 	shell.AddCmd(&ishell.Cmd{
 		Name:     "nmi",
-		Help:     "trigger a Non Maskable Interrupt (NMI)",
+		Help:     "trigger a non-maskable interrupt (NMI)",
 		LongHelp: longHelpNMI,
 		Func: func(c *ishell.Context) {
 			c.Println("Triggering non-maskable interrupt (NMI) ...")
@@ -353,7 +355,7 @@ func main() {
 
 	shell.AddCmd(&ishell.Cmd{
 		Name:     "reading",
-		Help:     "set a special address",
+		Help:     "set a special address for reading",
 		LongHelp: longHelpReading,
 		Func: func(c *ishell.Context) {
 			c.Println("CLI: DUMMY reading")
@@ -362,7 +364,7 @@ func main() {
 
 	shell.AddCmd(&ishell.Cmd{
 		Name:     "reset",
-		Help:     "trigger a RESET signal",
+		Help:     "rest the machine (RESET)",
 		LongHelp: longHelpReset,
 		Func: func(c *ishell.Context) {
 			c.Println("Triggering RESET signal ...")
@@ -381,18 +383,21 @@ func main() {
 		},
 	})
 
+	// TODO make this work quickly
 	shell.AddCmd(&ishell.Cmd{
 		Name:     "run",
-		Help:     "Run machine created with 'init'",
+		Help:     "run a machine created with 'init'",
 		LongHelp: longHelpRun,
 		Func: func(c *ishell.Context) {
+			// TODO make sure we have an initialized machine
+			// TODO print message about interfacing with machine
 			fmt.Println("(CLI: DUMMY run)")
 		},
 	})
 
 	shell.AddCmd(&ishell.Cmd{
 		Name:     "save",
-		Help:     "save an address range to file",
+		Help:     "save an address range to a file",
 		LongHelp: longHelpSave,
 		Func: func(c *ishell.Context) {
 			c.Println("(CLI: DUMMY save)")
@@ -440,7 +445,7 @@ func main() {
 
 	shell.AddCmd(&ishell.Cmd{
 		Name:     "status",
-		Help:     "display status of the machine",
+		Help:     "display status of the machine or the host computer",
 		LongHelp: longHelpStatus,
 		Func: func(c *ishell.Context) {
 			if len(c.Args) != 1 {
@@ -449,7 +454,7 @@ func main() {
 				subcmd := c.Args[0]
 
 				switch subcmd {
-				case "system":
+				case "host":
 					fmt.Println("Host architecture:", runtime.GOARCH)
 					fmt.Println("Host operating system:", runtime.GOOS)
 					fmt.Println("Host system CPU cores available:", runtime.NumCPU())
@@ -465,7 +470,7 @@ func main() {
 
 	shell.AddCmd(&ishell.Cmd{
 		Name:     "store",
-		Help:     "store byte at a given address",
+		Help:     "store a byte at a given address",
 		LongHelp: longHelpStore,
 		Func: func(c *ishell.Context) {
 			c.Println("(DUMMY store)")
