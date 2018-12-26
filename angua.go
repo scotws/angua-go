@@ -1,7 +1,7 @@
-// Angua - A 65816 MPU emulator in Go
+// Angua - A partial 65816 MPU emulator in Go
 // Scot W. Stevenson <scot.stevenson@gmail.com>
 // First version: 26. Sep 2017
-// This version: 18. Nov 2018
+// This version: 26. Dec 2018
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -35,8 +35,11 @@ import (
 )
 
 const (
-	// TODO make this pretty
-	shellBanner = "Angua 65816 Emulator\n(c) 2018 Scot W. Stevenson"
+	shellBanner string = `The Angua partial 65816 emulator
+Version ALPHA 0.1  26. Dec 2018
+Copyright (c) 2018 Scot W. Stevenson
+Angua comes with absolutely NO WARRANTY
+Type 'help' for more information`
 )
 
 var (
@@ -76,8 +79,8 @@ func parseAddressRange(ws []string) (addr1, addr2 common.Addr24, ok bool) {
 		addr2 = bankAddr + 0xFFFF
 
 	} else {
-		// We at least need to addresses and the memory type, so that's
-		// three words length. We could parse more carefully but not at
+		// We at least need two addresses and the memory type, so that's
+		// three words length. We could parse more carefully, but not at
 		// the moment
 		if len(ws) < 3 {
 			addr1 = 0
@@ -103,11 +106,10 @@ func parseAddressRange(ws []string) (addr1, addr2 common.Addr24, ok bool) {
 }
 
 // -----------------------------------------------------------------
-// MAIN ROUTINE
 
 func main() {
 
-	// Generate Dictionaries for info system in the background
+	// Generate Dictionaries for 'info' system in the background
 	go info.GenerateDicts()
 
 	flag.Parse()
@@ -126,12 +128,12 @@ func main() {
 
 	// We create a history file
 	// TODO point this out in the documentation
-	// TODO see if this works in all operating systems
 	shell.SetHomeHistoryPath(".angua_shell_history")
 
 	shell.AddCmd(&ishell.Cmd{
-		Name: "abort",
-		Help: "Trigger the ABORT vector",
+		Name:     "abort",
+		Help:     "Trigger the ABORT vector",
+		LongHelp: longHelpAbort,
 		Func: func(c *ishell.Context) {
 			c.Println("Sending ABORT signal to machine ...")
 			cmd <- common.ABORT
@@ -148,8 +150,9 @@ func main() {
 	})
 
 	shell.AddCmd(&ishell.Cmd{
-		Name: "boot",
-		Help: "Boot the machine. Same effect as turning on the power",
+		Name:     "boot",
+		Help:     "Boot the machine. Same effect as turning on the power",
+		LongHelp: longHelpBoot,
 		Func: func(c *ishell.Context) {
 			c.Println("Sending BOOT signal to machine ...")
 			cmd <- common.BOOT
@@ -157,8 +160,9 @@ func main() {
 	})
 
 	shell.AddCmd(&ishell.Cmd{
-		Name: "destroy",
-		Help: "destroy the machine",
+		Name:     "destroy",
+		Help:     "destroy the machine",
+		LongHelp: longHelpDestroy,
 		Func: func(c *ishell.Context) {
 			if !haveMachine {
 				c.Println("ERROR: No machine present")
@@ -174,8 +178,9 @@ func main() {
 	})
 
 	shell.AddCmd(&ishell.Cmd{
-		Name: "disasm",
-		Help: "Disassemble a range of memory",
+		Name:     "disasm",
+		Help:     "Disassemble a range of memory",
+		LongHelp: longHelpDisasm,
 		Func: func(c *ishell.Context) {
 			c.Println("CLI: DUMMY: disassemble memory")
 		},
@@ -203,8 +208,9 @@ func main() {
 	})
 
 	shell.AddCmd(&ishell.Cmd{
-		Name: "echo",
-		Help: "Print following text to end of line",
+		Name:     "echo",
+		Help:     "Print following text to end of line",
+		LongHelp: longHelpEcho,
 		Func: func(c *ishell.Context) {
 			c.Println(strings.Join(c.Args, " "))
 		},
@@ -220,8 +226,9 @@ func main() {
 	})
 
 	shell.AddCmd(&ishell.Cmd{
-		Name: "halt",
-		Help: "Halt the machine",
+		Name:     "halt",
+		Help:     "Halt the machine",
+		LongHelp: longHelpHalt,
 		Func: func(c *ishell.Context) {
 			c.Println("Requesting HALT from machine ...")
 			cmd <- common.HALT
@@ -253,8 +260,9 @@ func main() {
 	})
 
 	shell.AddCmd(&ishell.Cmd{
-		Name: "irq",
-		Help: "trigger an Interrupt Request (IRQ)",
+		Name:     "irq",
+		Help:     "trigger an Interrupt Request (IRQ)",
+		LongHelp: longHelpIRQ,
 		Func: func(c *ishell.Context) {
 			c.Println("Triggering maskable interrupt request (IRQ) ...")
 			cmd <- common.IRQ
@@ -306,8 +314,9 @@ func main() {
 		// Memory commands take the form of
 		// 	 memory <ADDRESS RANGE> ["is"] ("rom" | "ram")
 		// TODO Add labels
-		Name: "memory",
-		Help: "define a memory chunk",
+		Name:     "memory",
+		Help:     "define a memory chunk",
+		LongHelp: longHelpMemory,
 		Func: func(c *ishell.Context) {
 
 			// We can break this up from the end by making sure that the
@@ -336,8 +345,9 @@ func main() {
 	})
 
 	shell.AddCmd(&ishell.Cmd{
-		Name: "nmi",
-		Help: "trigger a Non Maskable Interrupt (NMI)",
+		Name:     "nmi",
+		Help:     "trigger a Non Maskable Interrupt (NMI)",
+		LongHelp: longHelpNMI,
 		Func: func(c *ishell.Context) {
 			c.Println("Triggering non-maskable interrupt (NMI) ...")
 			cmd <- common.NMI
@@ -345,16 +355,18 @@ func main() {
 	})
 
 	shell.AddCmd(&ishell.Cmd{
-		Name: "reading",
-		Help: "set a special address",
+		Name:     "reading",
+		Help:     "set a special address",
+		LongHelp: longHelpReading,
 		Func: func(c *ishell.Context) {
 			c.Println("CLI: DUMMY reading")
 		},
 	})
 
 	shell.AddCmd(&ishell.Cmd{
-		Name: "reset",
-		Help: "trigger a RESET signal",
+		Name:     "reset",
+		Help:     "trigger a RESET signal",
+		LongHelp: longHelpReset,
 		Func: func(c *ishell.Context) {
 			c.Println("Triggering RESET signal ...")
 			cmd <- common.RESET
@@ -363,8 +375,9 @@ func main() {
 
 	// TODO this doesn't work at all, see RUN
 	shell.AddCmd(&ishell.Cmd{
-		Name: "resume",
-		Help: "resume after a halt",
+		Name:     "resume",
+		Help:     "resume after a halt",
+		LongHelp: longHelpResume,
 		Func: func(c *ishell.Context) {
 			c.Println("Resuming at current PC location ...")
 			cmd <- common.RESUME
@@ -374,23 +387,25 @@ func main() {
 	shell.AddCmd(&ishell.Cmd{
 		Name:     "run",
 		Help:     "Run machine created with 'init'",
-		LongHelp: "System starts as a boot.",
+		LongHelp: longHelpRun,
 		Func: func(c *ishell.Context) {
 			fmt.Println("(CLI: DUMMY run)")
 		},
 	})
 
 	shell.AddCmd(&ishell.Cmd{
-		Name: "save",
-		Help: "save an address range to file",
+		Name:     "save",
+		Help:     "save an address range to file",
+		LongHelp: longHelpSave,
 		Func: func(c *ishell.Context) {
 			c.Println("(CLI: DUMMY save)")
 		},
 	})
 
 	shell.AddCmd(&ishell.Cmd{
-		Name: "set",
-		Help: "set various parameters",
+		Name:     "set",
+		Help:     "set various parameters",
+		LongHelp: longHelpSet,
 		Func: func(c *ishell.Context) {
 			c.Println("(CLI: DUMMY set)")
 		},
@@ -429,7 +444,7 @@ func main() {
 	shell.AddCmd(&ishell.Cmd{
 		Name:     "status",
 		Help:     "display status of the machine",
-		LongHelp: "Options: 'system' or ''",
+		LongHelp: longHelpStatus,
 		Func: func(c *ishell.Context) {
 			if len(c.Args) != 1 {
 				cmd <- common.STATUS
@@ -452,16 +467,18 @@ func main() {
 	})
 
 	shell.AddCmd(&ishell.Cmd{
-		Name: "store",
-		Help: "store byte at a given address",
+		Name:     "store",
+		Help:     "store byte at a given address",
+		LongHelp: longHelpStore,
 		Func: func(c *ishell.Context) {
 			c.Println("(DUMMY store)")
 		},
 	})
 
 	shell.AddCmd(&ishell.Cmd{
-		Name: "writing",
-		Help: "define a function to be triggered when address written to",
+		Name:     "writing",
+		Help:     "define a function to be triggered when address written to",
+		LongHelp: longHelpWriting,
 		Func: func(c *ishell.Context) {
 			c.Println("(DUMMY writing)")
 		},

@@ -6,12 +6,40 @@
 package main
 
 const (
+	longHelpAbort string = `Trigger the Abort Vector
+
+(THE REST OF THIS ENTRY IS MISSING)
+
+Example:
+		(THE EXAMPLE IS MISSING)`
+
 	longHelpBeep string = `Produce a beeping noise
 
 Seriously, that is all this command does. It goes BEEP.
 
 Example:
 		beep		; duh, right?`
+
+	longHelpBoot string = `Boot the machine.
+
+(THE REST OF THIS ENTRY IS MISSING)
+
+Example:
+		(THE EXAMPLE IS MISSING)`
+
+	longHelpDestroy string = `Destory the current machine.
+
+(THE REST OF THIS ENTRY IS MISSING)
+
+Example:
+		(THE EXAMPLE IS MISSING)`
+
+	longHelpDisasm string = `Disassemble a memory range.
+
+(THE REST OF THIS ENTRY IS MISSING)
+
+Example:
+		(THE EXAMPLE IS MISSING)`
 
 	longHelpDump string = `Create a hex dump of the address range
 
@@ -25,6 +53,13 @@ Examples:
                 dump bank 2
                 dump bank 0x1F`
 
+	longHelpEcho string = `Print a character string.
+
+(THE REST OF THIS ENTRY IS MISSING)
+
+Example:
+		(THE EXAMPLE IS MISSING)`
+
 	longHelpFill string = `Fill a memory range with a byte
 
 Fill can be used to set a memory range to a byte, for instance to store 0xEA
@@ -35,7 +70,14 @@ Examples:
 		fill $00:2000 to $00:2FFF with 0xea
 		fill bank 2 with 00`
 
-	longHelpInit string = `Initialize a new machine
+	longHelpHalt string = `Halt a running machine.
+
+(THE REST OF THIS ENTRY IS MISSING)
+
+Example:
+		(THE EXAMPLE IS MISSING)`
+
+	longHelpInit string = `Initialize a new machine.
 
 Init loads a configuration file from the configs folder, sets up some background
 stuff and starts the Switcher Daemon which is responsible for switching the
@@ -46,6 +88,13 @@ already initialized machine.
 Examples:
 		init			; uses configs/default.cfg
 		init my65816.cfg	; runs file configs/myconfig65816.cfg`
+
+	longHelpIRQ string = `Trigger a maskable Interrupt (IRQ).
+
+(THE REST OF THIS ENTRY IS MISSING)
+
+Example:
+		(THE EXAMPLE IS MISSING)`
 
 	longHelpLoad string = `Load binary file to memory location
 
@@ -79,6 +128,62 @@ Examples:
 		info 0x00		; information on brk instruction
 		info json opcodes.json   ; saves databank to file`
 
+	longHelpMemory string = `Define a memory chunk.
+
+(THE REST OF THIS ENTRY IS MISSING)
+
+Example:
+		(THE EXAMPLE IS MISSING)`
+
+	longHelpNMI string = `Trigger a non-maskable interrupt (NMI).
+
+(THE REST OF THIS ENTRY IS MISSING)
+
+Example:
+		(THE EXAMPLE IS MISSING)`
+
+	longHelpReading string = `Set a special address for reading.
+
+(THE REST OF THIS ENTRY IS MISSING)
+
+Example:
+		(THE EXAMPLE IS MISSING)`
+
+	longHelpResume string = `Resume execution of a halted machine.
+
+(THE REST OF THIS ENTRY IS MISSING)
+
+Example:
+		(THE EXAMPLE IS MISSING)`
+
+	longHelpReset string = `Trigger the RESET signal.
+
+(THE REST OF THIS ENTRY IS MISSING)
+
+Example:
+		(THE EXAMPLE IS MISSING)`
+
+	longHelpRun string = `Run an initialized machine.
+
+(THE REST OF THIS ENTRY IS MISSING)
+
+Example:
+		(THE EXAMPLE IS MISSING)`
+
+	longHelpSave string = `Save an address range of memory to a file.
+
+(THE REST OF THIS ENTRY IS MISSING)
+
+Example:
+		(THE EXAMPLE IS MISSING)`
+
+	longHelpSet string = `Set various parameters.
+
+(THE REST OF THIS ENTRY IS MISSING)
+
+Example:
+		(THE EXAMPLE IS MISSING)`
+
 	longHelpShow string = `Show information on the system
 
 Show produces information on larger elements of the system.
@@ -95,4 +200,25 @@ For information on the computer angua is running on, use "status system". For
 information on the CPU, use "status". To see information on the stack, use
 "dump stack". For the contents of the Direct Page", use "dump direct". For
 a hex dump of a given range, use "dump <ADDRESS RANGE>".`
+
+	longHelpStatus string = `Display high-level status of machine or host.
+
+(THE REST OF THIS ENTRY IS MISSING)
+
+Example:
+		(THE EXAMPLE IS MISSING)`
+
+	longHelpStore string = `Store a byte at a given address in memory.
+
+(THE REST OF THIS ENTRY IS MISSING)
+
+Example:
+		(THE EXAMPLE IS MISSING)`
+
+	longHelpWriting string = `Define special address for writing.
+
+(THE REST OF THIS ENTRY IS MISSING)
+
+Example:
+		(THE EXAMPLE IS MISSING)`
 )
