@@ -118,7 +118,6 @@ Options:
 		<SAN MNEMONIC>  - Returns information on the instruction
 		<OPCODE>        - Returns information on the instruction
 		all             - Gives a list of all instructions
-		json <FILENAME> - Saves a JSON file with the information to file
 
 Why the "json" option? The information about the opcodes can be used for other
 projects, and sooner or later you'll want to have it.

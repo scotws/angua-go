@@ -1,11 +1,10 @@
 // Info (built-in help) system for Angua
 // Scot W. Stevenson <scot.stevenson@gmail.com>
 // First version: 11. Nov 2018
-// This version: 14. Nov 2018
+// This version: 26. Dec 2018
 
 // info is a package to provide an online manual system to look up instructions
-// while using the Angua emulator for the 65816. As a spin off, it allows the
-// export as a JSON file for other uses
+// while using the Angua emulator for the 65816.
 package info
 
 import (
@@ -148,9 +147,4 @@ func PrintOpcodeInfo(opc byte) {
 	fmt.Println("Size:", OpcodeDict[opc].Bytes, "byte(s)", " Cycles:",
 		OpcodeDict[opc].Cycles, " MPUs:", OpcodeDict[opc].MPUs)
 	fmt.Println("Note:", OpcodeDict[opc].Note)
-}
-
-// ExportJSON exports the complete Dictionary as a JSON file to a file given
-func ExportJSON(f string) {
-	fmt.Println("DUMMY ExportJSON to", f)
 }

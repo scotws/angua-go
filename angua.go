@@ -301,9 +301,6 @@ func main() {
 				// TODO Okay, still not good. Then see about
 				// another command such as 'all' or 'list'
 
-				// TODO finally, maybe we're looking to export
-				// the dictionary as a JSON file 'json'
-
 				c.Println("ERROR: Opcode or mnemonic", subcmd, "unknown")
 			}
 
