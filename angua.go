@@ -115,19 +115,18 @@ func main() {
 	memory := &mem.Memory{}
 
 	// We communicate with the system through the command channel, which is
-	// buffered because lots of other stuff might be going on. Both CPUs see
-	// the same channel, but because one of them is inactive, that's not a
-	// problem
+	// buffered because other stuff might be going on.
 	cmd := make(chan int, 2)
 
 	// Start interactive shell. Note that by default, this provides the
-	// directives "exit", "help", and "clear"
+	// directives "exit", "help", and "clear".
 	shell := ishell.New()
 	shell.Println(shellBanner)
 	shell.SetPrompt("> ")
 
 	// We create a history file
 	// TODO point this out in the documentation
+	// TODO see if this works in all operating systems
 	shell.SetHomeHistoryPath(".angua_shell_history")
 
 	shell.AddCmd(&ishell.Cmd{
@@ -220,10 +219,6 @@ func main() {
 		},
 	})
 
-	// TODO Set a flag to signal that system is halted so commands
-	// like status make more sense. Also, we need some way of remembering
-	// which CPU we last left off with so we can start in the right mode
-	// Note that RESUME is currently broken
 	shell.AddCmd(&ishell.Cmd{
 		Name: "halt",
 		Help: "Halt the machine",

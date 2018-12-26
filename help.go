@@ -1,19 +1,19 @@
 // Long Help messages for the Angua Command Line Interface (CLI)
 // Scot W. Stevenson <scot.stevenson@gmail.com>
 // First version: 11. Nov 2018
-// This version: 11. Nov 2018
+// This version: 26. Dec 2018
 
 package main
 
 const (
-	longHelpBeep = `Produce a beeping noise
+	longHelpBeep string = `Produce a beeping noise
 
 Seriously, that is all this command does. It goes BEEP.
 
 Example:
 		beep		; duh, right?`
 
-	longHelpDump = `Create a hex dump of the address range
+	longHelpDump string = `Create a hex dump of the address range
 
 Supply an address range in the usual format "<ADDRESS> to <ADDRESS>" or as a
 bank with "bank <BANK>". Output is formatted in hex with the printable ASCII
@@ -25,7 +25,7 @@ Examples:
                 dump bank 2
                 dump bank 0x1F`
 
-	longHelpFill = `Fill a memory range with a byte
+	longHelpFill string = `Fill a memory range with a byte
 
 Fill can be used to set a memory range to a byte, for instance to store 0xEA
 (the nop instruction). The format takes the usual address range or bank number.
@@ -35,7 +35,7 @@ Examples:
 		fill $00:2000 to $00:2FFF with 0xea
 		fill bank 2 with 00`
 
-	longHelpInit = `Initialize a new machine
+	longHelpInit string = `Initialize a new machine
 
 Init loads a configuration file from the configs folder, sets up some background
 stuff and starts the Switcher Daemon which is responsible for switching the
@@ -47,7 +47,7 @@ Examples:
 		init			; uses configs/default.cfg
 		init my65816.cfg	; runs file configs/myconfig65816.cfg`
 
-	longHelpLoad = `Load binary file to memory location
+	longHelpLoad string = `Load binary file to memory location
 
 Given a filename, load it as binary data to the specified memory range.
 
@@ -55,7 +55,7 @@ Examples:
 		load myOS.bin to $00:FFFF
 		load myStuff.bin to bank 2`
 
-	longHelpInfo = `Query built-in manual pages
+	longHelpInfo string = `Query built-in manual pages
 
 The manual pages include information on SAN mnemonics and opcodes as well as other
 topics. A better name for this command would have been "help", but it was already
@@ -79,7 +79,7 @@ Examples:
 		info 0x00		; information on brk instruction
 		info json opcodes.json   ; saves databank to file`
 
-	longHelpShow = `Show information on the system
+	longHelpShow string = `Show information on the system
 
 Show produces information on larger elements of the system.
 

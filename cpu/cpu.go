@@ -14,7 +14,8 @@ import (
 )
 
 const (
-	// Interrupt vectors. Note the reset vector is only for emulated mode
+	// Interrupt vectors. Note the reset vector is only for emulated mode.
+	// See http://6502.org/tutorials/65c816interrupts.html for details
 	abortAddr = 0xFFE8
 	brkAddr   = 0xFFE6
 	copAddr   = 0xFFE4
@@ -104,8 +105,10 @@ type CPU struct {
 	ModeA  int // Current width of Accumulator, either A16 or A8
 	ModeXY int // Current width of X and Y registers, either XY16 or X8
 
-	Halted     bool // Signals if CPU stopped by CLI
-	SingleStep bool // Signals if we are in single step mode
+	IsHalted       bool // Signals if CPU stopped by CLI
+	IsWaiting      bool // CPU stopped by WAI instruction
+	IsStopped      bool // CPU stopped by STP instruction
+	SingleStepMode bool // Signals if we are in single step mode
 
 	StatReg
 }
@@ -121,7 +124,9 @@ func (c *CPU) Step() {
 func (c *CPU) Run(cmd <-chan int) {
 
 	fmt.Println("CPU: DUMMY: Run")
-	c.Halted = true
+	c.IsHalted = false
+	c.IsStopped = false
+	c.IsWaiting = false
 
 	// TODO REWRITE THIS WITHOUT MODES
 
@@ -129,7 +134,7 @@ func (c *CPU) Run(cmd <-chan int) {
 		// If we are not halted, we run the main CPU loop: See if we
 		// received a command from the CLI, if not, single step an
 		// instruction.
-		for !c.Halted {
+		for !c.IsHalted {
 
 			select {
 			case order := <-cmd:
@@ -139,16 +144,16 @@ func (c *CPU) Run(cmd <-chan int) {
 
 				case common.HALT:
 					fmt.Println("CPU: DUMMY: Received *** HALT ***")
-					c.Halted = true
+					c.IsHalted = true
 
 				case common.RESUME, common.RUN:
 					fmt.Println("CPU: DUMMY: Received cmd RESUME/RUN")
-					c.SingleStep = false
-					c.Halted = false
+					c.SingleStepMode = false
+					c.IsHalted = false
 
 				case common.STEP:
 					fmt.Println("CPU: DUMMY: Received cmd STEP")
-					c.SingleStep = true
+					c.SingleStepMode = true
 
 				case common.STATUS:
 					c.Status()
