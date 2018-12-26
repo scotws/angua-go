@@ -27,7 +27,7 @@ import (
 	"sync"
 
 	"angua/common"
-	// "angua/cpu"
+	"angua/cpu"
 	"angua/info"
 	"angua/mem"
 
