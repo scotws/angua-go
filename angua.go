@@ -180,9 +180,8 @@ func main() {
 
 			c.Println("CLI: DUMMY: destroy the machine")
 			haveMachine = false
+			cmd <- common.HALT
 			shell.Process("beep")
-
-			// TODO Call HALT
 		},
 	})
 
@@ -296,7 +295,7 @@ func main() {
 		LongHelp: longHelpInfo,
 		Func: func(c *ishell.Context) {
 			if len(c.Args) != 1 {
-				c.Println("ERROR: Need opcode or SAN mnemonic")
+				c.Println("ERROR: Need opcode, SAN mnemonic, or 'all'")
 			} else {
 				subcmd := c.Args[0]
 
@@ -311,7 +310,7 @@ func main() {
 				// opcode
 
 				// TODO Okay, still not good. Then see about
-				// another command such as 'all' or 'list'
+				// another command such as 'all'
 
 				c.Println("ERROR: Opcode or mnemonic", subcmd, "unknown")
 			}
