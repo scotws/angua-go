@@ -7,7 +7,6 @@ package cpu
 
 import (
 	"fmt"
-	"log"
 	"time"
 
 	"angua/common"
@@ -130,87 +129,91 @@ func (c *CPU) Run(cmd chan int) {
 	c.IsWaiting = false // WAI instruction
 
 	for {
-		// If we are not halted, we run the main CPU loop: See if we
-		// received a command from the CLI; if not, single step an
-		// instruction.
-		for !c.IsHalted {
+		// We first check if we have received a command from the user
+		// via the command channel from the CLI. Otherwise, execute an
+		// insruction. We do not check if we got a correct signal from
+		// the CLI, that must be checked at that level.
+		select {
+		case order := <-cmd:
 
-			select {
-			case order := <-cmd:
-				// If we were given a command by the operating system,
-				// we execute it first
-				switch order {
+			switch order {
 
-				case common.ABORT:
-					fmt.Println("CPU: DUMMY: Received cmd ABORT")
+			case common.ABORT:
+				fmt.Println("CPU: DUMMY: Received cmd ABORT")
 
-				case common.BOOT:
-					boot()
+			case common.BOOT:
+				boot()
 
-				case common.HALT:
-					fmt.Println("CPU: DUMMY: Received *** HALT ***")
-					c.IsHalted = true
+			case common.HALT:
+				fmt.Println("CPU: DUMMY: Received *** HALT ***")
+				c.IsHalted = true
 
-				case common.IRQ:
-					fmt.Println("CPU: DUMMY: Received cmd IRQ")
+			case common.IRQ:
+				fmt.Println("CPU: DUMMY: Received cmd IRQ")
 
-				case common.NOTRACE:
-					fmt.Println("CPU: DUMMY: Received cmd NOTRACE")
-					trace = false
+			case common.NOTRACE:
+				fmt.Println("CPU: DUMMY: Received cmd NOTRACE")
+				trace = false
 
-				case common.NOVERBOSE:
-					fmt.Println("CPU: DUMMY: Received cmd NOVERBOSE")
-					verbose = false
+			case common.NOVERBOSE:
+				fmt.Println("CPU: DUMMY: Received cmd NOVERBOSE")
+				verbose = false
 
-				case common.NMI:
-					fmt.Println("CPU: DUMMY: Received cmd NMI")
+			case common.NMI:
+				fmt.Println("CPU: DUMMY: Received cmd NMI")
 
-				case common.RESET:
-					fmt.Println("CPU: DUMMY: Received cmd RESET")
+			case common.RESET:
+				fmt.Println("CPU: DUMMY: Received cmd RESET")
 
-				case common.RESUME:
-					fmt.Println("CPU: DUMMY: Received cmd RESUME")
-					c.IsHalted = false
+			case common.RESUME:
+				fmt.Println("CPU: DUMMY: Received cmd RESUME")
+				c.IsHalted = false
 
-				case common.RUN:
-					fmt.Println("CPU: DUMMY: Received cmd RUN")
-					c.IsHalted = false
-					c.SingleStepMode = false
+			case common.RUN:
+				fmt.Println("CPU: DUMMY: Received cmd RUN")
+				c.IsHalted = false
+				c.SingleStepMode = false
 
-				case common.STATUS:
-					fmt.Println("CPU: DUMMY: Received cmd STATUS")
+			case common.STATUS:
+				fmt.Println("CPU: DUMMY: Received cmd STATUS")
 
-				case common.STEP:
-					fmt.Println("CPU: DUMMY: Received cmd STEP")
-					c.SingleStepMode = true
+			case common.STEP:
+				fmt.Println("CPU: DUMMY: Received cmd STEP")
+				c.SingleStepMode = true
 
-				case common.TRACE:
-					fmt.Println("CPU: DUMMY: Received cmd TRACE")
-					trace = true
+			case common.TRACE:
+				fmt.Println("CPU: DUMMY: Received cmd TRACE")
+				trace = true
 
-				case common.VERBOSE:
-					fmt.Println("CPU: DUMMY: Received cmd VERBOSE")
-					verbose = true
+			case common.VERBOSE:
+				fmt.Println("CPU: DUMMY: Received cmd VERBOSE")
+				verbose = true
 
-				default:
-					// TODO make this less brutal
-					log.Fatal("ERROR: CPU: Got unknown command", order, "from CLI")
+				// No default clause because we have the CLI check the
+				// signals that we send
+			}
 
-				}
+		default:
+			// This is where the CPU actually runs an
+			// instruction.
 
-			default:
-				// This is where the CPU actually runs an
-				// instruction.
+			if !c.IsHalted {
 				c.Step()
-				fmt.Println("CPU: DUMMY: Main loop")
 				time.Sleep(1 * time.Second)
 
-				// TODO wait if single step
 				if c.SingleStepMode {
-					fmt.Println("CPU: DUMMY: Should be single-step mode")
+					<-cmd
+				}
+
+			} else {
+				lock := <-cmd
+
+				if lock == common.RESUME {
+					c.IsHalted = false
 				}
 
 			}
+
 		}
 	}
 

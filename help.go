@@ -178,6 +178,12 @@ Example:
 
 	longHelpSet string = `Set various parameters.
 
+Use this to set verbose and trace modes. 
+
+	set step [on|off]	- Single step mode
+	set trace [on|off]	- Print trace (lots and lots of output)
+	set verbose [on|off]    - Give more information (more output)
+
 (THE REST OF THIS ENTRY IS MISSING)
 
 Example:

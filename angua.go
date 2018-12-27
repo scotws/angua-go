@@ -463,8 +463,18 @@ func main() {
 		Help:     "display status of the machine or the host computer",
 		LongHelp: longHelpStatus,
 		Func: func(c *ishell.Context) {
+
 			if len(c.Args) != 1 {
-				cmd <- common.STATUS
+
+				if !haveMachine {
+					c.Println("No machine present (use 'init')")
+				} else {
+					// TODO move this to its own routine
+					if cpu.IsHalted {
+						fmt.Println("Machine is halted")
+					}
+				}
+
 			} else {
 				subcmd := c.Args[0]
 
