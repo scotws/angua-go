@@ -16,18 +16,18 @@ import (
 const (
 	// Interrupt vectors. Note the reset vector is only for emulated mode.
 	// See http://6502.org/tutorials/65c816interrupts.html for details
-	abortAddr = 0xFFE8
-	brkAddr   = 0xFFE6
-	copAddr   = 0xFFE4
-	irqAddr   = 0xFFEE
-	nmiAddr   = 0xFFEA
-	resetAddr = 0xFFFC // Routine must move to native mode ASAP
+	abortAddr common.Addr16 = 0xFFE8
+	brkAddr   common.Addr16 = 0xFFE6
+	copAddr   common.Addr16 = 0xFFE4
+	irqAddr   common.Addr16 = 0xFFEE
+	nmiAddr   common.Addr16 = 0xFFEA
+	resetAddr common.Addr16 = 0xFFFC
 
 	// Width of accumulator and registers
-	A8   = 0
-	A16  = 1
-	XY   = 0
-	XY16 = 1
+	A8   int = 0
+	A16  int = 1
+	XY   int = 0
+	XY16 int = 1
 )
 
 // --------------------------------------------------
@@ -122,9 +122,9 @@ func (c *CPU) Step() {
 }
 
 // Run is the main loop of the CPU.
-func (c *CPU) Run(cmd <-chan int) {
+func (c *CPU) Run(cmd chan int) {
 
-	fmt.Println("CPU: DUMMY: Run")
+	fmt.Println("CPU: DUMMY: Bringing up the CPU")
 	c.IsHalted = false  // User freezes execution, resume with 'resume'
 	c.IsStopped = false // STP instruction
 	c.IsWaiting = false // WAI instruction
@@ -145,7 +145,7 @@ func (c *CPU) Run(cmd <-chan int) {
 					fmt.Println("CPU: DUMMY: Received cmd ABORT")
 
 				case common.BOOT:
-					fmt.Println("CPU: DUMMY: Received cmd BOOT")
+					boot()
 
 				case common.HALT:
 					fmt.Println("CPU: DUMMY: Received *** HALT ***")
@@ -175,6 +175,7 @@ func (c *CPU) Run(cmd <-chan int) {
 				case common.RUN:
 					fmt.Println("CPU: DUMMY: Received cmd RUN")
 					c.IsHalted = false
+					c.SingleStepMode = false
 
 				case common.STATUS:
 					fmt.Println("CPU: DUMMY: Received cmd STATUS")
@@ -199,12 +200,23 @@ func (c *CPU) Run(cmd <-chan int) {
 
 			default:
 				// This is where the CPU actually runs an
-				// instruction
+				// instruction.
 				c.Step()
 				fmt.Println("CPU: DUMMY: Main loop")
-				time.Sleep(2 * time.Second)
+				time.Sleep(1 * time.Second)
+
+				// TODO wait if single step
+				if c.SingleStepMode {
+					fmt.Println("CPU: DUMMY: Should be single-step mode")
+				}
+
 			}
 		}
 	}
 
+}
+
+// Boot the machine, the equivalent of a cold start
+func boot() {
+	fmt.Println("CPU: DUMMY: Received cmd BOOT")
 }

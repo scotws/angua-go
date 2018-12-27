@@ -115,6 +115,7 @@ func main() {
 	flag.Parse()
 
 	memory := &mem.Memory{}
+	cpu := &cpu.CPU{}
 
 	// We communicate with the system through the command channel, which is
 	// buffered because other stuff might be going on.
@@ -156,6 +157,12 @@ func main() {
 		Help:     "boot the machine (cold restart)",
 		LongHelp: longHelpBoot,
 		Func: func(c *ishell.Context) {
+
+			if !haveMachine {
+				c.Println("ERROR: Machine not initialized")
+				return
+			}
+
 			c.Println("Sending BOOT signal to machine ...")
 			cmd <- common.BOOT
 		},
@@ -163,7 +170,7 @@ func main() {
 
 	shell.AddCmd(&ishell.Cmd{
 		Name:     "destroy",
-		Help:     "destroy the machine",
+		Help:     "de-initialize a machine (start over)",
 		LongHelp: longHelpDestroy,
 		Func: func(c *ishell.Context) {
 			if !haveMachine {
@@ -244,7 +251,7 @@ func main() {
 		Func: func(c *ishell.Context) {
 
 			if haveMachine {
-				c.Println("ERROR: Already have machine")
+				c.Println("ERROR: Machine already initialized")
 				return
 			}
 
@@ -253,11 +260,14 @@ func main() {
 			// with a filename, load the file cfom configs
 
 			// TODO set up memory by reading cfg file
+			// TODO set up special memory
+			// TODO set up CPU
 
 			c.Println("Initializing machine ...")
 			haveMachine = true
+			cpu.IsHalted = true
 
-			c.Println("*** System initialized, start with 'run' or 'boot' ***")
+			c.Println("System initialized, start with 'run' or 'boot'")
 		},
 	})
 
@@ -389,9 +399,15 @@ func main() {
 		Help:     "run a machine created with 'init'",
 		LongHelp: longHelpRun,
 		Func: func(c *ishell.Context) {
-			// TODO make sure we have an initialized machine
+
+			if !haveMachine {
+				c.Println("Machine must be initialized first")
+				return
+			}
+
 			// TODO print message about interfacing with machine
-			fmt.Println("(CLI: DUMMY run)")
+			c.Println("Running machine ...")
+			go cpu.Run(cmd)
 		},
 	})
 
