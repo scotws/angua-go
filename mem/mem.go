@@ -69,15 +69,18 @@ func NewChunk(addr1, addr2 common.Addr24, cType string) (Chunk, bool) {
 
 // --- CHUNK METHODS ---
 
+// Chunk methods are only to be used internally; the other parts of Angua
+// interact through the Memory on a higher level.
+
 // Contains takes a memory address and checks if it is in this chunk,
 // returning a bool
-func (c Chunk) Contains(addr common.Addr24) bool {
+func (c Chunk) contains(addr common.Addr24) bool {
 	return c.Start <= addr && addr <= c.End
 }
 
 // Fetch gets one byte of memory from the data of a chunk and returns it.
 // Assumes we have already made sure that the address is in this chunk
-func (c Chunk) Fetch(addr common.Addr24) byte {
+func (c Chunk) fetch(addr common.Addr24) byte {
 	c.Lock()
 	b := c.Data[addr-c.Start]
 	c.Unlock()
@@ -86,7 +89,7 @@ func (c Chunk) Fetch(addr common.Addr24) byte {
 
 // Size returns the size of a chunk in bytes as an uint. Does not check to
 // see if chunk addresses are valid, that is, c.End is larger than c.Start
-func (c Chunk) Size() uint {
+func (c Chunk) size() uint {
 	return uint(c.End - c.Start + 1)
 }
 
@@ -94,7 +97,7 @@ func (c Chunk) Size() uint {
 // chunk. Assumes that we already checked that the address is in fact in this
 // chunk. Note this doesn't care if memory is RAM or ROM, this is handled at the
 // Memory level. This way, we can use this word for Write and Burn routines
-func (c Chunk) Store(addr common.Addr24, b byte) {
+func (c Chunk) store(addr common.Addr24, b byte) {
 	c.Lock()
 	c.Data[addr-c.Start] = b
 	c.Unlock()
@@ -112,7 +115,7 @@ func (m Memory) Contains(addr common.Addr24) bool {
 
 	for _, c := range m.Chunks {
 
-		if c.Contains(addr) {
+		if c.contains(addr) {
 			result = true
 			break
 		}
@@ -130,8 +133,8 @@ func (m Memory) Fetch(addr common.Addr24) (byte, bool) {
 
 	for _, c := range m.Chunks {
 
-		if c.Contains(addr) {
-			b = c.Fetch(addr)
+		if c.contains(addr) {
+			b = c.fetch(addr)
 			found = true
 			break
 		}
@@ -176,7 +179,7 @@ func (m Memory) List() string {
 	for _, c := range m.Chunks {
 		r += fmt.Sprintf(template,
 			c.Start.HexString(), c.End.HexString(),
-			strings.ToUpper(c.Type), c.Size())
+			strings.ToUpper(c.Type), c.size())
 	}
 
 	if r == "" {
@@ -211,7 +214,7 @@ func (m Memory) Size() uint {
 	var sum uint
 
 	for _, c := range m.Chunks {
-		sum += c.Size()
+		sum += c.size()
 	}
 
 	return sum
@@ -231,8 +234,8 @@ func (m Memory) Store(addr common.Addr24, b byte) bool {
 
 		// Assumes we're short-circuiting thought it seems that this is
 		// not explicitly in the Go specs
-		if c.Type == "ram" && c.Contains(addr) {
-			c.Store(addr, b) // Does not check if legal address
+		if c.Type == "ram" && c.contains(addr) {
+			c.store(addr, b) // Does not check if legal address
 			f = true
 			break
 		}
@@ -295,8 +298,8 @@ func (m Memory) Burn(addr common.Addr24, b byte) bool {
 
 	for _, c := range m.Chunks {
 
-		if c.Contains(addr) {
-			c.Store(addr, b)
+		if c.contains(addr) {
+			c.store(addr, b)
 			f = true
 			break
 		}
