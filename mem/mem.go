@@ -1,7 +1,7 @@
 // Angua Memory System
 // Scot W. Stevenson <scot.stevenson@gmail.com>
 // First version: 09. Mar 2018
-// This version: 14. Nov 2018
+// This version: 31. Dec 2018
 
 package mem
 
@@ -15,16 +15,18 @@ import (
 	"angua/common"
 )
 
+// Chunks are the basic memory unit in Angua, a continuous region of memory that
+// can either be read-only (ROM) or read and write (RAM). The memory contents
+// itself is stored as a list of bytes
 type Chunk struct {
 	Start      common.Addr24 // stores 65816 addr
 	End        common.Addr24 // stores 65816 addr
 	Type       string        // "ram" or "rom"
-	Label      string        // internal use only
 	sync.Mutex               // Make chunks threadsafe
 	Data       []byte
 }
 
-// Memory is the total system memory, which is basically just a bunch of chunks
+// Memory is the total system memory, which is just a list of chunks
 type Memory struct {
 	Chunks []Chunk
 }
@@ -55,7 +57,7 @@ func (c Chunk) Size() uint {
 
 // Store takes a byte and an address and stores the byte at the address in the
 // chunk. Assumes that we already checked that the address is in fact in this
-// chunk. We use the Mutex here out of paranoia to make sure it's thread safe
+// chunk.
 func (c Chunk) Store(addr common.Addr24, b byte) {
 	c.Lock()
 	c.Data[addr-c.Start] = b
@@ -64,10 +66,9 @@ func (c Chunk) Store(addr common.Addr24, b byte) {
 
 // --- MEMORY METHODS ---
 
-// Contains takes an 65816 addressand checks to see if it is
+// Contains takes an 65816 address and checks to see if it is
 // valid, returning a bool
 func (m Memory) Contains(addr common.Addr24) bool {
-
 	result := false
 
 	for _, c := range m.Chunks {
@@ -100,12 +101,11 @@ func (m Memory) Fetch(addr common.Addr24) (byte, bool) {
 }
 
 // FetchMore takes a 65816 address and the number of bytes to get -- 1, 2 or 3
-// -- should be fetched and returned as an integer, retrieving those bytes as
+// -- to be fetched and returned as an integer, retrieving those bytes as
 // little endian. Also returns a bool to show if all fetches were to legal
 // addresses. Assumes that the address itself was vetted.
 func (m Memory) FetchMore(addr common.Addr24, num uint) (uint, bool) {
-
-	const maxint = 3
+	const maxint uint = 3
 	var legal bool = true
 	var sum uint
 
@@ -135,8 +135,8 @@ func (m Memory) FetchMore(addr common.Addr24, num uint) (uint, bool) {
 // the line, and the library function starts the count with zero, not the
 // address. Also, we want uppercase letters for hex values
 // TODO Return result as a string instead of printing it
+// TODO Move this to the interface code and just take an address
 func (m Memory) Hexdump(addr1, addr2 common.Addr24) {
-
 	var r rune
 	var count uint
 	var hb strings.Builder // hex part
@@ -158,13 +158,17 @@ func (m Memory) Hexdump(addr1, addr2 common.Addr24) {
 		}
 
 		// We ignore the ok flag here
-		b, _ := m.Fetch(i)
+		b, ok := m.Fetch(i)
+		if !ok {
+			log.Fatal("ERROR fetching byte", i, "from memory")
+		}
 
 		// Build the hex string
 		fmt.Fprintf(&hb, " %02X", b)
 
 		// Build the string list. This is the 21. century so we hexdump
-		// in Unicode, not ASCII
+		// in Unicode, not ASCII, though this doesn't make a different
+		// if we just have byte values
 		r = rune(b)
 		if !unicode.IsPrint(r) {
 			r = rune('.')
@@ -189,12 +193,12 @@ func (m Memory) Hexdump(addr1, addr2 common.Addr24) {
 // List returns a list of all chunks in memory, as a string
 func (m Memory) List() string {
 	var r string
-	var template string = "%s %s: %s (%d bytes) Label: '%s'\n"
+	var template string = "%s %s %s (%d bytes)\n"
 
 	for _, c := range m.Chunks {
 		r += fmt.Sprintf(template,
 			c.Start.HexString(), c.End.HexString(),
-			c.Type, c.Size(), c.Label)
+			strings.ToUpper(c.Type), c.Size())
 	}
 
 	if r == "" {
@@ -258,7 +262,6 @@ func (m Memory) Store(addr common.Addr24, b byte) bool {
 // length (three bytes) are stored. Anything above that is silently discarded.
 // If the number of bytes to store is anything but 1, 2, or 3, we return a false
 // flag with memory untouched
-// TODO move the LSB functions to common package
 func (m Memory) StoreMore(addr common.Addr24, num uint, len uint) bool {
 
 	if len < 1 || len > 3 {
@@ -281,9 +284,9 @@ func (m Memory) StoreMore(addr common.Addr24, num uint, len uint) bool {
 	return f
 }
 
-// Write takes a 65816 address and a slice of bytes and story those bytes start
-// at that address. If all addresses were legal, it returns a true flag,
-// otherwise a false
+// Write takes a 65816 address and a slice of bytes and stores those bytes
+// starting at that address. If all addresses were legal, it returns a true
+// flag, otherwise a false
 func (m Memory) Write(addr common.Addr24, bs []byte) bool {
 	var legal bool = true
 

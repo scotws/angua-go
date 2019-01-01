@@ -2,7 +2,7 @@
 // Part of the Angua package
 // Scot W. Stevenson <scot.stevenson@gmail.com>
 // First version 09. Mar 2018
-// This version 14. Nov 2018
+// This version 31. Dec 2018
 
 package mem
 
@@ -73,7 +73,7 @@ func TestFetch(t *testing.T) {
 			{0x100, 0},
 		}
 	)
-	tc := Chunk{Start: 0, End: 0x400, Label: "Test", Data: mydata}
+	tc := Chunk{Start: 0, End: 0x400, Data: mydata}
 
 	for _, test := range tests {
 		got := tc.Fetch(test.input)
@@ -98,7 +98,7 @@ func TestStoreNFetch(t *testing.T) {
 		}
 	)
 
-	tc := Chunk{Start: 0x100, End: 0x500, Label: "Test", Data: mydata}
+	tc := Chunk{Start: 0x100, End: 0x500, Data: mydata}
 
 	for _, test := range tests {
 
@@ -121,7 +121,7 @@ func TestStoreMore(t *testing.T) {
 
 	var mydata = make([]byte, 0x400) // 1 KiB length
 	var mymem Memory
-	tc := Chunk{Start: 0x100, End: 0x4FF, Label: "Test", Data: mydata, Type: "ram"}
+	tc := Chunk{Start: 0x100, End: 0x4FF, Data: mydata, Type: "ram"}
 	mymem.Chunks = append(mymem.Chunks, tc)
 
 	var tests = []struct {

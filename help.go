@@ -119,20 +119,22 @@ Options:
 		<OPCODE>        - Returns information on the instruction
 		all             - Gives a list of all instructions
 
-Why the "json" option? The information about the opcodes can be used for other
-projects, and sooner or later you'll want to have it.
-
 Examples:
 		info jmp.xi		; information on the opcode
-		info 0x00		; information on brk instruction
-		info json opcodes.json   ; saves databank to file`
+		info 0x00		; information on brk instruction`
 
 	longHelpMemory string = `Define a memory chunk.
 
-(THE REST OF THIS ENTRY IS MISSING)
+Memory in Angua is organized as "chunks", which are continuous regions that can
+be either read-only ("ROM") or read and write ("RAM"). They are defined either
+by passing a memory range or a block number.
 
 Example:
-		(THE EXAMPLE IS MISSING)`
+	memory 00:000 $00:ffff is ram 
+	memory bank 0 is ram
+
+Calling "memory" by itself will print the current memory configuration and is the
+same as "show memory".`
 
 	longHelpNMI string = `Trigger a non-maskable interrupt (NMI).
 

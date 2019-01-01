@@ -1,7 +1,7 @@
 // Angua - A partial 65816 MPU emulator in Go
 // Scot W. Stevenson <scot.stevenson@gmail.com>
 // First version: 26. Sep 2017
-// This version: 26. Dec 2018
+// This version: 31. Dec 2018
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -19,9 +19,12 @@
 package main
 
 import (
+	"bufio"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"log"
+	"os"
 	"runtime"
 	"strings"
 	"sync"
@@ -31,13 +34,14 @@ import (
 	"angua/info"
 	"angua/mem"
 
-	"gopkg.in/abiosoft/ishell.v2"
+	"gopkg.in/abiosoft/ishell.v2" // https://godoc.org/gopkg.in/abiosoft/ishell.v2
 )
 
 const (
+	configDir   string = "configs"
 	shellBanner string = `The Angua partial 65816 emulator
-Version ALPHA 0.1  26. Dec 2018
-Copyright (c) 2018 Scot W. Stevenson
+Version ALPHA 0.1  01. Jan 2019
+Copyright (c) 2018-2019 Scot W. Stevenson
 Angua comes with absolutely NO WARRANTY
 Type 'help' for more information`
 )
@@ -46,17 +50,47 @@ var (
 	haveMachine bool = false
 
 	// Flags passed.
-	// TODO Add "-c" to load config file
 	// TODO Add "-d" to print debug information
 	beVerbose   = flag.Bool("v", false, "Verbose, print more output")
 	inBatchMode = flag.Bool("b", false, "Start in batch mode")
+	configFile  = flag.String("c", "default.cfg", "Configuration file")
 )
+
+// readConfig takes the address of a configuration file in the form of
+// "configs/<NAME>.cfg" and reads the content, returning it stripped of empty
+// lines and comments as a list of strings. We use bufio.Scanner here because we
+// want to read the test as lines
+// TODO pass bool back to check if stuff went wrong, removing log.Fatal()
+func readConfig(s string) []string {
+	var commands []string
+	config := configDir + string(os.PathSeparator) + s
+
+	configFile, err := os.Open(config)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer configFile.Close()
+
+	source := bufio.NewScanner(configFile)
+
+	for source.Scan() {
+		line := strings.TrimSpace(source.Text())
+
+		if line == "" || line[0] == ';' {
+			continue
+		}
+
+		commands = append(commands, line)
+	}
+
+	return commands
+}
 
 // verbose takes a string and prints it on the standard output through logger if
 // the user awants us to be verbose
 func verbose(s string) {
 	if *beVerbose {
-		log.Print(s)
+		log.Println(s)
 	}
 }
 
@@ -181,7 +215,11 @@ func main() {
 			c.Println("CLI: DUMMY: destroy the machine")
 			haveMachine = false
 			cmd <- common.HALT
-			shell.Process("beep")
+
+			err := shell.Process("beep")
+			if err != nil {
+				log.Fatal(err)
+			}
 		},
 	})
 
@@ -244,21 +282,33 @@ func main() {
 	})
 
 	shell.AddCmd(&ishell.Cmd{
+		// TODO allow reading new configuration from a file given as a
+		// parameter
 		Name:     "init",
 		Help:     "initialize a new machine",
 		LongHelp: longHelpInit,
 		Func: func(c *ishell.Context) {
+			var commands []string
 
 			if haveMachine {
 				c.Println("ERROR: Machine already initialized")
 				return
 			}
 
-			// Three variants: Without a parameter or with the words
-			// "default", load the default.cfg file from configs;
-			// with a filename, load the file cfom configs
+			commands = readConfig(*configFile)
 
-			// TODO set up memory by reading cfg file
+			// Process configuration file
+			for _, cmd := range commands {
+				ws := strings.Fields(cmd)
+
+				err := shell.Process(ws[0:]...)
+				if err != nil {
+					log.Fatal(err)
+				}
+			}
+
+			c.Println("Processed configuration file", *configFile, "...")
+
 			// TODO set up special memory
 			// TODO set up CPU
 
@@ -281,11 +331,47 @@ func main() {
 	})
 
 	shell.AddCmd(&ishell.Cmd{
+		// Load a binary file to memory. Memory has to already exist.
+		// Format is
+		//
+		// 	load <FILENAME> [ to ] <ADDRESS>
+		//
+		// The name of the file is not in quotation marks
 		Name:     "load",
 		Help:     "load binary file to memory",
 		LongHelp: longHelpLoad,
 		Func: func(c *ishell.Context) {
-			c.Println("CLI: DUMMY: load")
+
+			if !haveMachine {
+				c.Println("Machine must be initialized first by 'init'")
+				return
+			}
+
+			// The filename must be the first parameter and the
+			// address the last one. This lets us ignore any "to" in
+			// the middle. One way or another, we need at least two
+			// parameters
+			if len(c.Args) < 2 {
+				c.Println("ERROR: Need filename and address to load.")
+				return
+			}
+
+			fileName := c.Args[0]
+			addr := common.Addr24(common.ConvNum(c.Args[len(c.Args)-1]))
+
+			// We can use ioutil.ReadFile here because we want
+			// binary data
+			data, err := ioutil.ReadFile(fileName)
+			if err != nil {
+				c.Println(err)
+				return
+			}
+
+			ok := memory.Write(addr, data)
+			if !ok {
+				c.Println("ERROR: Couldn't write binary data to address")
+				return
+			}
 		},
 	})
 
@@ -321,11 +407,20 @@ func main() {
 	shell.AddCmd(&ishell.Cmd{
 		// Memory commands take the form of
 		// 	 memory <ADDRESS RANGE> ["is"] ("rom" | "ram")
-		// TODO Add labels
+		//       memory bank <NUMBER> ["is"] ("rom" | "ram")
+		//       memory
 		Name:     "memory",
 		Help:     "define a memory chunk",
 		LongHelp: longHelpMemory,
 		Func: func(c *ishell.Context) {
+
+			// If we weren't given any parameters, we just print the
+			// current memory configuration. This is the same
+			// command as "show memory"
+			if len(c.Args) == 0 {
+				c.Println(memory.List())
+				return
+			}
 
 			// We can break this up from the end by making sure that the
 			// last word is either "ram" or "rom", and feeding the beginning
@@ -334,6 +429,7 @@ func main() {
 
 			if memType != "ram" && memType != "rom" {
 				c.Println("ERROR: Last word must be memory type ('ram' or 'rom')")
+				c.Println("Got: ", memType)
 				return
 			}
 
@@ -344,7 +440,7 @@ func main() {
 				return
 			}
 
-			newChunk := mem.Chunk{a1, a2, memType, "<NONE>", sync.Mutex{}, []byte{}}
+			newChunk := mem.Chunk{a1, a2, memType, sync.Mutex{}, make([]byte, a2-a1)}
 			memory.Chunks = append(memory.Chunks, newChunk)
 
 			// We can at least allow stuff like hexdumps of memory
@@ -381,7 +477,6 @@ func main() {
 		},
 	})
 
-	// TODO this doesn't work at all, see RUN
 	shell.AddCmd(&ishell.Cmd{
 		Name:     "resume",
 		Help:     "resume after a halt",
@@ -442,15 +537,15 @@ func main() {
 				case "breakpoints":
 					c.Println("CLI: SHOW: DUMMY show breakpoints")
 				case "config":
-					c.Println("(DUMMY show config)")
-				case "memory":
+					c.Println("CLI: DUMMY show config")
+				case "memory": // This is the same as just calling memory
 					c.Println(memory.List())
 				case "specials":
-					c.Println("(DUMMY show specials)")
+					c.Println("CLI: DUMMY show specials")
 				case "system":
-					c.Println("(Use 'status system' to show host information)")
+					c.Println("(Use 'status host' to show host information)")
 				case "vectors":
-					c.Println("(DUMMY show vectors)")
+					c.Println("CLI: DUMMY show vectors")
 				default:
 					c.Println("ERROR: Option", subcmd, "unknown")
 				}

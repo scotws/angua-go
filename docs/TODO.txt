@@ -1,13 +1,15 @@
 TODO file for Angua
 Scot W. Stevenson <scot.stevenson@gmail.com>
 First version: 16. Mar 2018
-This version: 27. Dez 2018
+This version: 01. Jan 2019
 
 NEXT UP:
 
+- Create mem.Burn(addr, []byte) that can write to ROM as well during loading
+- Create a lot more test routines for mem (read across chunk boundries)
+- Create SHOW VECTORS, test DUMP
 - Add SET STEP ON, SET STEP OFF, test CPU main loop
 - Add memory setup so cpu.Step() can access memory (fake opcodes)
-- Add basic fetch/decode/execute routine from memory
 - Add I/O so that we can access through nc
 - Add SET VERBOSE ON, SET VERBOSE OFF so we have the option to print 
 - Add SET TRACE ON, SET TRACE OFF so we have the option to print 

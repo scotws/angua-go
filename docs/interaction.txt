@@ -1,7 +1,7 @@
 Notes on interaction 
 Scot W. Stevenson <scot.stevenson@gmail.com>
 First version: 20. Jun 2018  (Python version of Angua)
-This version: 06. Nov 2018 
+This version: 01. Jan 2019
 
 Angua is built to be used either through script files (*.cfg) or interactively
 with the same syntax from a command line interface. 
@@ -77,7 +77,7 @@ with the same syntax from a command line interface.
 "memory" <ADDR_RANGE> [ "is" ] ( "ram" | "rom" )
 "mode" ( "native" | "emulated" )
 "nmi"
-"reading" <ADDR> [ "calls" ] <FUNCTION>
+"reading" [ "from" ] <ADDR> [ "calls" ] <FUNCTION>
 "reset"
 "resume"
 "run" <ADDR>
@@ -99,7 +99,7 @@ with the same syntax from a command line interface.
 "status"
 "store" ( <BYTE> | <WORD> ) [ "in" ] ( <REGISTER> | <ADDR> )
 "step" [ "from" <ADDR> ]
-"writing" <ADDR> [ "calls" ] <FUNCTION>
+"writing" [ "to" ] <ADDR> [ "calls" ] <FUNCTION>
 
 
 === POSSIBLE VARIENTS ===
