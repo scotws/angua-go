@@ -38,6 +38,8 @@ type Memory struct {
 // success or failure. This routine checks to make sure that the addresses are
 // sane, and the strings are correct. Errors are handled here by printing to the
 // log. This is the only way that new chunks should be created.
+// TODO replace the ok bool with an error "err" that is passed upstream so we
+// don't directly print from this function.
 func NewChunk(addr1, addr2 common.Addr24, cType string) (Chunk, bool) {
 	var ok bool = true
 
@@ -48,8 +50,9 @@ func NewChunk(addr1, addr2 common.Addr24, cType string) (Chunk, bool) {
 	addr2ok := common.Ensure24(addr2)
 
 	// Make sure addr1 is really smaller than addr2. We don't accept chunks
-	// with a length of zero bytes
-	if addr2ok <= addr1ok {
+	// with a length of zero bytes. We do, however, accept a chunk with one
+	// byte, which is what you get when addr1 and addr2 are the same.
+	if addr2ok < addr1ok {
 		log.Println("ERROR: Invalid addresses for new chunk")
 		ok = false
 		return Chunk{}, ok
@@ -62,7 +65,13 @@ func NewChunk(addr1, addr2 common.Addr24, cType string) (Chunk, bool) {
 		return Chunk{}, ok
 	}
 
-	nc := Chunk{addr1ok, addr2ok, cType, sync.Mutex{}, make([]byte, addr2ok-addr1ok)}
+	// The tendency of computer people to count from 0 makes the size a bit
+	// more difficult. If we start at the address 0 and end at (15), then a
+	// naive calculation of 15-0 gives us 15 addresses, though of course we
+	// have 16. For this reason, we have to add one futher byte by hand.
+	size := (addr2ok - addr1ok) + 1
+
+	nc := Chunk{addr1ok, addr2ok, cType, sync.Mutex{}, make([]byte, size)}
 
 	return nc, ok
 }
@@ -220,13 +229,16 @@ func (m Memory) Size() uint {
 	return sum
 }
 
+// NOTE: Store and Burn are different only in the test for the memory type. We
+// could combine them to one routine, but that adds complexity and this is
+// easier to maintain, DRY be damned.
+
 // Store takes a 24-bit address and a byte. If the address is legal for a write,
 // that is, actually part of a RAM chunk, the byte is stored at the address and
 // a true flag is returned to signal success. If the address is outside the
 // defined range or in ROM, there is no write, and a false flag is returned.
 // This is the main store routine for the emulator. See Burn for a function that
 // ignores ROM/RAM differences.
-// TODO consider merging this with mem.Burn
 func (m Memory) Store(addr common.Addr24, b byte) bool {
 	var f bool = false
 
@@ -241,6 +253,26 @@ func (m Memory) Store(addr common.Addr24, b byte) bool {
 		}
 	}
 	return f
+}
+
+// Burn takes a 24-bit address and a byte. If the address is part of a chunk,
+// RAM or ROM, the byte is stored at the address and a true flag is returned to
+// signal success. If the address is outside the defined range, a false flag is
+// returned. Burn is used to write to memory during intialization and the load
+// command. The main routine for assembler instructions is Store.
+func (m Memory) Burn(addr common.Addr24, b byte) bool {
+	var f bool = false
+
+	for _, c := range m.Chunks {
+
+		if c.contains(addr) {
+			c.store(addr, b)
+			f = true
+			break
+		}
+	}
+	return f
+
 }
 
 // StoreMore takes an address, a number and the number of bytes to store little
@@ -271,6 +303,11 @@ func (m Memory) StoreMore(addr common.Addr24, num uint, len uint) bool {
 	return f
 }
 
+// NOTE: StoreBlock and BurnBlock are different only in the call to Store or
+// Burn for the individual bytes. We could combine them to one routine and pass
+// the function (technically a method) as a parameter, but that adds complexity
+// and this is easier to maintain, DRY be damned.
+
 // StoreBlock takes a 65816 address and a slice of bytes and stores those bytes
 // starting at that address. If all addresses were legal, it returns a true
 // flag, otherwise a false. StoreBlock will not write to ROM, use BurnBlock for
@@ -286,28 +323,6 @@ func (m Memory) StoreBlock(addr common.Addr24, bs []byte) bool {
 	return legal
 }
 
-// Burn takes a 24-bit address and a byte. If the address is part of a chunk,
-// RAM or ROM, the byte is stored at the address and a true flag is returned to
-// signal success. If the address is outside the defined range, a false flag is
-// returned. Burn is used to write to memory during intialization and the load
-// command. The main routine for assembler instructions is Store.
-// TODO consider merging this with mem.Store() and using a flag to signal if we
-// write to ROM.
-func (m Memory) Burn(addr common.Addr24, b byte) bool {
-	var f bool = false
-
-	for _, c := range m.Chunks {
-
-		if c.contains(addr) {
-			c.store(addr, b)
-			f = true
-			break
-		}
-	}
-	return f
-
-}
-
 // BurnBlock takes a 65816 address and a slice of bytes and stores those bytes
 // starting at that address. If all addresses were legal, it returns a true
 // flag, otherwise a false
@@ -315,7 +330,7 @@ func (m Memory) BurnBlock(addr common.Addr24, bs []byte) bool {
 	var legal bool = true
 
 	for i := addr; i < addr+common.Addr24(len(bs)); i++ {
-		ok := m.Store(i, bs[i-addr])
+		ok := m.Burn(i, bs[i-addr])
 		legal = legal && ok
 	}
 

@@ -12,35 +12,64 @@ import (
 	"angua/common"
 )
 
-// ==== TESTING CHUNKS ====
+// ==== CHUNK TESTS ====
 
-// Test if we get the right size of a Chunk
-func TestChunkSize(t *testing.T) {
-	type ip struct {
-		start common.Addr24
-		end   common.Addr24
+// Make sure bad chunk parameters are flagged during creation. Note these will
+// print error strings.
+func TestBadNewChunks(t *testing.T) {
+	type params struct {
+		start   common.Addr24
+		end     common.Addr24
+		memType string
 	}
 	var tests = []struct {
-		input ip
-		want  uint
+		input params
+		want  bool
 	}{
-		{ip{0, 0}, 1},
-		{ip{0, 0x3FF}, 1024},
-		{ip{0x400, 0x7FF}, 1024},
-		{ip{0x100, 0x1FF}, 0x100},
+		{params{1, 0, "ram"}, false},             // first addr must be smaller
+		{params{0, 0, "ram"}, true},              // single-byte chunk is legal
+		{params{0, 0xffff, "frogbreath"}, false}, // need "rom" or "ram"
 	}
 
 	for _, test := range tests {
-		tc := Chunk{Start: test.input.start, End: test.input.end}
-		got := tc.Size()
+		_, got := NewChunk(test.input.start, test.input.end, test.input.memType)
+
 		if got != test.want {
-			t.Errorf("Chunk size(%q) = %v", test.input, got)
+			t.Errorf("Bad NewChunk test(%q) = %v", test.input, got)
+		}
+	}
+}
+
+// Test if we get the right size of a Chunk
+func TestChunkSize(t *testing.T) {
+	type params struct {
+		start   common.Addr24
+		end     common.Addr24
+		memType string
+	}
+	var tests = []struct {
+		input params
+		want  uint
+	}{
+		{params{0, 0, "ram"}, 1}, // chunks of size 1 are legal
+		{params{0, 0x3FF, "ram"}, 1024},
+		{params{0x400, 0x7FF, "ram"}, 1024},
+		{params{0x100, 0x1FF, "ram"}, 0x100},
+		{params{0x100100, 0x1001FF, "ram"}, 0x100},
+	}
+
+	for _, test := range tests {
+		tc, _ := NewChunk(test.input.start, test.input.end, test.input.memType)
+		got := tc.size()
+
+		if got != test.want {
+			t.Errorf("chunk.Size(%q) = %v", test.input, got)
 		}
 	}
 }
 
 // Test if our address is in range in a chunk
-func TestContainsAddr(t *testing.T) {
+func TestChunkContainsAddr(t *testing.T) {
 	var (
 		tc = Chunk{Start: 0x400, End: 0x7FF}
 
@@ -58,7 +87,7 @@ func TestContainsAddr(t *testing.T) {
 	)
 
 	for _, test := range tests {
-		got := tc.Contains(test.input)
+		got := tc.contains(test.input)
 
 		if got != test.want {
 			t.Errorf("Contains Addr(%q) = %v", test.input, got)
@@ -68,7 +97,7 @@ func TestContainsAddr(t *testing.T) {
 
 // Test fetching of a byte from a chunk. Note that chunk.Fetch does not test if
 // value is legal and does not return a flag
-func TestFetch(t *testing.T) {
+func TestChunkFetch(t *testing.T) {
 	var (
 		mydata = make([]byte, 0x400) // 1 KiB length
 
@@ -82,7 +111,7 @@ func TestFetch(t *testing.T) {
 	tc := Chunk{Start: 0x100, End: 0x5FF, Data: mydata}
 
 	for _, test := range tests {
-		got := tc.Fetch(test.input)
+		got := tc.fetch(test.input)
 
 		if got != test.want {
 			t.Errorf("Fetch (%q) = %v", test.input, got)
@@ -90,8 +119,8 @@ func TestFetch(t *testing.T) {
 	}
 }
 
-// Test storing of a byte in a chunk
-func TestStoreNFetch(t *testing.T) {
+// Test storing of a byte in a chunk. Assumes this is RAM.
+func TestChunkStoreNFetch(t *testing.T) {
 	var (
 		mydata = make([]byte, 0x400) // 1 KiB buffer
 
@@ -108,9 +137,8 @@ func TestStoreNFetch(t *testing.T) {
 
 	for _, test := range tests {
 
-		tc.Store(test.addr, test.b)
-		got := tc.Fetch(test.addr)
-
+		tc.store(test.addr, test.b)
+		got := tc.fetch(test.addr)
 		if got != test.b {
 			t.Errorf("Store and Fetch (%q) = %v", test.addr, test.b)
 		}
@@ -118,7 +146,7 @@ func TestStoreNFetch(t *testing.T) {
 }
 
 // Test storing of a multi-byte number in little-endian format
-func TestStoreMore(t *testing.T) {
+func TestChunkStoreMore(t *testing.T) {
 	type ip struct {
 		addr common.Addr24
 		num  uint
@@ -151,3 +179,12 @@ func TestStoreMore(t *testing.T) {
 	}
 	//	mymem.Hexdump(0x100, 0x4FF)
 }
+
+// TODO test Chunk.StoreBlock
+
+// ==== MEMORY TESTS ====
+
+// TODO test Memory.Contains
+// TODO test Memory.Store
+// TODO test Memory.Fetch
+// TODO test Memory.StoreBlock

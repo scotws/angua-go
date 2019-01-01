@@ -353,7 +353,7 @@ func main() {
 				return
 			}
 
-			ok = memory.StoreBlock(addr, data)
+			ok = memory.BurnBlock(addr, data)
 			if !ok {
 				c.Println("ERROR: Couldn't write binary data to address")
 				return
@@ -549,10 +549,11 @@ func main() {
 				if !haveMachine {
 					c.Println("No machine present (use 'init')")
 				} else {
-					// TODO move this to its own routine
+
 					if cpu.IsHalted {
-						fmt.Println("Machine is halted")
+						fmt.Println("Machine is halted.")
 					}
+					fmt.Println("Total memory (ROM and RAM):", memory.Size(), "bytes")
 				}
 
 			} else {
