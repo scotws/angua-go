@@ -433,28 +433,10 @@ func TestConvertNumber(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		got, ok := ConvNum(test.input)
+		got, ok := ConvertNum(test.input)
 		res := conv{got, ok}
 		if res != test.want {
 			t.Errorf("convNum(%q) = %v", test.input, res)
-		}
-	}
-}
-
-func TestFmtAddr(t *testing.T) {
-	var tests = []struct {
-		input Addr24
-		want  string
-	}{
-		{0, "00:0000"},
-		{1, "00:0001"},
-		{1023, "00:03FF"},
-		{0x01ffff, "01:FFFF"},
-	}
-	for _, test := range tests {
-		got := FmtAddr(test.input)
-		if got != test.want {
-			t.Errorf("fmtAddr(%q) = %v", test.input, got)
 		}
 	}
 }

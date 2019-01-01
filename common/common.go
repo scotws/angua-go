@@ -207,17 +207,6 @@ func ConvertNum(s string) (uint, bool) {
 	return uint(n), ok
 }
 
-// fmtAddr takes a 65816 24 bit address as a uint and returns a hex number
-// string with a ':' between the bank byte and the rest of the address. Hex
-// digits are capitalized. Assumes we are sure that the address is valid
-// TODO See if we need this since we have the methods that do the same directly
-// on the data
-func FmtAddr(a Addr24) string {
-	s1 := fmt.Sprintf("%06X", a)
-	s2 := s1[0:2] + ":" + s1[2:len(s1)]
-	return s2
-}
-
 // stripDelimiters removes '.' and ':' which users can use as number delimiters.
 // Also removes spaces
 func StripDelimiters(s string) string {

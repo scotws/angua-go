@@ -188,6 +188,11 @@ func main() {
 	})
 
 	shell.AddCmd(&ishell.Cmd{
+		// Format is either
+		//
+		// 	dump <ADDRESS_RANGE>
+		//	dump stack
+		//	dump dp
 		Name:     "dump",
 		Help:     "print hex dump of a memory range",
 		LongHelp: longHelpDump,
@@ -195,6 +200,25 @@ func main() {
 
 			if !haveMachine {
 				c.Println("ERROR: No machine present")
+				return
+			}
+
+			if len(c.Args) == 0 {
+				c.Println("ERROR: Need at least one argument (see 'dump help')")
+				return
+			}
+
+			if len(c.Args) == 1 {
+
+				switch c.Args[0] {
+
+				case "stack":
+					fmt.Println("CLI: DUMMY dump stack")
+				case "dp", "direct", "directpage":
+					fmt.Println("CLI: DUMMY dump direct page")
+				default:
+					fmt.Println("ERROR: Unknown option:", c.Args[0])
+				}
 				return
 			}
 

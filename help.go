@@ -1,7 +1,7 @@
 // Long Help messages for the Angua Command Line Interface (CLI)
 // Scot W. Stevenson <scot.stevenson@gmail.com>
 // First version: 11. Nov 2018
-// This version: 26. Dec 2018
+// This version: 01. Jan 2019
 
 package main
 
@@ -44,14 +44,19 @@ Example:
 	longHelpDump string = `Create a hex dump of the address range
 
 Supply an address range in the usual format "<ADDRESS> to <ADDRESS>" or as a
-bank with "bank <BANK>". Output is formatted in hex with the printable ASCII
-characters in a separate column. Unicode is currently not supported.
+bank with "bank <BANK>"; or dump the stack or direct page. Output is formatted
+in hex with the printable ASCII characters in a separate column. Unicode is
+currently not supported.
 
 Examples:
                 dump $00:1000 to $00:1FFF
                 dump 0x1000 to 0xFFFF     ; defaults to bank 0
                 dump bank 2
-                dump bank 0x1F`
+                dump bank 0x1F
+		dump stack
+		dump dp		          ; synonyms "direct" and "directpage"
+		
+Because of the size of the stack, only the first elements are shown.`
 
 	longHelpEcho string = `Print a character string.
 
