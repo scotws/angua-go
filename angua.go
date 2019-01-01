@@ -1,4 +1,4 @@
-// Angua - An Emulator for 65816 Native Mode
+// Angua - An Emulator for the 65816 CPU in Native Mode
 // Scot W. Stevenson <scot.stevenson@gmail.com>
 // First version: 26. Sep 2017
 // This version: 01. Jan 2019
@@ -39,11 +39,13 @@ import (
 
 const (
 	configDir   string = "configs"
-	shellBanner string = `Angua - An Emulator for 65816 Native Mode
+	shellBanner string = `Welcome to Angua
+An Emulator for the 65816 in Native Mode
 Version ALPHA 0.1  01. Jan 2019
 Copyright (c) 2018-2019 Scot W. Stevenson
 Angua comes with absolutely NO WARRANTY
-Type 'help' for more information`
+Type 'help' for more information
+`
 )
 
 var (
@@ -142,22 +144,6 @@ func main() {
 	})
 
 	shell.AddCmd(&ishell.Cmd{
-		Name:     "boot",
-		Help:     "boot the machine (cold restart)",
-		LongHelp: longHelpBoot,
-		Func: func(c *ishell.Context) {
-
-			if !haveMachine {
-				c.Println("ERROR: Machine not initialized")
-				return
-			}
-
-			c.Println("Sending BOOT signal to machine ...")
-			cmd <- common.BOOT
-		},
-	})
-
-	shell.AddCmd(&ishell.Cmd{
 		Name:     "destroy",
 		Help:     "de-initialize a machine (start over)",
 		LongHelp: longHelpDestroy,
@@ -214,8 +200,11 @@ func main() {
 
 				case "stack":
 					fmt.Println("CLI: DUMMY dump stack")
+
 				case "dp", "direct", "directpage":
-					fmt.Println("CLI: DUMMY dump direct page")
+					addrDP := common.Addr24(cpu.DP)
+					hexDump(addrDP, addrDP+0xFF, memory)
+
 				default:
 					fmt.Println("ERROR: Unknown option:", c.Args[0])
 				}
@@ -228,7 +217,7 @@ func main() {
 				c.Println("ERROR parsing address range")
 				return
 			}
-			Hexdump(a1, a2, memory)
+			hexDump(a1, a2, memory)
 		},
 	})
 
@@ -288,6 +277,7 @@ func main() {
 
 			c.Println("Processed configuration file", *configFile, "...")
 
+			// TODO check for chunk overlap in memory
 			// TODO set up special memory
 			// TODO set up CPU
 
@@ -295,7 +285,7 @@ func main() {
 			haveMachine = true
 			cpu.IsHalted = true
 
-			c.Println("System initialized, start with 'run' or 'boot'")
+			c.Println("System initialized, start with 'reset'")
 		},
 	})
 
@@ -472,7 +462,8 @@ func main() {
 		},
 	})
 
-	// TODO make this work quickly
+	// Run is only used after HALT. To start the machine, use INIT followed
+	// by RESET. After INIT, the PC is not in a defined state.
 	shell.AddCmd(&ishell.Cmd{
 		Name:     "run",
 		Help:     "run a machine created with 'init'",
@@ -504,7 +495,7 @@ func main() {
 		Help:     "set various parameters",
 		LongHelp: longHelpSet,
 		Func: func(c *ishell.Context) {
-			c.Println("(CLI: DUMMY set)")
+			c.Println("CLI: DUMMY set")
 		},
 	})
 
@@ -528,7 +519,7 @@ func main() {
 				case "specials":
 					c.Println("CLI: DUMMY show specials")
 				case "system":
-					c.Println("(Use 'status host' to show host information)")
+					c.Println("Use 'status host' to show host information")
 				case "vectors":
 					c.Println("CLI: DUMMY show vectors")
 				default:
@@ -544,33 +535,40 @@ func main() {
 		LongHelp: longHelpStatus,
 		Func: func(c *ishell.Context) {
 
-			if len(c.Args) != 1 {
+			// "status host" prints data on the host computer,
+			// including number of goroutines
+			if len(c.Args) == 1 && c.Args[0] == "host" {
+				fmt.Println("Host architecture:", runtime.GOARCH)
+				fmt.Println("Host operating system:", runtime.GOOS)
+				fmt.Println("Host system CPU cores available:", runtime.NumCPU())
+				fmt.Println("Host system goroutines running:", runtime.NumGoroutine())
+				fmt.Println("Host system Go version:", runtime.Version())
 
-				if !haveMachine {
-					c.Println("No machine present (use 'init')")
-				} else {
-
-					if cpu.IsHalted {
-						fmt.Println("Machine is halted.")
-					}
-					fmt.Println("Total memory (ROM and RAM):", memory.Size(), "bytes")
-				}
-
-			} else {
-				subcmd := c.Args[0]
-
-				switch subcmd {
-				case "host":
-					fmt.Println("Host architecture:", runtime.GOARCH)
-					fmt.Println("Host operating system:", runtime.GOOS)
-					fmt.Println("Host system CPU cores available:", runtime.NumCPU())
-					fmt.Println("Host system goroutines running:", runtime.NumGoroutine())
-					fmt.Println("Host system Go version:", runtime.Version())
-				default:
-					c.Println("ERROR: Option", subcmd, "unknown")
-				}
+				return
 			}
 
+			if !haveMachine {
+				c.Println("No machine present (use 'init')")
+				return
+			}
+
+			// If we were told to print all data with "status all",
+			// well, print all data
+			if len(c.Args) == 1 && c.Args[0] == "all" {
+
+				if cpu.IsHalted {
+					fmt.Println("Machine is halted.")
+				}
+
+				fmt.Println("Total memory (ROM and RAM):", memory.Size(), "bytes")
+				printCPUStatus()
+
+				return
+			}
+
+			// In all other cases, we just print the CPU status
+			printCPUStatus()
+			return
 		},
 	})
 
@@ -588,7 +586,7 @@ func main() {
 		Help:     "define a function to be triggered when address written to",
 		LongHelp: longHelpWriting,
 		Func: func(c *ishell.Context) {
-			c.Println("(DUMMY writing)")
+			c.Println("CLI: DUMMY writing")
 		},
 	})
 
@@ -596,6 +594,65 @@ func main() {
 	shell.Run()
 	shell.Close()
 
+}
+
+// Hexdump prints the contents of a memory range in a nice hex table. If the
+// addresses do not exist, we just print a zero without any fuss. We could use
+// the library encoding/hex for this, but we want to print the first address of
+// the line, and the library function starts the count with zero, not the
+// address. Also, we want uppercase letters for hex values. This is kept here
+// because it is part of the command-line interface
+func hexDump(addr1, addr2 common.Addr24, m *mem.Memory) {
+	var r rune
+	var count uint
+	var hb strings.Builder // hex part
+	var cb strings.Builder // char part
+	var template string = "%-58s%s\n"
+
+	for i := addr1; i <= addr2; i++ {
+
+		// The first run produces a blank line because this if is
+		// triggered, however, the strings are empty because of the way
+		// Go initializes things
+		if count%16 == 0 {
+			fmt.Printf(template, hb.String(), cb.String())
+			hb.Reset()
+			cb.Reset()
+
+			nextAddr := addr1 + common.Addr24(count)
+			fmt.Fprintf(&hb, nextAddr.HexString()+" ")
+		}
+
+		b, ok := m.Fetch(i)
+		if !ok {
+			log.Fatal("ERROR fetching byte", i, "from memory")
+		}
+
+		// Build the hex string
+		fmt.Fprintf(&hb, " %02X", b)
+
+		// Build the string list. This is the 21. century so we hexdump
+		// in Unicode, not ASCII, though this doesn't make a different
+		// if we just have byte values
+		r = rune(b)
+		if !unicode.IsPrint(r) {
+			r = rune('.')
+		}
+
+		fmt.Fprintf(&cb, string(r))
+		count += 1
+
+		// We put one extra blank line after the first eight entries to
+		// make the dump more readable
+		if count%8 == 0 {
+			fmt.Fprintf(&hb, " ")
+		}
+
+	}
+
+	// If the loop is all done, we might still have stuff left in the
+	// buffers
+	fmt.Printf(template, hb.String(), cb.String())
 }
 
 // parseAddressRange takes a list of strings that in the formats of
@@ -652,61 +709,10 @@ func parseAddressRange(ws []string) (addr1, addr2 common.Addr24, ok bool) {
 	return addr1, addr2, ok
 }
 
-// Hexdump prints the contents of a memory range in a nice hex table. If the
-// addresses do not exist, we just print a zero without any fuss. We could use
-// the library encoding/hex for this, but we want to print the first address of
-// the line, and the library function starts the count with zero, not the
-// address. Also, we want uppercase letters for hex values. This is kept here
-// because it is part of the command-line interface
-func Hexdump(addr1, addr2 common.Addr24, m *mem.Memory) {
-	var r rune
-	var count uint
-	var hb strings.Builder // hex part
-	var cb strings.Builder // char part
-	var template string = "%-58s%s\n"
-
-	for i := addr1; i <= addr2; i++ {
-
-		// The first run produces a blank line because this if is
-		// triggered, however, the strings are empty because of the way
-		// Go initializes things
-		if count%16 == 0 {
-			fmt.Printf(template, hb.String(), cb.String())
-			hb.Reset()
-			cb.Reset()
-
-			// TODO move this to common print function
-			fmt.Fprintf(&hb, "%06X ", addr1+common.Addr24(count))
-		}
-
-		b, ok := m.Fetch(i)
-		if !ok {
-			log.Fatal("ERROR fetching byte", i, "from memory")
-		}
-
-		// Build the hex string
-		fmt.Fprintf(&hb, " %02X", b)
-
-		// Build the string list. This is the 21. century so we hexdump
-		// in Unicode, not ASCII, though this doesn't make a different
-		// if we just have byte values
-		r = rune(b)
-		if !unicode.IsPrint(r) {
-			r = rune('.')
-		}
-
-		fmt.Fprintf(&cb, string(r))
-		count += 1
-
-		// We put one extra blank line after the first eight entries to
-		// make the dump more readable
-		if count%8 == 0 {
-			fmt.Fprintf(&hb, " ")
-		}
-
-	}
-
-	// If the loop is all done, we might still have stuff left in the
-	// buffers
-	fmt.Printf(template, hb.String(), cb.String())
+// printCPUStatus print information on the registers, flags and other important
+// CPU data
+// TODO Code this
+func printCPUStatus() {
+	fmt.Println("CLI: DUMMY: Print CPU status")
+	return
 }

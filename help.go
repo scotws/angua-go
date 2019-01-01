@@ -20,13 +20,6 @@ Seriously, that is all this command does. It goes BEEP.
 Example:
 		beep		; duh, right?`
 
-	longHelpBoot string = `Boot the machine.
-
-(THE REST OF THIS ENTRY IS MISSING)
-
-Example:
-		(THE EXAMPLE IS MISSING)`
-
 	longHelpDestroy string = `Destory the current machine.
 
 (THE REST OF THIS ENTRY IS MISSING)
@@ -218,7 +211,9 @@ a hex dump of a given range, use "dump <ADDRESS RANGE>".`
 (THE REST OF THIS ENTRY IS MISSING)
 
 Example:
-		(THE EXAMPLE IS MISSING)`
+	        status		- Print all information on system
+		status cpu	- Only print registers and other CPU info
+		status host	- Print info on the host machine and Go version`
 
 	longHelpStore string = `Store a byte at a given address in memory.
 

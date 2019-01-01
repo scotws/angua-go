@@ -26,7 +26,7 @@ const (
 
 	// Interrupts, resets, power toggle. These are sent by the CLI to the
 	// CPU which then pretends that this condition just happened
-	BOOT  = 5 // Power on
+	//      5 // CURRENTLY UNUSED, was BOOT ("Power on")
 	RESET = 6 // Reset line
 	IRQ   = 7 // Maskable interrupt
 	NMI   = 8 // Non-maskable interrupt

@@ -1,12 +1,13 @@
 // Angua CPU System
 // Scot W. Stevenson <scot.stevenson@gmail.com>
 // First version: 06. Nov 2018
-// First version: 26. Dec 2018
+// First version: 01. Jan 2019
 
 package cpu
 
 import (
 	"fmt"
+	"log"
 	"time"
 
 	"angua/common"
@@ -14,7 +15,8 @@ import (
 
 const (
 	// Interrupt vectors. Note the reset vector is only for emulated mode.
-	// See http://6502.org/tutorials/65c816interrupts.html for details
+	// See http://6502.org/tutorials/65c816interrupts.html and Eyes & Lichty
+	// p. 195 for details
 	abortAddr common.Addr16 = 0xFFE8
 	brkAddr   common.Addr16 = 0xFFE6
 	copAddr   common.Addr16 = 0xFFE4
@@ -102,7 +104,7 @@ type CPU struct {
 	P   byte          // Status Register
 	DBR common.Data8  // Data Bank Register
 	PBR common.Data8  // Program Bank Register
-	PC  common.Data16 // Program counter
+	PC  common.Addr16 // Program counter
 
 	ModeA  int // Current width of Accumulator, either A16 or A8
 	ModeXY int // Current width of X and Y registers, either XY16 or X8
@@ -141,9 +143,6 @@ func (c *CPU) Run(cmd chan int) {
 			case common.ABORT:
 				fmt.Println("CPU: DUMMY: Received cmd ABORT")
 
-			case common.BOOT:
-				boot()
-
 			case common.HALT:
 				fmt.Println("CPU: DUMMY: Received *** HALT ***")
 				c.IsHalted = true
@@ -162,8 +161,11 @@ func (c *CPU) Run(cmd chan int) {
 			case common.NMI:
 				fmt.Println("CPU: DUMMY: Received cmd NMI")
 
-			case common.RESET:
-				fmt.Println("CPU: DUMMY: Received cmd RESET")
+			case common.RESET: // Also used for cold boot
+				ok := c.reset()
+				if !ok {
+					log.Println("ERROR: Reset failed for CPU")
+				}
 
 			case common.RESUME:
 				fmt.Println("CPU: DUMMY: Received cmd RESUME")
@@ -219,7 +221,23 @@ func (c *CPU) Run(cmd chan int) {
 
 }
 
-// Boot the machine, the equivalent of a cold start
-func boot() {
-	fmt.Println("CPU: DUMMY: Received cmd BOOT")
+// Reset the machine. This is handled by the RESET signal and is also how we
+// cold boot the machine after INIT. Details on the reset procedure are on page
+// 201 of Eyes & Lichty.
+func (c *CPU) reset() bool {
+	var ok bool = true
+
+	fmt.Println("CPU: DUMMY: Received RESET signal")
+
+	// TODO Set Stack high byte to 01
+	// TODO Set Direct Page Register to 0000
+	// TODO Set X Register high to 00 (through x Flag = 1)
+	// TODO Set Y Register high to 00 (through x Flag = 1)
+	// TODO Set Program Bank Register to 00
+	// TODO Set Data Bank Register to 00
+	// TODO Status Register: m=1, x=1, d=0, i=1
+	// TODO Emulation Flag: 1
+	// TODO Load new PC from 0xFFFC
+
+	return ok
 }
