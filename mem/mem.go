@@ -10,7 +10,6 @@ import (
 	"log"
 	"strings"
 	"sync"
-	"unicode"
 
 	"angua/common"
 )
@@ -167,66 +166,6 @@ func (m Memory) FetchMore(addr common.Addr24, num uint) (uint, bool) {
 		sum += (uint(b) << (8 * i))
 	}
 	return sum, legal
-}
-
-// Hexdump prints the contents of a memory range in a nice hex table. If the
-// addresses do not exist, we just print a zero without any fuss. We could use
-// the library encoding/hex for this, but we want to print the first address of
-// the line, and the library function starts the count with zero, not the
-// address. Also, we want uppercase letters for hex values
-// TODO Return result as a string instead of printing it
-// TODO Move this to the interface code and just take an address
-func (m Memory) Hexdump(addr1, addr2 common.Addr24) {
-	var r rune
-	var count uint
-	var hb strings.Builder // hex part
-	var cb strings.Builder // char part
-	var template string = "%-58s%s\n"
-
-	for i := addr1; i <= addr2; i++ {
-
-		// The first run produces a blank line because this if is
-		// triggered, however, the strings are empty because of the way
-		// Go initializes things
-		if count%16 == 0 {
-			fmt.Printf(template, hb.String(), cb.String())
-			hb.Reset()
-			cb.Reset()
-
-			// TODO move this to common print function
-			fmt.Fprintf(&hb, "%06X ", addr1+common.Addr24(count))
-		}
-
-		b, ok := m.Fetch(i)
-		if !ok {
-			log.Fatal("ERROR fetching byte", i, "from memory")
-		}
-
-		// Build the hex string
-		fmt.Fprintf(&hb, " %02X", b)
-
-		// Build the string list. This is the 21. century so we hexdump
-		// in Unicode, not ASCII, though this doesn't make a different
-		// if we just have byte values
-		r = rune(b)
-		if !unicode.IsPrint(r) {
-			r = rune('.')
-		}
-
-		fmt.Fprintf(&cb, string(r))
-		count += 1
-
-		// We put one extra blank line after the first eight entries to
-		// make the dump more readable
-		if count%8 == 0 {
-			fmt.Fprintf(&hb, " ")
-		}
-
-	}
-
-	// If the loop is all done, we might still have stuff left in the
-	// buffers
-	fmt.Printf(template, hb.String(), cb.String())
 }
 
 // List returns a list of all chunks in memory, as a string

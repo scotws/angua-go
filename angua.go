@@ -1,7 +1,7 @@
-// Angua - A partial 65816 MPU emulator in Go
+// Angua - An Emulator for 65816 Native Mode
 // Scot W. Stevenson <scot.stevenson@gmail.com>
 // First version: 26. Sep 2017
-// This version: 31. Dec 2018
+// This version: 01. Jan 2019
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@ import (
 	"os"
 	"runtime"
 	"strings"
-	"sync"
+	"unicode"
 
 	"angua/common"
 	"angua/cpu"
@@ -39,7 +39,7 @@ import (
 
 const (
 	configDir   string = "configs"
-	shellBanner string = `The Angua partial 65816 emulator
+	shellBanner string = `Angua - An Emulator for 65816 Native Mode
 Version ALPHA 0.1  01. Jan 2019
 Copyright (c) 2018-2019 Scot W. Stevenson
 Angua comes with absolutely NO WARRANTY
@@ -52,7 +52,7 @@ var (
 	// Flags passed.
 	// TODO Add "-d" to print debug information
 	beVerbose   = flag.Bool("v", false, "Verbose, print more output")
-	inBatchMode = flag.Bool("b", false, "Start in batch mode")
+	inBatchMode = flag.Bool("b", false, "Start in batch mode") // TODO see if this should be R for "run"
 	configFile  = flag.String("c", "default.cfg", "Configuration file")
 )
 
@@ -87,56 +87,11 @@ func readConfig(s string) []string {
 }
 
 // verbose takes a string and prints it on the standard output through logger if
-// the user awants us to be verbose
+// the user wants us to be verbose
 func verbose(s string) {
 	if *beVerbose {
 		log.Println(s)
 	}
-}
-
-// parseAddressRange takes a list of strings that either has a format in form of
-// "<BANK>:<ADDR16> to <BANK>:<ADDR16>" or "bank <BYTE>" and returns two
-// addresses in the common.Addr24 format and a bool for success for failure.
-func parseAddressRange(ws []string) (addr1, addr2 common.Addr24, ok bool) {
-
-	ok = true
-
-	// If the first word is "bank", then we are getting a full bank
-	if ws[0] == "bank" {
-
-		// Second word must be the bank byte. We brutally cut off
-		// everything but the lowest byte
-		bankNum := common.ConvNum(ws[1]) // Returns uint
-		bankByte := common.Addr24(bankNum).Lsb()
-		bankAddr := common.Addr24(bankByte) * 0x10000
-		addr1 = bankAddr
-		addr2 = bankAddr + 0xFFFF
-
-	} else {
-		// We at least need two addresses and the memory type, so that's
-		// three words length. We could parse more carefully, but not at
-		// the moment
-		if len(ws) < 3 {
-			addr1 = 0
-			addr2 = 0
-			ok = false
-			return addr1, addr2, ok
-		}
-
-		addr1 = common.Addr24(common.ConvNum(ws[0]))
-
-		// We allow people to slide on the "to" though we don't
-		// advertise the fact. Later, once we have the error handling of
-		// ConvNum working, check ws[1] and if there is an error, skip
-		// to ws[2].
-
-		if ws[1] == "to" {
-			addr2 = common.Addr24(common.ConvNum(ws[2]))
-		} else {
-			addr2 = common.Addr24(common.ConvNum(ws[1]))
-		}
-	}
-	return addr1, addr2, ok
 }
 
 // -----------------------------------------------------------------
@@ -249,7 +204,7 @@ func main() {
 				c.Println("ERROR parsing address range")
 				return
 			}
-			memory.Hexdump(a1, a2)
+			Hexdump(a1, a2, memory)
 		},
 	})
 
@@ -424,14 +379,10 @@ func main() {
 
 			// We can break this up from the end by making sure that the
 			// last word is either "ram" or "rom", and feeding the beginning
-			// to the address range finder
+			// to the address range finder. Note that mem.NewChunk
+			// tests if the sting passed is either "rom" or "ram" so
+			// we don't have to do that here
 			memType := c.Args[len(c.Args)-1]
-
-			if memType != "ram" && memType != "rom" {
-				c.Println("ERROR: Last word must be memory type ('ram' or 'rom')")
-				c.Println("Got: ", memType)
-				return
-			}
 
 			// The arg string is passed without "memory"
 			a1, a2, ok := parseAddressRange(c.Args)
@@ -440,10 +391,13 @@ func main() {
 				return
 			}
 
-			newChunk := mem.Chunk{a1, a2, memType, sync.Mutex{}, make([]byte, a2-a1)}
-			memory.Chunks = append(memory.Chunks, newChunk)
+			nc, ok := mem.NewChunk(a1, a2, memType)
+			if !ok {
+				c.Println("ERROR creating chunk with", a1, "to", a2, "as", memType)
+				return
+			}
 
-			// We can at least allow stuff like hexdumps of memory
+			memory.Chunks = append(memory.Chunks, nc)
 			haveMachine = true
 		},
 	})
@@ -610,4 +564,110 @@ func main() {
 	shell.Run()
 	shell.Close()
 
+}
+
+// parseAddressRange takes a list of strings that either has a format in form of
+// "<BANK>:<ADDR16> to <BANK>:<ADDR16>" or "bank <BYTE>" and returns two
+// addresses in the common.Addr24 format and a bool for success for failure.
+// This function lives here and not in common because it is part of the command
+// line interface
+func parseAddressRange(ws []string) (addr1, addr2 common.Addr24, ok bool) {
+
+	ok = true
+
+	// If the first word is "bank", then we are getting a full bank
+	if ws[0] == "bank" {
+
+		// Second word must be the bank byte. We brutally cut off
+		// everything but the lowest byte
+		bankNum := common.ConvNum(ws[1]) // Returns uint
+		bankByte := common.Addr24(bankNum).Lsb()
+		bankAddr := common.Addr24(bankByte) * 0x10000
+		addr1 = bankAddr
+		addr2 = bankAddr + 0xFFFF
+
+	} else {
+		// We at least need two addresses and the memory type, so that's
+		// three words length. We could parse more carefully, but not at
+		// the moment
+		if len(ws) < 3 {
+			addr1 = 0
+			addr2 = 0
+			ok = false
+			return addr1, addr2, ok
+		}
+
+		addr1 = common.Addr24(common.ConvNum(ws[0]))
+
+		// We allow people to slide on the "to" though we don't
+		// advertise the fact. Later, once we have the error handling of
+		// ConvNum working, check ws[1] and if there is an error, skip
+		// to ws[2].
+
+		if ws[1] == "to" {
+			addr2 = common.Addr24(common.ConvNum(ws[2]))
+		} else {
+			addr2 = common.Addr24(common.ConvNum(ws[1])) // TODO error here
+		}
+	}
+	return addr1, addr2, ok
+}
+
+// Hexdump prints the contents of a memory range in a nice hex table. If the
+// addresses do not exist, we just print a zero without any fuss. We could use
+// the library encoding/hex for this, but we want to print the first address of
+// the line, and the library function starts the count with zero, not the
+// address. Also, we want uppercase letters for hex values. This is kept here
+// because it is part of the command-line interface
+func Hexdump(addr1, addr2 common.Addr24, m *mem.Memory) {
+	var r rune
+	var count uint
+	var hb strings.Builder // hex part
+	var cb strings.Builder // char part
+	var template string = "%-58s%s\n"
+
+	for i := addr1; i <= addr2; i++ {
+
+		// The first run produces a blank line because this if is
+		// triggered, however, the strings are empty because of the way
+		// Go initializes things
+		if count%16 == 0 {
+			fmt.Printf(template, hb.String(), cb.String())
+			hb.Reset()
+			cb.Reset()
+
+			// TODO move this to common print function
+			fmt.Fprintf(&hb, "%06X ", addr1+common.Addr24(count))
+		}
+
+		b, ok := m.Fetch(i)
+		if !ok {
+			log.Fatal("ERROR fetching byte", i, "from memory")
+		}
+
+		// Build the hex string
+		fmt.Fprintf(&hb, " %02X", b)
+
+		// Build the string list. This is the 21. century so we hexdump
+		// in Unicode, not ASCII, though this doesn't make a different
+		// if we just have byte values
+		r = rune(b)
+		if !unicode.IsPrint(r) {
+			r = rune('.')
+		}
+
+		fmt.Fprintf(&cb, string(r))
+		count += 1
+
+		// We put one extra blank line after the first eight entries to
+		// make the dump more readable
+		if count%8 == 0 {
+			fmt.Fprintf(&hb, " ")
+		}
+
+	}
+
+	// If the loop is all done, we might still have stuff left in the
+	// buffers
+	fmt.Printf(template, hb.String(), cb.String())
 }
