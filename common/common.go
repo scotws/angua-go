@@ -10,7 +10,6 @@ package common
 
 import (
 	"fmt"
-	"log"
 	"strconv"
 	"strings"
 )
@@ -178,45 +177,34 @@ func (d Data16) HexString() string {
 
 // === General Helper Functions ===
 
-// convNum Converts a number string -- hex, binary, or decimal -- to an uint.
+// ConvertNum Converts a number string -- hex, binary, or decimal -- to an uint.
 // We accept ':' and '.' as delimiters, use $ or 0x for hex numbers, % for
 // binary numbers, and nothing for decimal numbers. Note octal is not supported
-// TODO We currently fail hard with a fatal log. When system is stable, replace
-// by a different error scheme
-func ConvNum(s string) uint {
+func ConvertNum(s string) (uint, bool) {
+	var (
+		ok  bool = true
+		n   int64
+		err error
+	)
 
 	ss := StripDelimiters(s)
 
 	switch {
 
 	case strings.HasPrefix(ss, "$"):
-		n, err := strconv.ParseInt(ss[1:], 16, 0)
-		if err != nil {
-			log.Fatal("ERROR: Can't convert ", ss, " as hex number")
-		}
-		return uint(n)
-
+		n, err = strconv.ParseInt(ss[1:], 16, 0)
 	case strings.HasPrefix(ss, "0x"):
-		n, err := strconv.ParseInt(ss[2:], 16, 0)
-		if err != nil {
-			log.Fatal("ERROR: Can't convert ", ss, " as hex number")
-		}
-		return uint(n)
-
+		n, err = strconv.ParseInt(ss[2:], 16, 0)
 	case strings.HasPrefix(ss, "%"):
-		n, err := strconv.ParseInt(ss[1:], 2, 0)
-		if err != nil {
-			log.Fatal("ERROR: Can't convert ", ss, " as binary number")
-		}
-		return uint(n)
-
+		n, err = strconv.ParseInt(ss[1:], 2, 0)
 	default:
-		n, err := strconv.ParseInt(ss, 10, 0)
-		if err != nil {
-			log.Fatal("ERROR: Can't convert ", ss, " to a decimal number")
-		}
-		return uint(n)
+		n, err = strconv.ParseInt(ss, 10, 0)
 	}
+
+	if err != nil {
+		return 0, false
+	}
+	return uint(n), ok
 }
 
 // fmtAddr takes a 65816 24 bit address as a uint and returns a hex number

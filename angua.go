@@ -312,7 +312,14 @@ func main() {
 			}
 
 			fileName := c.Args[0]
-			addr := common.Addr24(common.ConvNum(c.Args[len(c.Args)-1]))
+			addrString := c.Args[len(c.Args)-1]
+			num, ok := common.ConvertNum(addrString)
+			if !ok {
+				c.Println("ERROR Couldn't convert number", addrString)
+				return
+			}
+
+			addr := common.Addr24(num)
 
 			// We can use ioutil.ReadFile here because we want
 			// binary data
@@ -322,7 +329,7 @@ func main() {
 				return
 			}
 
-			ok := memory.StoreBlock(addr, data)
+			ok = memory.StoreBlock(addr, data)
 			if !ok {
 				c.Println("ERROR: Couldn't write binary data to address")
 				return
@@ -566,13 +573,16 @@ func main() {
 
 }
 
-// parseAddressRange takes a list of strings that either has a format in form of
-// "<BANK>:<ADDR16> to <BANK>:<ADDR16>" or "bank <BYTE>" and returns two
-// addresses in the common.Addr24 format and a bool for success for failure.
-// This function lives here and not in common because it is part of the command
-// line interface
+// parseAddressRange takes a list of strings that in the formats of
+//
+// 	[<BANK>[:]]<ADDR16> "to" [<BANK>[:]]<ADDR16>
+// 	[<BANK>[:]]<ADDR16> [<BANK>[:]]<ADDR16>
+// 	"bank" <BYTE>
+//
+// and returns two addresses in the common.Addr24 format and a bool for success
+// or failure. This function lives here and not in common because it is part of
+// the command line interface
 func parseAddressRange(ws []string) (addr1, addr2 common.Addr24, ok bool) {
-
 	ok = true
 
 	// If the first word is "bank", then we are getting a full bank
@@ -580,36 +590,40 @@ func parseAddressRange(ws []string) (addr1, addr2 common.Addr24, ok bool) {
 
 		// Second word must be the bank byte. We brutally cut off
 		// everything but the lowest byte
-		bankNum := common.ConvNum(ws[1]) // Returns uint
+		bankNum, ok := common.ConvertNum(ws[1])
 		bankByte := common.Addr24(bankNum).Lsb()
 		bankAddr := common.Addr24(bankByte) * 0x10000
 		addr1 = bankAddr
 		addr2 = bankAddr + 0xFFFF
 
-	} else {
-		// We at least need two addresses and the memory type, so that's
-		// three words length. We could parse more carefully, but not at
-		// the moment
-		if len(ws) < 3 {
-			addr1 = 0
-			addr2 = 0
-			ok = false
-			return addr1, addr2, ok
-		}
-
-		addr1 = common.Addr24(common.ConvNum(ws[0]))
-
-		// We allow people to slide on the "to" though we don't
-		// advertise the fact. Later, once we have the error handling of
-		// ConvNum working, check ws[1] and if there is an error, skip
-		// to ws[2].
-
-		if ws[1] == "to" {
-			addr2 = common.Addr24(common.ConvNum(ws[2]))
-		} else {
-			addr2 = common.Addr24(common.ConvNum(ws[1])) // TODO error here
-		}
+		return addr1, addr2, ok
 	}
+
+	// We at least need two addresses, so that's two words length. We could
+	// parse more carefully, but not at the moment
+	if len(ws) < 2 {
+		addr1 = 0
+		addr2 = 0
+		ok = false
+		return addr1, addr2, ok
+	}
+
+	num, ok := common.ConvertNum(ws[0])
+	addr1 = common.Addr24(num)
+
+	// We allow people to slide on the "to" though we don't
+	// advertise the fact. Later, once we have the error handling of
+	// ConvertNum working, check ws[1] and if there is an error, skip
+	// to ws[2].
+	if ws[1] == "to" {
+		num, ok = common.ConvertNum(ws[2])
+	} else {
+		num, ok = common.ConvertNum(ws[1])
+
+	}
+
+	addr2 = common.Addr24(num)
+
 	return addr1, addr2, ok
 }
 

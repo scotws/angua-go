@@ -1,7 +1,7 @@
 // Test file for Angua
 // Scot W. Stevenson <scot.stevenson@gmail.com>
 // First version: 15. Mar 2018
-// This version: 14. Nov 2018
+// This version: 01. Jan 2019
 
 package main
 
@@ -25,19 +25,21 @@ func TestParseAddressRange(t *testing.T) {
 	}{
 		{[]string{"too", "few"}, result{0, 0, false}},
 
-		{[]string{"bank", "00", "ram"}, result{0x000000, 0x00FFFF, true}},
-		{[]string{"bank", "$01", "ram"}, result{0x010000, 0x01FFFF, true}},
-		{[]string{"bank", "0x0A", "ram"}, result{0x0A0000, 0x0AFFFF, true}},
-		{[]string{"bank", "10", "ram"}, result{0x0A0000, 0x0AFFFF, true}},
+		{[]string{"bank", "00"}, result{0x000000, 0x00FFFF, true}},
+		{[]string{"bank", "$01"}, result{0x010000, 0x01FFFF, true}},
+		{[]string{"bank", "0x0A"}, result{0x0A0000, 0x0AFFFF, true}},
+		{[]string{"bank", "10"}, result{0x0A0000, 0x0AFFFF, true}},
 
-		{[]string{"00:0000", "to", "00:1000", "ram"}, result{0, 1000, true}},
-		{[]string{"00:0000", "to", "$00:FFFF", "ram"}, result{0, 0xFFFF, true}},
-		{[]string{"$FF:0000", "to", "$FF:FFFF", "ram"}, result{0xFF0000, 0xFFFFFF, true}},
+		{[]string{"0000", "to", "1000"}, result{0, 1000, true}},
+		{[]string{"00:0000", "to", "00:1000"}, result{0, 1000, true}},
+		{[]string{"00:0000", "to", "$00:FFFF"}, result{0, 0xFFFF, true}},
+		{[]string{"$FF:0000", "to", "$FF:FFFF"}, result{0xFF0000, 0xFFFFFF, true}},
 
-		{[]string{"0x002000", "$00:8000", "ram"}, result{0x2000, 32768, true}},
-		{[]string{"0x002000", "0x00:8000", "rom"}, result{0x2000, 32768, true}},
-		{[]string{"0x002000", "00:8000", "ram"}, result{0x2000, 8000, true}},
-		{[]string{"$FF:0000", "$FF:FFFF", "ram"}, result{0xFF0000, 0xFFFFFF, true}},
+		{[]string{"0x2000", "$8000"}, result{0x2000, 32768, true}},
+		{[]string{"0x002000", "$00:8000"}, result{0x2000, 32768, true}},
+		{[]string{"0x002000", "0x00:8000"}, result{0x2000, 32768, true}},
+		{[]string{"0x002000", "00:8000"}, result{0x2000, 8000, true}},
+		{[]string{"$FF:0000", "$FF:FFFF"}, result{0xFF0000, 0xFFFFFF, true}},
 	}
 
 	for _, test := range tests {

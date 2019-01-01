@@ -1,7 +1,7 @@
 // Test file for Angua Common Files
 // Scot W. Stevenson <scot.stevenson@gmail.com>
 // First version: 15. Mar 2018
-// This version: 10. Nov 2018
+// This version: 01. Jan 2019
 
 package common
 
@@ -247,7 +247,7 @@ func TestAddr24HexString(t *testing.T) {
 	}
 }
 
-func TestAddr24Ensure24(t *testing.T) {
+func TestEnsure24(t *testing.T) {
 	var tests = []struct {
 		input Addr24
 		want  Addr24
@@ -258,10 +258,10 @@ func TestAddr24Ensure24(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		got := test.input.Ensure24()
+		got := Ensure24(test.input)
 
 		if got != test.want {
-			t.Errorf("Addr24.Ensure24(%q) = %v", test.input, got)
+			t.Errorf("Ensure24(%q) = %v", test.input, got)
 		}
 	}
 }
@@ -407,25 +407,36 @@ func TestData16HexString(t *testing.T) {
 
 // --- Other helpers ---
 
-func TestConvNumber(t *testing.T) {
+func TestConvertNumber(t *testing.T) {
+	type conv struct {
+		numb uint
+		ok   bool
+	}
+
 	var tests = []struct {
 		input string
-		want  uint
+		want  conv
 	}{
-		{"0", 0},
-		{"100", 100},
-		{"$400", 1024},
-		{"0x400", 1024},
-		{"%10", 2},
-		{"%00001111", 0x0F},
-		{"0x00:0400", 1024},
+		{"0", conv{0, true}},
+		{"100", conv{100, true}},
+		{"$400", conv{1024, true}},
+		{"0x400", conv{1024, true}},
+		{"%10", conv{2, true}},
+		{"%00001111", conv{0x0F, true}},
+		{"%0000:1111", conv{0x0F, true}},
+		{"%0000.1111", conv{0x0F, true}},
+		{"0x00:0400", conv{1024, true}},
+		{"00::0400", conv{400, true}}, // gracefully handle typos
+
+		{"foobar", conv{0, false}},
+		{"&0001", conv{0, false}},
 	}
 
 	for _, test := range tests {
-		got := ConvNum(test.input)
-
-		if got != test.want {
-			t.Errorf("convNum(%q) = %v", test.input, got)
+		got, ok := ConvNum(test.input)
+		res := conv{got, ok}
+		if res != test.want {
+			t.Errorf("convNum(%q) = %v", test.input, res)
 		}
 	}
 }
