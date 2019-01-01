@@ -1,7 +1,7 @@
 // Common files and type for Angua
 // Scot W. Stevenson <scot.stevenson@gmail.com>
 // This version: 07. Nov 2018
-// First version: 26. Dec 2018
+// First version: 01. Jan 2019
 
 // This package contains base definitions and helper functions for all
 // parts of Angua
@@ -58,6 +58,12 @@ type Banker interface {
 // little endian byte arrarys
 type LilEnder interface {
 	LilEnd() []byte
+}
+
+// Ensure24 takes a 24 bit address and makes sure that the upper byte of the
+// underlying uint32 is actually zero
+func Ensure24(a Addr24) Addr24 {
+	return a & 0x00FFFFFF
 }
 
 // ==== DATA TYPES ===
@@ -130,12 +136,6 @@ func (a Addr24) LilEnd() []byte {
 // the rest of the address. There is no prefix such as "$" or "0x"
 func (a Addr24) HexString() string {
 	return fmt.Sprintf("%02X:%02X%02X", a.Bank(), a.Msb(), a.Lsb())
-}
-
-// Ensure24 is a method of Addr24 that makes sure the upper byte of the
-// underlying uint32 is actually zero
-func (a Addr24) Ensure24() Addr24 {
-	return a & 0x00FFFFFF
 }
 
 // --- Data8 ---

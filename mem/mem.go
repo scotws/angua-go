@@ -26,9 +26,46 @@ type Chunk struct {
 	Data       []byte
 }
 
-// Memory is the total system memory, which is just a list of chunks
+// Memory is the total system memory, which is just a list of chunks. This is
+// why there is no function NewMemory to parallel NewChunk
+// TODO add a map of addresses to bools to memoize checks if the address is
+// present in memory; see Memory.Contains()
 type Memory struct {
 	Chunks []Chunk
+}
+
+// NewChunk takes the start and end address for a new chunk as well as its type
+// and returns a new chunk with initialized memory and a bool that describes
+// success or failure. This routine checks to make sure that the addresses are
+// sane, and the strings are correct. Errors are handled here by printing to the
+// log. This is the only way that new chunks should be created.
+func NewChunk(addr1, addr2 common.Addr24, cType string) (Chunk, bool) {
+	var ok bool = true
+
+	// Limit size of addresses to 24 bit. We don't have to check if this is
+	// an unsigned int because the type system does that for us, see
+	// common.Addr24
+	addr1ok := common.Ensure24(addr1)
+	addr2ok := common.Ensure24(addr2)
+
+	// Make sure addr1 is really smaller than addr2. We don't accept chunks
+	// with a length of zero bytes
+	if addr2ok <= addr1ok {
+		log.Println("ERROR: Invalid addresses for new chunk")
+		ok = false
+		return Chunk{}, ok
+	}
+
+	// Make sure memType is either "ram" or "rom"
+	if cType != "ram" && cType != "rom" {
+		log.Println("ERROR: Chunk type must either be 'ram' or 'rom'")
+		ok = false
+		return Chunk{}, ok
+	}
+
+	nc := Chunk{addr1ok, addr2ok, cType, sync.Mutex{}, make([]byte, addr2ok-addr1ok)}
+
+	return nc, ok
 }
 
 // --- CHUNK METHODS ---

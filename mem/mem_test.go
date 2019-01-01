@@ -2,7 +2,7 @@
 // Part of the Angua package
 // Scot W. Stevenson <scot.stevenson@gmail.com>
 // First version 09. Mar 2018
-// This version 31. Dec 2018
+// This version 01. Jan 2019
 
 package mem
 
@@ -11,6 +11,8 @@ import (
 
 	"angua/common"
 )
+
+// ==== TESTING CHUNKS ====
 
 // Test if we get the right size of a Chunk
 func TestChunkSize(t *testing.T) {
@@ -37,18 +39,21 @@ func TestChunkSize(t *testing.T) {
 	}
 }
 
-// Test if our address is in range
+// Test if our address is in range in a chunk
 func TestContainsAddr(t *testing.T) {
 	var (
-		tc = Chunk{Start: 0x400, End: 0x800}
+		tc = Chunk{Start: 0x400, End: 0x7FF}
 
 		tests = []struct {
 			input common.Addr24
 			want  bool
 		}{
-			{0x400, true},
+			{0x100, false},
 			{0x3FF, false},
-			{0x801, false},
+			{0x400, true},
+			{0x500, true},
+			{0x7FF, true},
+			{0x800, false},
 		}
 	)
 
@@ -61,7 +66,8 @@ func TestContainsAddr(t *testing.T) {
 	}
 }
 
-// Test fetching of a byte
+// Test fetching of a byte from a chunk. Note that chunk.Fetch does not test if
+// value is legal and does not return a flag
 func TestFetch(t *testing.T) {
 	var (
 		mydata = make([]byte, 0x400) // 1 KiB length
@@ -73,7 +79,7 @@ func TestFetch(t *testing.T) {
 			{0x100, 0},
 		}
 	)
-	tc := Chunk{Start: 0, End: 0x400, Data: mydata}
+	tc := Chunk{Start: 0x100, End: 0x5FF, Data: mydata}
 
 	for _, test := range tests {
 		got := tc.Fetch(test.input)
@@ -84,7 +90,7 @@ func TestFetch(t *testing.T) {
 	}
 }
 
-// Test storing of a byte
+// Test storing of a byte in a chunk
 func TestStoreNFetch(t *testing.T) {
 	var (
 		mydata = make([]byte, 0x400) // 1 KiB buffer
@@ -98,7 +104,7 @@ func TestStoreNFetch(t *testing.T) {
 		}
 	)
 
-	tc := Chunk{Start: 0x100, End: 0x500, Data: mydata}
+	tc := Chunk{Start: 0x100, End: 0x4FF, Data: mydata}
 
 	for _, test := range tests {
 

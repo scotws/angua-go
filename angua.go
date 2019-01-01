@@ -367,7 +367,7 @@ func main() {
 				return
 			}
 
-			ok := memory.Write(addr, data)
+			ok := memory.StoreBlock(addr, data)
 			if !ok {
 				c.Println("ERROR: Couldn't write binary data to address")
 				return
