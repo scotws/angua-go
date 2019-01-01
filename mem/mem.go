@@ -1,7 +1,7 @@
 // Angua Memory System
 // Scot W. Stevenson <scot.stevenson@gmail.com>
 // First version: 09. Mar 2018
-// This version: 31. Dec 2018
+// This version: 01. Jan 2019
 
 package mem
 
@@ -48,16 +48,16 @@ func (c Chunk) Fetch(addr common.Addr24) byte {
 	return b
 }
 
-// Size returns the, uh, size of a chunk in bytes as an uint. Does not check to
+// Size returns the size of a chunk in bytes as an uint. Does not check to
 // see if chunk addresses are valid, that is, c.End is larger than c.Start
-// TODO see if this should be an int
 func (c Chunk) Size() uint {
 	return uint(c.End - c.Start + 1)
 }
 
 // Store takes a byte and an address and stores the byte at the address in the
 // chunk. Assumes that we already checked that the address is in fact in this
-// chunk.
+// chunk. Note this doesn't care if memory is RAM or ROM, this is handled at the
+// Memory level. This way, we can use this word for Write and Burn routines
 func (c Chunk) Store(addr common.Addr24, b byte) {
 	c.Lock()
 	c.Data[addr-c.Start] = b
@@ -66,8 +66,11 @@ func (c Chunk) Store(addr common.Addr24, b byte) {
 
 // --- MEMORY METHODS ---
 
-// Contains takes an 65816 address and checks to see if it is
-// valid, returning a bool
+// Contains takes an 65816 address and checks to see if it is valid, returning a
+// bool
+// TODO we are going to checking the same addresses over and over again, so we
+// should speed this up by including a map of addresses to bools as a
+// memoization device in the Memory struct.
 func (m Memory) Contains(addr common.Addr24) bool {
 	result := false
 
@@ -82,7 +85,7 @@ func (m Memory) Contains(addr common.Addr24) bool {
 }
 
 // Fetch takes an address and gets a byte from the appropriate chunk and returns
-// the byte with a true flag for success. If the address is not memory, it
+// it with a true flag for success. If the address is not memory, it
 // returns a zero value and a false flag. We use a Mutex at chunk level, not
 // memory level
 func (m Memory) Fetch(addr common.Addr24) (byte, bool) {
@@ -157,7 +160,6 @@ func (m Memory) Hexdump(addr1, addr2 common.Addr24) {
 			fmt.Fprintf(&hb, "%06X ", addr1+common.Addr24(count))
 		}
 
-		// We ignore the ok flag here
 		b, ok := m.Fetch(i)
 		if !ok {
 			log.Fatal("ERROR fetching byte", i, "from memory")
@@ -218,10 +220,10 @@ func (m Memory) Read(addr common.Addr24, size uint) ([]byte, bool) {
 
 	for i := addr; i <= addr+common.Addr24(size); i++ {
 		b, ok := m.Fetch(i)
-
 		if !ok {
 			allLegal = false
 		}
+
 		bs = append(bs, b)
 	}
 	return bs, allLegal
@@ -239,16 +241,22 @@ func (m Memory) Size() uint {
 	return sum
 }
 
-// Store takes an address and a byte and saves them to memory. If the addr is
-// not part of legal memory, we return a false flag, otherwise a true. If the
-// addr is part of ROM, do the same thing
+// Store takes a 24-bit address and a byte. If the address is legal for a write,
+// that is, actually part of a RAM chunk, the byte is stored at the address and
+// a true flag is returned to signal success. If the address is outside the
+// defined range or in ROM, there is no write, and a false flag is returned.
+// This is the main store routine for the emulator. See Burn for a function that
+// ignores ROM/RAM differences.
+// TODO consider merging this with mem.Burn
 func (m Memory) Store(addr common.Addr24, b byte) bool {
 	var f bool = false
 
 	for _, c := range m.Chunks {
 
+		// Assumes we're short-circuiting thought it seems that this is
+		// not explicitly in the Go specs
 		if c.Type == "ram" && c.Contains(addr) {
-			c.Store(addr, b)
+			c.Store(addr, b) // Does not check if legal address
 			f = true
 			break
 		}
@@ -284,18 +292,53 @@ func (m Memory) StoreMore(addr common.Addr24, num uint, len uint) bool {
 	return f
 }
 
-// Write takes a 65816 address and a slice of bytes and stores those bytes
+// StoreBlock takes a 65816 address and a slice of bytes and stores those bytes
 // starting at that address. If all addresses were legal, it returns a true
-// flag, otherwise a false
-func (m Memory) Write(addr common.Addr24, bs []byte) bool {
+// flag, otherwise a false. StoreBlock will not write to ROM, use BurnBlock for
+// that.
+func (m Memory) StoreBlock(addr common.Addr24, bs []byte) bool {
 	var legal bool = true
 
 	for i := addr; i < addr+common.Addr24(len(bs)); i++ {
 		ok := m.Store(i, bs[i-addr])
+		legal = legal && ok
+	}
 
-		if !ok {
-			legal = false
+	return legal
+}
+
+// Burn takes a 24-bit address and a byte. If the address is part of a chunk,
+// RAM or ROM, the byte is stored at the address and a true flag is returned to
+// signal success. If the address is outside the defined range, a false flag is
+// returned. Burn is used to write to memory during intialization and the load
+// command. The main routine for assembler instructions is Store.
+// TODO consider merging this with mem.Store() and using a flag to signal if we
+// write to ROM.
+func (m Memory) Burn(addr common.Addr24, b byte) bool {
+	var f bool = false
+
+	for _, c := range m.Chunks {
+
+		if c.Contains(addr) {
+			c.Store(addr, b)
+			f = true
+			break
 		}
 	}
+	return f
+
+}
+
+// BurnBlock takes a 65816 address and a slice of bytes and stores those bytes
+// starting at that address. If all addresses were legal, it returns a true
+// flag, otherwise a false
+func (m Memory) BurnBlock(addr common.Addr24, bs []byte) bool {
+	var legal bool = true
+
+	for i := addr; i < addr+common.Addr24(len(bs)); i++ {
+		ok := m.Store(i, bs[i-addr])
+		legal = legal && ok
+	}
+
 	return legal
 }
