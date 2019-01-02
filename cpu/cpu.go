@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"angua/common"
+	"angua/opc"
 )
 
 const (
@@ -120,7 +121,10 @@ type CPU struct {
 
 // Step executes a single instruction from PC. This is called by the Run method
 func (c *CPU) Step() {
-	fmt.Println("CPU: DUMMY: <EXECUTING ONE INSTRUCTION>")
+
+	// TODO basic tests
+	opc.InsJump[0xEA]()
+
 }
 
 // Run is the main loop of the CPU.
