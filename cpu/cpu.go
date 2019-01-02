@@ -11,19 +11,20 @@ import (
 	"time"
 
 	"angua/common"
-	"angua/opc"
+	"angua/mem"
 )
 
 const (
 	// Interrupt vectors. Note the reset vector is only for emulated mode.
 	// See http://6502.org/tutorials/65c816interrupts.html and Eyes & Lichty
-	// p. 195 for details
-	abortAddr common.Addr16 = 0xFFE8
-	brkAddr   common.Addr16 = 0xFFE6
-	copAddr   common.Addr16 = 0xFFE4
-	irqAddr   common.Addr16 = 0xFFEE
-	nmiAddr   common.Addr16 = 0xFFEA
-	resetAddr common.Addr16 = 0xFFFC // <-- This is the really important one
+	// p. 195 for details. We store these as 24 bit addresses because that
+	// is the way we'll use them during mem.FetchMore
+	abortAddr common.Addr24 = 0xFFE8
+	brkAddr   common.Addr24 = 0xFFE6
+	copAddr   common.Addr24 = 0xFFE4
+	irqAddr   common.Addr24 = 0xFFEE
+	nmiAddr   common.Addr24 = 0xFFEA
+	resetAddr common.Addr24 = 0xFFFC // <-- This is the really important one
 
 	// Width of accumulator and registers
 	A8   int = 0
@@ -116,22 +117,37 @@ type CPU struct {
 	IsStopped      bool // CPU stopped by STP instruction
 	SingleStepMode bool // Signals if we are in single step mode
 
+	Mem *mem.Memory // Pointer to the memory we're working on
+
 	StatReg
 }
 
+// getFullAddr merges the Bank Byte and the Program Counter and returns a 24
+// bit address
+func (c *CPU) getFullPC() common.Addr24 {
+	bank := common.Addr24(c.PBR) << 16
+	addr := bank + common.Addr24(c.PC)
+
+	return common.Ensure24(addr)
+}
+
 // Step executes a single instruction from PC. This is called by the Run method
+// TODO this is pretty much all fake
 func (c *CPU) Step() {
 
-	// TODO basic tests
-	opc.InsJump[0xEA]()
-	c.PC += common.Addr16(opc.InsData[0xEA].Size)
+	// Get byte at PC
+	ins, ok := c.Mem.Fetch(c.getFullPC())
+	if !ok {
+		log.Println("ERROR: Can't get instruction at", c.getFullPC().HexString())
+		return
+	}
 
+	InsJump[ins](c)
+	c.PC += common.Addr16(InsData[ins].Size)
 }
 
 // Run is the main loop of the CPU.
 func (c *CPU) Run(cmd chan int) {
-
-	fmt.Println("CPU: DUMMY: Bringing up the CPU")
 	c.IsHalted = false  // User freezes execution, resume with 'resume'
 	c.IsStopped = false // STP instruction
 	c.IsWaiting = false // WAI instruction
@@ -168,10 +184,9 @@ func (c *CPU) Run(cmd chan int) {
 				fmt.Println("CPU: DUMMY: Received cmd NMI")
 
 			case common.RESET: // Also used for cold boot
-				ok := c.reset()
-				if !ok {
-					log.Println("CPU ERROR: Reset failed for CPU")
-				}
+				c.reset()
+				c.IsHalted = false
+				c.SingleStepMode = false
 
 			case common.RESUME:
 				fmt.Println("CPU: DUMMY: Received cmd RESUME")
@@ -206,7 +221,7 @@ func (c *CPU) Run(cmd chan int) {
 			// This is where the CPU actually runs an
 			// instruction.
 
-			if !c.IsHalted {
+			if !c.IsHalted && !c.IsStopped {
 				c.Step()
 				time.Sleep(1 * time.Second) // TODO for testing
 
@@ -231,21 +246,33 @@ func (c *CPU) Run(cmd chan int) {
 // Reset the machine. This is handled by the RESET signal and is also how we
 // cold boot the machine after INIT. Details on the reset procedure are on page
 // 201 of Eyes & Lichty.
-func (c *CPU) reset() bool {
-	var ok bool = true
+func (c *CPU) reset() {
+	var ok bool
 
-	fmt.Println("CPU: DUMMY: Received RESET signal")
+	// Set Direct Page to 0000
+	c.DP = 0
+
+	// Set Program Bank Register to 00
+	c.PBR = 0
+
+	// Set Data Bank Register to 00
+	c.DBR = 0
 
 	// TODO Set Stack high byte to 01
-	// TODO Set Direct Page Register to 0000
 	// TODO Set X Register high to 00 (through x Flag = 1)
 	// TODO Set Y Register high to 00 (through x Flag = 1)
-	// TODO Set Program Bank Register to 00
-	// TODO Set Data Bank Register to 00
 	// TODO Status Register: m=1, x=1, d=0, i=1
 	// TODO Emulation Flag: 1
-	// TODO Load new PC from 0xFFFC
+
+	// Get address at 0xFFFC (Reset Vector)
+	rv, ok := c.Mem.FetchMore(resetAddr, 2)
+	if !ok {
+		log.Println("ERROR: Couldn't get RESET vector from", resetAddr)
+		return
+	}
+
+	c.PC = common.Addr16(rv)
+
 	// TODO Make sure we have "magic number" at address
 
-	return ok
 }

@@ -42,7 +42,7 @@ const (
 	configDir   string = "configs"
 	shellBanner string = `Welcome to Angua
 An Emulator for the 65816 in Native Mode
-Version ALPHA 0.1  01. Jan 2019
+Version ALPHA 0.1  02. Jan 2019
 Copyright (c) 2018-2019 Scot W. Stevenson
 Angua comes with absolutely NO WARRANTY
 Type 'help' for more information
@@ -285,7 +285,9 @@ func main() {
 
 			// TODO check for chunk overlap in memory
 			// TODO set up special memory
-			// TODO set up CPU
+
+			// Set up CPU
+			cpu.Mem = memory
 
 			c.Println("Initializing machine ...")
 			haveMachine = true
@@ -455,6 +457,7 @@ func main() {
 		Func: func(c *ishell.Context) {
 			c.Println("Triggering RESET signal ...")
 			cmd <- common.RESET
+			shell.Process("run")
 		},
 	})
 

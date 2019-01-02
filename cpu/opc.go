@@ -7,7 +7,7 @@
 // Note there is redundancy with the information in the info package. We keep
 // these separate to allow more robustness while editing.
 
-package opc
+package cpu
 
 import (
 	"fmt" // TODO This is used for testing only
@@ -49,10 +49,11 @@ type OpcData struct {
 }
 
 var (
-	InsJump [256]func()  // Instruction jump table
-	InsData [256]OpcData // Instruction data
+	InsJump [256]func(*CPU) // Instruction jump table
+	InsData [256]OpcData    // Instruction data
 )
 
+// TODO see if we have to passe these a pointer to the memory
 func init() {
 	// Instruction jumps
 	InsData[0x00] = OpcData{2, STACK, false}    // brk with signature byte
@@ -62,6 +63,8 @@ func init() {
 	InsData[0x18] = OpcData{1, IMPLIED, false} // clc
 	// ...
 	InsData[0x85] = OpcData{2, DP, false} // sta.d
+	// ...
+	InsData[0x8D] = OpcData{3, ABSOLUTE, false} // sta
 	// ...
 	InsData[0xA9] = OpcData{2, IMMEDIATE, true} // lda.# (lda.8/lda.16)
 	// ...
@@ -84,6 +87,8 @@ func init() {
 	// ...
 	InsJump[0x85] = Opc85 // sta.d
 	// ...
+	InsJump[0x8D] = Opc8D // sta
+	// ...
 	InsJump[0xAD] = OpcAD // lda
 	// ...
 	InsJump[0xDB] = OpcDB // stp
@@ -95,54 +100,61 @@ func init() {
 
 // --- Instruction Functions ---
 
-func Opc00() { // brk
+func Opc00(c *CPU) { // brk
 	fmt.Println("OPC: DUMMY: Executing brk (00)")
 }
 
-func Opc01() { // ora.dxi
+func Opc01(c *CPU) { // ora.dxi
 	fmt.Println("OPC: DUMMY: Executing ora.dxi (02)")
 }
 
-func Opc02() { // cop
+func Opc02(c *CPU) { // cop
 	fmt.Println("OPC: DUMMY: Executing cop (03)")
 }
 
-func Opc18() { // nop
+func Opc18(c *CPU) { // nop
 	fmt.Println("OPC: DUMMY: Executing clc (18) ")
 }
 
 // ...
 
-func Opc85() { // sta.d
+func Opc85(c *CPU) { // sta.d
 	fmt.Println("OPC: DUMMY: Executing sta.d (85) ")
 }
 
 // ...
 
-func OpcA9() { // lda.# (lda.8/lda.16)
+func Opc8D(c *CPU) { // sta
+	fmt.Println("OPC: DUMMY: Executing sta (8D) ")
+}
+
+// ...
+
+func OpcA9(c *CPU) { // lda.# (lda.8/lda.16)
 	fmt.Println("OPC: DUMMY: Executing lda.# (A9) ")
 }
 
 // ...
 
-func OpcAD() { // lda
+func OpcAD(c *CPU) { // lda
 	fmt.Println("OPC: DUMMY: Executing lda (AD) ")
 }
 
 // ...
 
-func OpcDB() { // stp
-	fmt.Println("OPC: DUMMY: Executing stp (DB) ")
+func OpcDB(c *CPU) { // stp
+	fmt.Println("Machine stopped by STP instruction (0xDB) at", c.PC.HexString)
+	c.IsStopped = true
 }
 
 // ...
 
-func OpcEA() { // nop
+func OpcEA(c *CPU) { // nop
 	fmt.Println("OPC: DUMMY: Executing nop (EA) ")
 }
 
 // ...
 
-func OpcFB() { // nop
+func OpcFB(c *CPU) { // nop
 	fmt.Println("OPC: DUMMY: Executing xce (FB) ")
 }
