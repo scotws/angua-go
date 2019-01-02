@@ -565,13 +565,13 @@ func main() {
 				}
 
 				fmt.Println("Total memory (ROM and RAM):", memory.Size(), "bytes")
-				printCPUStatus()
+				printCPUStatus(cpu)
 
 				return
 			}
 
 			// In all other cases, we just print the CPU status
-			printCPUStatus()
+			printCPUStatus(cpu)
 			return
 		},
 	})
@@ -629,7 +629,8 @@ func hexDump(addr1, addr2 common.Addr24, m *mem.Memory) {
 
 		b, ok := m.Fetch(i)
 		if !ok {
-			log.Fatal("ERROR fetching byte", i, "from memory")
+			fmt.Println("ERROR No memory at address", i.HexString(), "(see 'memory')")
+			return
 		}
 
 		// Build the hex string
@@ -715,8 +716,52 @@ func parseAddressRange(ws []string) (addr1, addr2 common.Addr24, ok bool) {
 
 // printCPUStatus print information on the registers, flags and other important
 // CPU data
-// TODO Code this
-func printCPUStatus() {
-	fmt.Println("CLI: DUMMY: Print CPU status")
+// TODO Code this in more detail
+func printCPUStatus(c *cpu.CPU) {
+
+	// TODO TESTING
+	c.FlagM = true
+	c.FlagX = true
+
+	// --- Print legend --------------------------------------
+
+	fmt.Print(" PC  PBR ")
+
+	// Accumulator: M=1 is 8 bit (and B register), M=0 is 16 bit
+	if c.FlagM {
+		fmt.Print(" A  B ")
+	} else {
+		fmt.Print("  A ")
+	}
+
+	// XY Registers: X=1 is 8 bit, X=0 is 16 bit
+	if c.FlagX {
+		fmt.Print(" X  Y ")
+	} else {
+		fmt.Print("   X    Y ")
+	}
+
+	fmt.Println()
+
+	// --- Print data --------------------------------------
+
+	fmt.Print(c.PC.HexString(), "  ", c.PBR.HexString())
+
+	// Accumultor: M=1 is 8 bit (and B register), M=0 is 16 bit
+	if c.FlagM {
+		fmt.Print(" ", c.A8.HexString(), " ", c.B.HexString())
+	} else {
+		fmt.Print(" ", c.A16.HexString())
+	}
+
+	// XY Registers: X=1 is 8 bit, X=0 is 16 bit
+	if c.FlagX {
+		fmt.Print(" ", c.X8.HexString(), " ", c.Y8.HexString())
+	} else {
+		fmt.Print(" ", c.X16.HexString(), " ", c.Y16.HexString())
+	}
+
+	fmt.Println()
+
 	return
 }

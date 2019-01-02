@@ -46,8 +46,8 @@ Examples:
                 dump 0x1000 to 0xFFFF     ; defaults to bank 0
                 dump bank 2
                 dump bank 0x1F
-		dump stack
-		dump dp		          ; synonyms "direct" and "directpage"
+		dump sp			  ; synomyms "stack", "stackpointer"
+		dump dp		          ; synonyms "direct", "directpage"
 		
 Because of the size of the stack, only the first elements are shown.`
 

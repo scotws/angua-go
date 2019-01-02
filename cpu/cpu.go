@@ -42,9 +42,11 @@ type StatReg struct {
 	FlagN bool // Negative flag, true if highest bit is 1
 	FlagV bool // Overflow flag, true if overflow
 	FlagB bool // Break Instruction, true if interrupt by BRK
+	FlagM bool // A size, set is 8 bit (and B register), clear is 16 bit
 	FlagD bool // Decimal mode, true is decimal, false is binary
 	FlagI bool // Interrupt disable, true is disabled
 	FlagZ bool // Zero flag
+	FlagX bool // XY size, set is 8 bit, clear is 16 bit
 	FlagC bool // Carry flag
 
 	FlagE bool // Emulation flag, set signals is 6502 emulation mode
@@ -99,8 +101,8 @@ type CPU struct {
 	Y8  common.Data8  // Y register 8 bit
 	Y16 common.Data16 // Y register 16 bit
 
-	DP  common.Data16 // Direct Page register, yes, 16 bit, not 8
-	SP  common.Data16 // Stack Pointer, 16 bit
+	DP  common.Addr16 // Direct Page register, yes, 16 bit, not 8
+	SP  common.Addr16 // Stack Pointer, 16 bit
 	P   byte          // Status Register
 	DBR common.Data8  // Data Bank Register
 	PBR common.Data8  // Program Bank Register
