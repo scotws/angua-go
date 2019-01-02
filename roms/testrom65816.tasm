@@ -1,0 +1,55 @@
+; Test 8 KB ROM System for Angua
+; Scot W. Stevenson <scot.stevenson@gmail.com>
+; First version: 02. Jan 2019
+; This version: 02. Jan 2019
+
+; After assembly, this creates an 8 kb binary file that can be 
+; loaded to $E000 in a simulator. The syntax is for the Tinkerer's Assember 
+; https://github.com/scotws/tinkasm in TAN. Later, a new assembler will be
+; written in Simpler Assembler Notation (SAN).
+
+        .mpu 65816
+        .origin 0xE000
+
+        .equ putchar 0xF000
+        .equ getchar 0xF001
+
+vectors
+        ; All vectors land here because this is just a test
+        ; The 65816 automatically sets the interrupt flag so we don't have to
+        ; add a SEI
+        .native         ; switch to native mode. CLC XCE as "magic number"
+
+        ; We need a few instructions to get started with testing
+        lda.# 'a'       ; this will later be lda.8
+        sta putchar
+
+        nop             ; gotta have a NOP
+
+        lda getchar     ; need to test this
+        sta.d 00
+
+        stp             ; enough for the beginning
+
+
+        ; Jump table for interrupts. We are only interested in those for native
+        ; mode, though we keep those in emulation mode 
+
+        .advance 0x0FFE4 
+
+        .word vectors  ; 0xFFE4  COP   (native mode) 
+        .word vectors  ; 0xFFE6  BRK   (native mode) 
+        .word vectors  ; 0xFFE8  ABORT (native mode) 
+        .word vectors  ; 0xFFEA  NMI   (native mode) 
+        .word 0000     ; 0xFFEC  unused
+        .word vectors  ; 0xFFEE  IRQ   (native mode) 
+        .word 0000     ; 0xFFF0  unused
+        .word 0000     ; 0xFFF2  unused
+        .word vectors  ; 0xFFF4  COP   (emulation mode) 
+        .word 0000     ; 0xFFF6  unused
+        .word vectors  ; 0xFFF8  ABORT (emulation mode) 
+        .word vectors  ; 0xFFFA  NMI   (emulation mode)
+        .word vectors  ; 0xFFFC  RESET
+        .word vectors  ; 0xFFFE  IRQ   (emulation mode) 
+   
+        .end
