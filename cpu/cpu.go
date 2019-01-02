@@ -1,7 +1,7 @@
 // Angua CPU System
 // Scot W. Stevenson <scot.stevenson@gmail.com>
 // First version: 06. Nov 2018
-// First version: 01. Jan 2019
+// First version: 02. Jan 2019
 
 package cpu
 
@@ -22,7 +22,7 @@ const (
 	copAddr   common.Addr16 = 0xFFE4
 	irqAddr   common.Addr16 = 0xFFEE
 	nmiAddr   common.Addr16 = 0xFFEA
-	resetAddr common.Addr16 = 0xFFFC
+	resetAddr common.Addr16 = 0xFFFC // <-- This is the really important one
 
 	// Width of accumulator and registers
 	A8   int = 0
@@ -70,7 +70,7 @@ func (s *StatReg) GetStatusReg() byte {
 // accordingly. It is used by the instruction PLP for example.
 // TODO code this
 func (s *StatReg) SetStatusReg(b byte) {
-	fmt.Println("DUMMY SetStatusRegister")
+	fmt.Println("CPU: DUMMY: SetStatusRegister")
 }
 
 // TestZ takes an int and sets the Z flag to true if the value is zero and to
@@ -165,7 +165,7 @@ func (c *CPU) Run(cmd chan int) {
 			case common.RESET: // Also used for cold boot
 				ok := c.reset()
 				if !ok {
-					log.Println("ERROR: Reset failed for CPU")
+					log.Println("CPU ERROR: Reset failed for CPU")
 				}
 
 			case common.RESUME:
@@ -177,6 +177,7 @@ func (c *CPU) Run(cmd chan int) {
 				c.IsHalted = false
 				c.SingleStepMode = false
 
+			// TODO Get rid of this
 			case common.STATUS:
 				fmt.Println("CPU: DUMMY: Received cmd STATUS")
 
@@ -202,7 +203,7 @@ func (c *CPU) Run(cmd chan int) {
 
 			if !c.IsHalted {
 				c.Step()
-				time.Sleep(1 * time.Second)
+				time.Sleep(1 * time.Second) // TODO for testing
 
 				if c.SingleStepMode {
 					<-cmd
@@ -239,6 +240,7 @@ func (c *CPU) reset() bool {
 	// TODO Status Register: m=1, x=1, d=0, i=1
 	// TODO Emulation Flag: 1
 	// TODO Load new PC from 0xFFFC
+	// TODO Make sure we have "magic number" at address
 
 	return ok
 }
