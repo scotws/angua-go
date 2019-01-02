@@ -725,7 +725,7 @@ func printCPUStatus(c *cpu.CPU) {
 
 	// --- Print legend --------------------------------------
 
-	fmt.Print(" PC  PBR ")
+	fmt.Print(" PC  PB ")
 
 	// Accumulator: M=1 is 8 bit (and B register), M=0 is 16 bit
 	if c.FlagM {
@@ -741,11 +741,11 @@ func printCPUStatus(c *cpu.CPU) {
 		fmt.Print("   X    Y ")
 	}
 
-	fmt.Println()
+	fmt.Println("DB  DP   SP  NVMXDIZC")
 
 	// --- Print data --------------------------------------
 
-	fmt.Print(c.PC.HexString(), "  ", c.PBR.HexString())
+	fmt.Print(c.PC.HexString(), " ", c.PBR.HexString())
 
 	// Accumultor: M=1 is 8 bit (and B register), M=0 is 16 bit
 	if c.FlagM {
@@ -756,12 +756,12 @@ func printCPUStatus(c *cpu.CPU) {
 
 	// XY Registers: X=1 is 8 bit, X=0 is 16 bit
 	if c.FlagX {
-		fmt.Print(" ", c.X8.HexString(), " ", c.Y8.HexString())
+		fmt.Print(" ", c.X8.HexString(), " ", c.Y8.HexString(), " ")
 	} else {
-		fmt.Print(" ", c.X16.HexString(), " ", c.Y16.HexString())
+		fmt.Print(" ", c.X16.HexString(), " ", c.Y16.HexString(), " ")
 	}
 
-	fmt.Println()
+	fmt.Println(c.DBR.HexString(), c.DP.HexString(), c.SP.HexString(), "<FEHLT>")
 
 	return
 }
