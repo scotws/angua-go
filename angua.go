@@ -198,8 +198,12 @@ func main() {
 
 				switch c.Args[0] {
 
-				case "stack":
-					fmt.Println("CLI: DUMMY dump stack")
+				case "sp", "stack", "stackpointer":
+					// TODO make this a list with a pointer,
+					// consider taking second parameter for
+					// depth
+					addrDP := common.Addr24(cpu.SP)
+					hexDump(addrDP, addrDP+0xF, memory)
 
 				case "dp", "direct", "directpage":
 					addrDP := common.Addr24(cpu.DP)
