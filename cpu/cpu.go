@@ -124,6 +124,7 @@ func (c *CPU) Step() {
 
 	// TODO basic tests
 	opc.InsJump[0xEA]()
+	c.PC += common.Addr16(opc.InsData[0xEA].Size)
 
 }
 

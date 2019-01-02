@@ -49,9 +49,8 @@ type OpcData struct {
 }
 
 var (
-	// --- Function Jump Table ---
-	InsJump [256]func()
-	InsData [256]OpcData
+	InsJump [256]func()  // Instruction jump table
+	InsData [256]OpcData // Instruction data
 )
 
 func init() {
@@ -60,14 +59,38 @@ func init() {
 	InsData[0x01] = OpcData{2, DP_IND_X, false} // ora.dxi
 	InsData[0x02] = OpcData{2, STACK, false}    // cop
 	// ...
+	InsData[0x18] = OpcData{1, IMPLIED, false} // clc
+	// ...
+	InsData[0x85] = OpcData{2, DP, false} // sta.d
+	// ...
+	InsData[0xA9] = OpcData{2, IMMEDIATE, true} // lda.# (lda.8/lda.16)
+	// ...
+	InsData[0xAD] = OpcData{3, ABSOLUTE, false} // lda
+	// ...
 	InsData[0xEA] = OpcData{1, IMPLIED, false} // nop
+	// ...
+	InsData[0xDB] = OpcData{1, IMPLIED, false} // stp
+	// ...
+	InsData[0xFB] = OpcData{1, IMPLIED, false} // xce
 
 	// Instruction data
 	InsJump[0x00] = Opc00 // brk
 	InsJump[0x01] = Opc01 // ora.dxi
 	InsJump[0x02] = Opc02 // cop
 	// ...
+	InsJump[0x18] = Opc18 // clc
+	// ...
+	InsJump[0xA9] = OpcA9 // lda.# (lda.8/lda.16)
+	// ...
+	InsJump[0x85] = Opc85 // sta.d
+	// ...
+	InsJump[0xAD] = OpcAD // lda
+	// ...
+	InsJump[0xDB] = OpcDB // stp
+	// ...
 	InsJump[0xEA] = OpcEA // nop
+	// ...
+	InsJump[0xFB] = OpcFB // xce
 }
 
 // --- Instruction Functions ---
@@ -84,8 +107,42 @@ func Opc02() { // cop
 	fmt.Println("OPC: DUMMY: Executing cop (03)")
 }
 
+func Opc18() { // nop
+	fmt.Println("OPC: DUMMY: Executing clc (18) ")
+}
+
+// ...
+
+func Opc85() { // sta.d
+	fmt.Println("OPC: DUMMY: Executing sta.d (85) ")
+}
+
+// ...
+
+func OpcA9() { // lda.# (lda.8/lda.16)
+	fmt.Println("OPC: DUMMY: Executing lda.# (A9) ")
+}
+
+// ...
+
+func OpcAD() { // lda
+	fmt.Println("OPC: DUMMY: Executing lda (AD) ")
+}
+
+// ...
+
+func OpcDB() { // stp
+	fmt.Println("OPC: DUMMY: Executing stp (DB) ")
+}
+
 // ...
 
 func OpcEA() { // nop
 	fmt.Println("OPC: DUMMY: Executing nop (EA) ")
+}
+
+// ...
+
+func OpcFB() { // nop
+	fmt.Println("OPC: DUMMY: Executing xce (FB) ")
 }
