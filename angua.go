@@ -26,6 +26,7 @@ import (
 	"log"
 	"os"
 	"runtime"
+	"strconv"
 	"strings"
 	"unicode"
 
@@ -250,6 +251,7 @@ func main() {
 		Func: func(c *ishell.Context) {
 			c.Println("Telling machine to halt ...")
 			cmd <- common.HALT
+			printCPUStatus(cpu) // TODO see if we are really giving current status
 		},
 	})
 
@@ -333,7 +335,7 @@ func main() {
 			addrString := c.Args[len(c.Args)-1]
 			num, ok := common.ConvertNum(addrString)
 			if !ok {
-				c.Println("ERROR Couldn't convert number", addrString)
+				c.Println("ERROR: Couldn't convert number", addrString)
 				return
 			}
 
@@ -556,6 +558,9 @@ func main() {
 				return
 			}
 
+			// TODO remember if machine is halted or not, then halt
+			// machine
+
 			// If we were told to print all data with "status all",
 			// well, print all data
 			if len(c.Args) == 1 && c.Args[0] == "all" {
@@ -572,6 +577,9 @@ func main() {
 
 			// In all other cases, we just print the CPU status
 			printCPUStatus(cpu)
+
+			// TODO restore old status
+
 			return
 		},
 	})
@@ -629,7 +637,7 @@ func hexDump(addr1, addr2 common.Addr24, m *mem.Memory) {
 
 		b, ok := m.Fetch(i)
 		if !ok {
-			fmt.Println("ERROR No memory at address", i.HexString(), "(see 'memory')")
+			fmt.Println("ERROR: No memory at address", i.HexString(), "(see 'memory')")
 			return
 		}
 
@@ -715,13 +723,9 @@ func parseAddressRange(ws []string) (addr1, addr2 common.Addr24, ok bool) {
 }
 
 // printCPUStatus print information on the registers, flags and other important
-// CPU data
-// TODO Code this in more detail
+// CPU data. This assumes that the machine has been halted or interesting things
+// might happen
 func printCPUStatus(c *cpu.CPU) {
-
-	// TODO TESTING
-	c.FlagM = true
-	c.FlagX = true
 
 	// --- Print legend --------------------------------------
 
@@ -731,14 +735,14 @@ func printCPUStatus(c *cpu.CPU) {
 	if c.FlagM {
 		fmt.Print(" A  B ")
 	} else {
-		fmt.Print("  A ")
+		fmt.Print("  A  ")
 	}
 
 	// XY Registers: X=1 is 8 bit, X=0 is 16 bit
 	if c.FlagX {
 		fmt.Print(" X  Y ")
 	} else {
-		fmt.Print("   X    Y ")
+		fmt.Print("  X    Y  ")
 	}
 
 	fmt.Println("DB  DP   SP  NVMXDIZC")
@@ -761,7 +765,10 @@ func printCPUStatus(c *cpu.CPU) {
 		fmt.Print(" ", c.X16.HexString(), " ", c.Y16.HexString(), " ")
 	}
 
-	fmt.Println(c.DBR.HexString(), c.DP.HexString(), c.SP.HexString(), "<FEHLT>")
+	p := c.GetStatusReg()
+	statusReg := strconv.FormatUint(uint64(p), 2)
+
+	fmt.Println(c.DBR.HexString(), c.DP.HexString(), c.SP.HexString(), statusReg)
 
 	return
 }

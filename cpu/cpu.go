@@ -41,15 +41,15 @@ const (
 type StatReg struct {
 	FlagN bool // Negative flag, true if highest bit is 1
 	FlagV bool // Overflow flag, true if overflow
-	FlagB bool // Break Instruction, true if interrupt by BRK
 	FlagM bool // A size, set is 8 bit (and B register), clear is 16 bit
+	FlagX bool // XY size, set is 8 bit, clear is 16 bit
 	FlagD bool // Decimal mode, true is decimal, false is binary
 	FlagI bool // Interrupt disable, true is disabled
 	FlagZ bool // Zero flag
-	FlagX bool // XY size, set is 8 bit, clear is 16 bit
 	FlagC bool // Carry flag
 
-	FlagE bool // Emulation flag, set signals is 6502 emulation mode
+	FlagB bool // Break Instruction, true if interrupt by BRK (6502)
+	FlagE bool // Emulation flag, set signals is 6502 emulation mode (unused)
 }
 
 var (
@@ -63,7 +63,6 @@ var (
 // and returns it to the caller. It is used by the instuction PHP for example.
 // TODO code this
 func (s *StatReg) GetStatusReg() byte {
-	fmt.Println("DUMMY GetStatusRegister")
 	return 0xFF // TODO dummy
 }
 
