@@ -521,18 +521,37 @@ func main() {
 				subcmd := c.Args[0]
 
 				switch subcmd {
+
 				case "breakpoints":
 					c.Println("CLI: SHOW: DUMMY show breakpoints")
+
 				case "config":
 					c.Println("CLI: DUMMY show config")
+
 				case "memory": // This is the same as just calling memory
 					c.Println(memory.List())
+
 				case "specials":
 					c.Println("CLI: DUMMY show specials")
+
 				case "system":
 					c.Println("Use 'status host' to show host information")
-				case "vectors":
-					c.Println("CLI: DUMMY show vectors")
+
+				case "v", "vecs", "vectors", "interrupts":
+
+					if !haveMachine {
+						c.Println("No machine present (use 'init')")
+						return
+					}
+
+					// We only print the vectors relevant to native mode
+					c.Println("Abort (00:FFE8):", getVector(0xFFE8, memory))
+					c.Println("BRK   (00:FFE6):", getVector(0xFFE6, memory))
+					c.Println("COP   (00:FFE4):", getVector(0xFFE4, memory))
+					c.Println("IRQ   (00:FFEE):", getVector(0xFFEE, memory))
+					c.Println("NMI   (00:FFEA):", getVector(0xFFEA, memory))
+					c.Println("Reset (00:FFFC):", getVector(0xFFFC, memory))
+
 				default:
 					c.Println("ERROR: Option", subcmd, "unknown")
 				}
@@ -611,6 +630,23 @@ func main() {
 	shell.Run()
 	shell.Close()
 
+}
+
+// getVector is helper function for the "show vectors" instruction. It takes a
+// 16 bit address and returns a string with the 24 bit address of the vector at
+// that memory location in the first bank. Note this routine can be used for
+// other memory fetches
+func getVector(addr common.Addr16, m *mem.Memory) string {
+	va24 := common.Addr24(addr)
+
+	av, ok := m.FetchMore(va24, 2)
+	if !ok {
+		av = 0
+	}
+
+	// FetchMore returns an int
+	avAddr := common.Addr24(av)
+	return avAddr.HexString()
 }
 
 // Hexdump prints the contents of a memory range in a nice hex table. If the
