@@ -5,7 +5,7 @@
 
 // This package contains the opcodes and opcode data for the 65816 instructions.
 // Note there is redundancy with the information in the info package. We keep
-// these separate to allow more robustness while editing.
+// these separate for the moment to allow more robustness while editing.
 
 package cpu
 
@@ -53,7 +53,6 @@ var (
 	InsData [256]OpcData    // Instruction data
 )
 
-// TODO see if we have to passe these a pointer to the memory
 func init() {
 	// Instruction jumps
 	InsData[0x00] = OpcData{2, STACK, false}    // brk with signature byte

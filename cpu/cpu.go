@@ -1,7 +1,7 @@
 // Angua CPU System
 // Scot W. Stevenson <scot.stevenson@gmail.com>
 // First version: 06. Nov 2018
-// First version: 02. Jan 2019
+// First version: 04. Jan 2019
 
 package cpu
 
@@ -77,6 +77,7 @@ func (s *StatReg) SetStatusReg(b byte) {
 
 // TestZ takes an int and sets the Z flag to true if the value is zero and to
 // false otherwise
+// TODO get serious about this code
 func (s *StatReg) TestZ(i int) {
 	if i == 0 {
 		s.FlagZ = true
@@ -199,10 +200,6 @@ func (c *CPU) Run(cmd chan int) {
 				fmt.Println("CPU: DUMMY: Received cmd RUN")
 				c.IsHalted = false
 				c.SingleStepMode = false
-
-			// TODO Get rid of this
-			case common.STATUS:
-				fmt.Println("CPU: DUMMY: Received cmd STATUS")
 
 			case common.STEP:
 				fmt.Println("CPU: DUMMY: Received cmd STEP")

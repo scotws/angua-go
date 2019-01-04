@@ -1,7 +1,7 @@
 // Angua - An Emulator for the 65816 CPU in Native Mode
 // Scot W. Stevenson <scot.stevenson@gmail.com>
 // First version: 26. Sep 2017
-// This version: 01. Jan 2019
+// This version: 04. Jan 2019
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -185,6 +185,8 @@ func main() {
 		LongHelp: longHelpDump,
 		Func: func(c *ishell.Context) {
 
+			const ruler string = "         00 01 02 03 04 05 06 07  08 09 0A 0B 0C 0D 0E 0F"
+
 			if !haveMachine {
 				c.Println("ERROR: No machine present")
 				return
@@ -208,6 +210,7 @@ func main() {
 
 				case "dp", "direct", "directpage":
 					addrDP := common.Addr24(cpu.DP)
+					fmt.Println(ruler)
 					hexDump(addrDP, addrDP+0xFF, memory)
 
 				default:
