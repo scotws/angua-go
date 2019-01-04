@@ -1,7 +1,7 @@
 // Opcodes for Angua
 // Scot W. Stevenson <scot.stevenson@gmail.com>
 // This version: 02. Jan 2019
-// First version: 02. Jan 2019
+// First version: 04. Jan 2019
 
 // This package contains the opcodes and opcode data for the 65816 instructions.
 // Note there is redundancy with the information in the info package. We keep
