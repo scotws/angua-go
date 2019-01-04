@@ -26,32 +26,39 @@ const (
 	nmiAddr   common.Addr24 = 0xFFEA
 	resetAddr common.Addr24 = 0xFFFC // <-- This is the really important one
 
-	// Width of accumulator and registers
-	A8   int = 0
-	A16  int = 1
-	XY   int = 0
-	XY16 int = 1
+	// Width of accumulator and registers. We follow the flag convention for
+	// M and X flags: 0 (clear) is 16 bits, 1 (set) 8 bit
+	W8  = 1
+	W16 = 0
+
+	// Convenience definitions for working with flags
+	SET   = 1
+	CLEAR = 0
 )
 
 // --------------------------------------------------
 // Status Register
 
-// D for decimal mode and E for emulated are provided, but not functional
-// If you are coming from the 6502, notice that the BRK instruction is handled
-// differently
+/*
+	You would think that using bools is the logical way to go with the
+	flags, but it turns out that numbers are easier to move the bits around.
+	D for decimal mode and E for emulated are provided, but not functional.
+	If you are coming from the 6502/65c02, note that the BRK instruction is
+	handled differently.
+*/
 
 type StatReg struct {
-	FlagN bool // Negative flag, true if highest bit is 1
-	FlagV bool // Overflow flag, true if overflow
-	FlagM bool // A size, set is 8 bit (and B register), clear is 16 bit
-	FlagX bool // XY size, set is 8 bit, clear is 16 bit
-	FlagD bool // Decimal mode, true is decimal, false is binary
-	FlagI bool // Interrupt disable, true is disabled
-	FlagZ bool // Zero flag
-	FlagC bool // Carry flag
+	FlagN byte // Negative flag
+	FlagV byte // Overflow flag
+	FlagM byte // A size. SET (1) is 8 bit, CLEAR (0) is 16 bit
+	FlagX byte // XY size. SET (1) is 8 bit, CLEAR (0) is 16 bit
+	FlagD byte // Decimal mode. Ignored with this emulator.
+	FlagI byte // Interrupt disable. SET (1) is disabled.
+	FlagZ byte // Zero flag. SET (1) means zero was found.
+	FlagC byte // Carry flag. SET (1) means we have a carry.
 
-	FlagB bool // Break Instruction, true if interrupt by BRK (6502)
-	FlagE bool // Emulation flag, set signals is 6502 emulation mode (unused)
+	FlagB byte // Break Instruction, SET (1) if IRQ came from BRK (6502, unused)
+	FlagE byte // Emulation flag. SET (1) means emulated, CLEAR (0) native
 }
 
 var (
@@ -61,33 +68,55 @@ var (
 	trace   bool // Print even more information
 )
 
-// GetStatusReg creates a status byte out of the flags of the Status Register
+// GetStatReg creates a status byte out of the flags of the Status Register
 // and returns it to the caller. It is used by the instuction PHP for example.
-// TODO code this
-func (s *StatReg) GetStatusReg() byte {
-	return 0xFF // TODO dummy
+// The sequence is NVMXDIZC
+func (s *StatReg) GetStatReg() byte {
+	var sb byte
+
+	n := s.FlagN << 7
+	v := s.FlagV << 6
+	m := s.FlagM << 5
+	x := s.FlagX << 4
+	d := s.FlagD << 3
+	i := s.FlagI << 2
+	z := s.FlagZ << 1
+	c := s.FlagC
+
+	sb = n + v + m + x + d + i + z + c
+
+	return sb
 }
 
-// SetStatusReg takes a byte and sets the flags of the Status Register
+// SetStatReg takes a byte and sets the flags of the Status Register
 // accordingly. It is used by the instruction PLP for example.
 // TODO code this
-func (s *StatReg) SetStatusReg(b byte) {
+func (s *StatReg) SetStatReg(b byte) {
 	fmt.Println("CPU: DUMMY: SetStatusRegister")
+}
+
+// StringStatReg returns the status register as an eight rune string with 1
+// for set flags and 0 for cleared. The sequence is NVMXDIZC
+func (s *StatReg) StringStatReg() string {
+	var sb byte
+
+	sb = s.GetStatReg()
+
+	return fmt.Sprintf("%08b", sb)
 }
 
 // TestZ takes an int and sets the Z flag to true if the value is zero and to
 // false otherwise
-// TODO get serious about this code
-func (s *StatReg) TestZ(i int) {
+func (s *StatReg) TestAndSetZ(i int) {
 	if i == 0 {
-		s.FlagZ = true
+		s.FlagZ = SET
 	} else {
-		s.FlagZ = false
+		s.FlagZ = CLEAR
 	}
 }
 
-// TestN takes a int and sets the N flag to true if highest bit is set else to flase
-func (s *StatReg) TestN(i int) {
+// TestN takes a int and sets the N flag if highest bit is set, else clears it
+func (s *StatReg) TestAndSetN(i int) {
 	// TODO check based on register size
 }
 
@@ -110,8 +139,8 @@ type CPU struct {
 	PBR common.Data8  // Program Bank Register
 	PC  common.Addr16 // Program counter
 
-	ModeA  int // Current width of Accumulator, either A16 or A8
-	ModeXY int // Current width of X and Y registers, either XY16 or X8
+	ModeA  int // Current width of Accumulator, either W8 or W16
+	ModeXY int // Current width of X and Y registers, either W8 or W16
 
 	IsHalted       bool // Signals if CPU stopped by Angua CLI
 	IsWaiting      bool // CPU stopped by WAI instruction
@@ -123,8 +152,8 @@ type CPU struct {
 	StatReg
 }
 
-// getFullAddr merges the Bank Byte and the Program Counter and returns a 24
-// bit address
+// getFullPC merges the Bank Byte and the Program Counter and returns the
+// current address as a 24 bit value
 func (c *CPU) getFullPC() common.Addr24 {
 	bank := common.Addr24(c.PBR) << 16
 	addr := bank + common.Addr24(c.PC)
@@ -263,8 +292,16 @@ func (c *CPU) reset() {
 
 	// TODO Set X Register high to 00 (through x Flag = 1)
 	// TODO Set Y Register high to 00 (through x Flag = 1)
-	// TODO Status Register: m=1, x=1, d=0, i=1
-	// TODO Emulation Flag: 1
+
+	// Status Register: M=1, X=1, D=0, I=1
+	c.FlagM = SET   // Width of A is 8 bit
+	c.FlagX = SET   // Width of XY is 8 bit
+	c.FlagD = CLEAR // "Best practice" though we don't use it
+	c.FlagI = SET   // Stop interrupts
+
+	// Reset switches us to emulated mode, which means we'll have to get
+	// out of it as soon as possible
+	c.FlagE = SET
 
 	// Get address at 0xFFFC (Reset Vector)
 	rv, ok := c.Mem.FetchMore(resetAddr, 2)

@@ -26,7 +26,6 @@ import (
 	"log"
 	"os"
 	"runtime"
-	"strconv"
 	"strings"
 	"unicode"
 
@@ -39,6 +38,9 @@ import (
 )
 
 const (
+	CLEAR = 0 // Convenience for flags
+	SET   = 1 // Convenience for flags
+
 	configDir   string = "configs"
 	shellBanner string = `Welcome to Angua
 An Emulator for the 65816 in Native Mode
@@ -766,6 +768,7 @@ func parseAddressRange(ws []string) (addr1, addr2 common.Addr24, ok bool) {
 // printCPUStatus print information on the registers, flags and other important
 // CPU data. This assumes that the machine has been halted or interesting things
 // might happen
+// TODO rewrite this is arrays of strings to get rid of the IFs
 func printCPUStatus(c *cpu.CPU) {
 
 	// --- Print legend --------------------------------------
@@ -773,14 +776,14 @@ func printCPUStatus(c *cpu.CPU) {
 	fmt.Print(" PC  PB ")
 
 	// Accumulator: M=1 is 8 bit (and B register), M=0 is 16 bit
-	if c.FlagM {
+	if c.FlagM == SET {
 		fmt.Print(" A  B ")
 	} else {
 		fmt.Print("  A  ")
 	}
 
 	// XY Registers: X=1 is 8 bit, X=0 is 16 bit
-	if c.FlagX {
+	if c.FlagX == SET {
 		fmt.Print(" X  Y ")
 	} else {
 		fmt.Print("  X    Y  ")
@@ -793,23 +796,20 @@ func printCPUStatus(c *cpu.CPU) {
 	fmt.Print(c.PC.HexString(), " ", c.PBR.HexString())
 
 	// Accumultor: M=1 is 8 bit (and B register), M=0 is 16 bit
-	if c.FlagM {
+	if c.FlagM == SET {
 		fmt.Print(" ", c.A8.HexString(), " ", c.B.HexString())
 	} else {
 		fmt.Print(" ", c.A16.HexString())
 	}
 
 	// XY Registers: X=1 is 8 bit, X=0 is 16 bit
-	if c.FlagX {
+	if c.FlagX == SET {
 		fmt.Print(" ", c.X8.HexString(), " ", c.Y8.HexString(), " ")
 	} else {
 		fmt.Print(" ", c.X16.HexString(), " ", c.Y16.HexString(), " ")
 	}
 
-	p := c.GetStatusReg()
-	statusReg := strconv.FormatUint(uint64(p), 2)
-
-	fmt.Println(c.DBR.HexString(), c.DP.HexString(), c.SP.HexString(), statusReg)
+	fmt.Println(c.DBR.HexString(), c.DP.HexString(), c.SP.HexString(), c.StringStatReg())
 
 	return
 }
