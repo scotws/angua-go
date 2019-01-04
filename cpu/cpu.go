@@ -258,7 +258,9 @@ func (c *CPU) reset() {
 	// Set Data Bank Register to 00
 	c.DBR = 0
 
-	// TODO Set Stack high byte to 01
+	// Set Stack high byte to 01
+	c.SP = 0x0100
+
 	// TODO Set X Register high to 00 (through x Flag = 1)
 	// TODO Set Y Register high to 00 (through x Flag = 1)
 	// TODO Status Register: m=1, x=1, d=0, i=1

@@ -202,11 +202,11 @@ func main() {
 				switch c.Args[0] {
 
 				case "sp", "stack", "stackpointer":
-					// TODO make this a list with a pointer,
+					// TODO make this a list with a pointer;
 					// consider taking second parameter for
 					// depth
-					addrDP := common.Addr24(cpu.SP)
-					hexDump(addrDP, addrDP+0xF, memory)
+					addrSP := common.Addr24(cpu.SP)
+					hexDump(addrSP, addrSP+0xF, memory)
 
 				case "dp", "direct", "directpage":
 					addrDP := common.Addr24(cpu.DP)
@@ -252,7 +252,6 @@ func main() {
 		Help:     "halt the machine (freeze)",
 		LongHelp: longHelpHalt,
 		Func: func(c *ishell.Context) {
-			c.Println("Telling machine to halt ...")
 			cmd <- common.HALT
 			printCPUStatus(cpu) // TODO see if we are really giving current status
 		},
