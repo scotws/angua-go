@@ -344,5 +344,9 @@ func (c *CPU) reset() {
 		return
 	}
 
+	// Everything is fine, we are good to go
 	c.PC = addr
+	c.IsHalted = false
+	c.IsStopped = false
+	c.IsWaiting = false
 }

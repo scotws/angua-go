@@ -477,6 +477,7 @@ func main() {
 
 	// Run is only used after HALT. To start the machine, use INIT followed
 	// by RESET. After INIT, the PC is not in a defined state.
+	// TODO see about replacing by RESUME
 	shell.AddCmd(&ishell.Cmd{
 		Name:     "run",
 		Help:     "run a machine created with 'init'",
