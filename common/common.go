@@ -106,6 +106,8 @@ func (a Addr16) LilEnd() []byte {
 	return []byte{a.Lsb(), a.Msb()}
 }
 
+// HexString returns a string representation of the Addr16 address with the hex
+// numbers converted to uppercase. There is no prefix such as "$" or "0x"
 func (a Addr16) HexString() string {
 	return fmt.Sprintf("%02X%02X", a.Msb(), a.Lsb())
 }

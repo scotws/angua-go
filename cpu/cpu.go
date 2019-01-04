@@ -24,7 +24,7 @@ const (
 	copAddr   common.Addr24 = 0xFFE4
 	irqAddr   common.Addr24 = 0xFFEE
 	nmiAddr   common.Addr24 = 0xFFEA
-	resetAddr common.Addr24 = 0xFFFC // <-- This is the really important one
+	resetAddr common.Addr24 = 0xFFFC // <-- This is the important one
 
 	// Width of accumulator and registers. We follow the flag convention for
 	// M and X flags: 0 (clear) is 16 bits, 1 (set) 8 bit
@@ -34,6 +34,12 @@ const (
 	// Convenience definitions for working with flags
 	SET   = 1
 	CLEAR = 0
+
+	// "Magic Number": Because we only emulate native mode, the first
+	// two instructions after a reset must be CLC XCE, which in hex is 0x18
+	// 0xFB, or loaded as a little-endian 16 bit number 0xFB18. We check for
+	// this after a reboot
+	MAGICNUMBER common.Data16 = 0xFB18
 )
 
 // --------------------------------------------------
@@ -46,7 +52,6 @@ const (
 	If you are coming from the 6502/65c02, note that the BRK instruction is
 	handled differently.
 */
-
 type StatReg struct {
 	FlagN byte // Negative flag
 	FlagV byte // Overflow flag
@@ -65,7 +70,7 @@ var (
 	cmd = make(<-chan int, 2) // Receive commands from CLI
 
 	verbose bool // Print lots of information
-	trace   bool // Print even more information
+	trace   bool // Show us what is going on
 )
 
 // GetStatReg creates a status byte out of the flags of the Status Register
@@ -139,8 +144,8 @@ type CPU struct {
 	PBR common.Data8  // Program Bank Register
 	PC  common.Addr16 // Program counter
 
-	ModeA  int // Current width of Accumulator, either W8 or W16
-	ModeXY int // Current width of X and Y registers, either W8 or W16
+	WidthA  int // Current width of Accumulator, either W8 or W16
+	WidthXY int // Current width of X and Y registers, either W8 or W16
 
 	IsHalted       bool // Signals if CPU stopped by Angua CLI
 	IsWaiting      bool // CPU stopped by WAI instruction
@@ -278,8 +283,11 @@ func (c *CPU) Run(cmd chan int) {
 func (c *CPU) reset() {
 	var ok bool
 
-	// Set Direct Page to 0000
+	// Set Direct Page to 0000 (where the Zero Page is on the 6502)
 	c.DP = 0
+
+	// Set Stack high byte to 01 (where it is on the 6502)
+	c.SP = 0x0100
 
 	// Set Program Bank Register to 00
 	c.PBR = 0
@@ -287,13 +295,23 @@ func (c *CPU) reset() {
 	// Set Data Bank Register to 00
 	c.DBR = 0
 
-	// Set Stack high byte to 01
-	c.SP = 0x0100
+	// Clear registers
+	// TODO see if this is what really happens, if we have garbage in
+	// the registers after a reset, we want to emulate that as well
+	c.A8 = 0
+	c.A16 = 0
+	c.B = 0
+	c.X8 = 0
+	c.X16 = 0
+	c.Y8 = 0
+	c.Y16 = 0
 
-	// TODO Set X Register high to 00 (through x Flag = 1)
-	// TODO Set Y Register high to 00 (through x Flag = 1)
+	// Set register widths the fast way
+	c.WidthA = W8
+	c.WidthXY = W8
 
 	// Status Register: M=1, X=1, D=0, I=1
+	// TODO But what happens to the others?
 	c.FlagM = SET   // Width of A is 8 bit
 	c.FlagX = SET   // Width of XY is 8 bit
 	c.FlagD = CLEAR // "Best practice" though we don't use it
@@ -310,8 +328,21 @@ func (c *CPU) reset() {
 		return
 	}
 
-	c.PC = common.Addr16(rv)
+	addr := common.Addr16(rv)
 
-	// TODO Make sure we have "magic number" at address
+	// Make sure we have "magic number" at address: The first instructions
+	// must always be CLC XCE which translates as 0xFB18 because of the
+	// little-endian fetch
+	bootInst, ok := c.Mem.FetchMore(common.Addr24(rv), 2)
+	if !ok {
+		log.Println("ERROR: Couldn't get instructions from Reset target", addr.HexString())
+		return
+	}
 
+	if common.Data16(bootInst) != MAGICNUMBER {
+		log.Println("ERROR: Reset address must start with 0xFB18 (CLC XCE), got", addr.HexString())
+		return
+	}
+
+	c.PC = addr
 }
