@@ -1,7 +1,7 @@
 // Info (built-in help) system for Angua
 // Scot W. Stevenson <scot.stevenson@gmail.com>
 // First version: 11. Nov 2018
-// This version: 26. Dec 2018
+// This version: 04. Jan 2019
 
 // info is a package to provide an online manual system to look up instructions
 // while using the Angua emulator for the 65816.
@@ -25,10 +25,10 @@ const (
 	StackRel         = 10
 
 	// Strings
-	mpu6502  = "6502"
-	mpu65c02 = "65c02"
-	mpu65816 = "65802/65816"
-	mpuAll   = "6502 65c02 65802/65816"
+	mpu6502  string = "6502"
+	mpu65c02 string = "65c02"
+	mpu65816 string = "65802/65816"
+	mpuAll   string = "6502 65c02 65802/65816"
 )
 
 type InfoEntry struct {
@@ -77,11 +77,11 @@ func GenerateDicts() {
 		1, 2, 352, []string{mpu6502, mpu65c02, mpu65816}, false, false,
 		[]string{"N", "Z"}, "Does not affect carry flag C"}
 
-	OpcodeDict[0x9C] = InfoEntry{0x9C, "stz", "STZ ????", "Store Zero to Memory",
+	OpcodeDict[0x9C] = InfoEntry{0x9C, "stz", "STZ nnnn", "Store Zero to Memory",
 		Absolute, 3, 4, 405, []string{mpu65c02, mpu65816}, true, false,
 		[]string{""}, "Flags unaffected by store instructions"}
 
-	OpcodeDict[0x74] = InfoEntry{0x74, "stz.dx", "STZ ??,X", "Store Zero to Memory",
+	OpcodeDict[0x74] = InfoEntry{0x74, "stz.dx", "STZ nn,X", "Store Zero to Memory",
 		DirPageIndexX, 2, 4, 405, []string{mpu65c02, mpu65816}, true, false,
 		[]string{""}, "Flags unaffected by store instructions"}
 
@@ -89,19 +89,19 @@ func GenerateDicts() {
 		3, 4, 340, []string{mpu65816}, true, false,
 		[]string{""}, "Relocateable, but JMP Absolute one cycle faster"}
 
-	OpcodeDict[0x8E] = InfoEntry{0x8E, "stx", "STX ????", "Store Index Register X to Memory",
+	OpcodeDict[0x8E] = InfoEntry{0x8E, "stx", "STX nnnn", "Store Index Register X to Memory",
 		Absolute, 3, 4, 403, []string{mpuAll}, true, false,
 		[]string{""}, "Flags unaffected by store instructions"}
 
-	OpcodeDict[0xA3] = InfoEntry{0xA3, "lda.s", "LDA ??,S", "Load Accumulator from Memory",
+	OpcodeDict[0xA3] = InfoEntry{0xA3, "lda.s", "LDA nn,S", "Load Accumulator from Memory",
 		StackRel, 2, 4, 363, []string{mpu65816}, true, false,
 		[]string{"N", "Z"}, "(none)"}
 
-	OpcodeDict[0xA9] = InfoEntry{0xA9, "lda.#", "LDA #??", "Load Accumulator from Memory",
+	OpcodeDict[0xA9] = InfoEntry{0xA9, "lda.#", "LDA #nn", "Load Accumulator from Memory",
 		Immediate, 2, 2, 363, []string{mpuAll}, true, true,
 		[]string{"N", "Z"}, "On 65802/65816, 16 bit of data compared if flag X clear"}
 
-	OpcodeDict[0xE0] = InfoEntry{0xE0, "cpx.#", "CPX #??", "Compare Index Register X with Memory",
+	OpcodeDict[0xE0] = InfoEntry{0xE0, "cpx.#", "CPX #nn", "Compare Index Register X with Memory",
 		Immediate, 2, 2, 350, []string{mpu6502, mpu65c02, mpu65816}, true, true,
 		[]string{"N", "Z", "C"}, "On 65802/65816, 16 bit of data compared if flag X clear"}
 

@@ -142,7 +142,10 @@ func (c *CPU) Step() {
 		return
 	}
 
+	// Execute the instruction by accessing the entry in the Instruction
+	// Jump table. We pass a pointer to the CPU struct.
 	InsJump[ins](c)
+
 	c.PC += common.Addr16(InsData[ins].Size)
 }
 
