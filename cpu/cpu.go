@@ -1,13 +1,14 @@
 // Angua CPU System
 // Scot W. Stevenson <scot.stevenson@gmail.com>
 // First version: 06. Nov 2018
-// First version: 04. Jan 2019
+// This version: 05. Jan 2019
 
 package cpu
 
 import (
 	"fmt"
 	"log"
+	"math/bits"
 	"time"
 
 	"angua/common"
@@ -18,7 +19,7 @@ const (
 	// Interrupt vectors. Note the reset vector is only for emulated mode.
 	// See http://6502.org/tutorials/65c816interrupts.html and Eyes & Lichty
 	// p. 195 for details. We store these as 24 bit addresses because that
-	// is the way we'll use them during mem.FetchMore
+	// is the way we'll use them during mem.FetchMore().
 	abortAddr common.Addr24 = 0xFFE8
 	brkAddr   common.Addr24 = 0xFFE6
 	copAddr   common.Addr24 = 0xFFE4
@@ -75,7 +76,7 @@ var (
 
 // GetStatReg creates a status byte out of the flags of the Status Register
 // and returns it to the caller. It is used by the instuction PHP for example.
-// The sequence is NVMXDIZC
+// The flag sequence is NVMXDIZC
 func (s *StatReg) GetStatReg() byte {
 	var sb byte
 
@@ -95,9 +96,16 @@ func (s *StatReg) GetStatReg() byte {
 
 // SetStatReg takes a byte and sets the flags of the Status Register
 // accordingly. It is used by the instruction PLP for example.
-// TODO code this
 func (s *StatReg) SetStatReg(b byte) {
-	fmt.Println("CPU: DUMMY: SetStatusRegister")
+
+	s.FlagN = bits.Reverse8(b & 0x80)
+	s.FlagV = (b & 0x40) >> 6
+	s.FlagM = (b & 0x20) >> 5
+	s.FlagX = (b & 0x10) >> 4
+	s.FlagD = (b & 0x08) >> 3
+	s.FlagI = (b & 0x04) >> 2
+	s.FlagZ = (b & 0x02) >> 1
+	s.FlagC = (b & 0x01)
 }
 
 // StringStatReg returns the status register as an eight rune string with 1

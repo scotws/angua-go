@@ -142,7 +142,7 @@ func OpcAD(c *CPU) { // lda
 // ...
 
 func OpcDB(c *CPU) { // stp
-	fmt.Println("Machine stopped by STP instruction (0xDB) at", c.PC.HexString)
+	fmt.Println("Machine stopped by STP instruction (0xDB) at", c.PC.HexString())
 	c.IsStopped = true
 }
 

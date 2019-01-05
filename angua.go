@@ -1,7 +1,7 @@
 // Angua - An Emulator for the 65816 CPU in Native Mode
 // Scot W. Stevenson <scot.stevenson@gmail.com>
 // First version: 26. Sep 2017
-// This version: 04. Jan 2019
+// This version: 05. Jan 2019
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -44,7 +44,7 @@ const (
 	configDir   string = "configs"
 	shellBanner string = `Welcome to Angua
 An Emulator for the 65816 in Native Mode
-Version ALPHA 0.1  02. Jan 2019
+Version ALPHA 0.1  05. Jan 2019
 Copyright (c) 2018-2019 Scot W. Stevenson
 Angua comes with absolutely NO WARRANTY
 Type 'help' for more information
