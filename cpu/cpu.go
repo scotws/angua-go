@@ -287,21 +287,25 @@ func (c *CPU) Run(cmd chan int) {
 
 // Reset the machine. This is handled by the RESET signal and is also how we
 // cold boot the machine after INIT. Details on the reset procedure are on page
-// 201 of Eyes & Lichty.
+// 201 of Eyes & Lichty; see http://6502.org/tutorials/65c816interrupts.html for
+// a more detailed discussion
 func (c *CPU) reset() {
 	var ok bool
+
+	// For future reference: If the internal clock was stopped by STP or
+	// WAI, it will be restarted.
 
 	// Set Direct Page to 0000 (where the Zero Page is on the 6502)
 	c.DP = 0
 
-	// Set Stack high byte to 01 (where it is on the 6502)
-	c.SP = 0x0100
-
-	// Set Program Bank Register to 00
+	// Set Program and Data Bank Registers to 00
 	c.PBR = 0
-
-	// Set Data Bank Register to 00
 	c.DBR = 0
+
+	// The LSB of the SP is in an undefined state after a reset, while the
+	// MSB is set to 01. We simulate this to avoid users getting used to a
+	// certain value
+	c.SP = 0x0100 | common.Addr16(common.UndefinedByte())
 
 	// Clear registers
 	// TODO see if this is what really happens, if we have garbage in
@@ -319,7 +323,6 @@ func (c *CPU) reset() {
 	c.WidthXY = W8
 
 	// Status Register: M=1, X=1, D=0, I=1
-	// TODO But what happens to the others?
 	c.FlagM = SET   // Width of A is 8 bit
 	c.FlagX = SET   // Width of XY is 8 bit
 	c.FlagD = CLEAR // "Best practice" though we don't use it
@@ -328,6 +331,13 @@ func (c *CPU) reset() {
 	// Reset switches us to emulated mode, which means we'll have to get
 	// out of it as soon as possible
 	c.FlagE = SET
+
+	// The flags CNVZ are undefined after a reset. We simulated this to make
+	// sure the user doesn't get used to this.
+	c.FlagC = common.UndefinedBit()
+	c.FlagN = common.UndefinedBit()
+	c.FlagV = common.UndefinedBit()
+	c.FlagZ = common.UndefinedBit()
 
 	// Get address at 0xFFFC (Reset Vector)
 	rv, ok := c.Mem.FetchMore(resetAddr, 2)

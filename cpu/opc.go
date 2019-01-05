@@ -111,8 +111,10 @@ func Opc02(c *CPU) { // cop
 	fmt.Println("OPC: DUMMY: Executing cop (03)")
 }
 
-func Opc18(c *CPU) { // nop
-	fmt.Println("OPC: DUMMY: Executing clc (18) ")
+// ...
+
+func Opc18(c *CPU) { // clc
+	c.FlagC = CLEAR
 }
 
 // ...
@@ -142,18 +144,21 @@ func OpcAD(c *CPU) { // lda
 // ...
 
 func OpcDB(c *CPU) { // stp
-	fmt.Println("Machine stopped by STP instruction (0xDB) at", c.PC.HexString())
 	c.IsStopped = true
+	// TODO print Addr24
+	fmt.Println("Machine stopped by STP (0xDB) in block", c.PBR.HexString(), "at address", c.PC.HexString())
 }
 
 // ...
 
 func OpcEA(c *CPU) { // nop
-	fmt.Println("OPC: DUMMY: Executing nop (EA) ")
+	// TODO consider a warning if this instruction is encountered
 }
 
 // ...
 
-func OpcFB(c *CPU) { // nop
-	fmt.Println("OPC: DUMMY: Executing xce (FB) ")
+func OpcFB(c *CPU) { // xce
+	tmp := c.FlagE
+	c.FlagE = c.FlagC
+	c.FlagC = tmp
 }

@@ -1,7 +1,7 @@
 // Common files and type for Angua
 // Scot W. Stevenson <scot.stevenson@gmail.com>
 // This version: 07. Nov 2018
-// First version: 01. Jan 2019
+// First version: 05. Jan 2019
 
 // This package contains base definitions and helper functions for all
 // parts of Angua
@@ -10,6 +10,7 @@ package common
 
 import (
 	"fmt"
+	"math/rand"
 	"strconv"
 	"strings"
 )
@@ -215,4 +216,18 @@ func StripDelimiters(s string) string {
 	s1 := strings.Replace(s, ":", "", -1)
 	s2 := strings.Replace(s1, ".", "", -1)
 	return strings.TrimSpace(s2)
+}
+
+// UndefinedByte returns a randomized byte. It is used for situations where the
+// state of part of the CPU is undefinded so the user doesn't learn to expect
+// (say) a 00. See cpu.reset() for an example.
+func UndefinedByte() byte {
+	return byte(rand.Intn(255))
+}
+
+// UndefinedBit returns either 0 or 1. It is used for situations where the
+// state of a flag is undefinded so the user doesn't learn to expect
+// a certain flag, for instance after a RESET (see cpu.reset()).
+func UndefinedBit() byte {
+	return byte(rand.Intn(1))
 }
