@@ -1,7 +1,7 @@
 // Angua Memory System
 // Scot W. Stevenson <scot.stevenson@gmail.com>
 // First version: 09. Mar 2018
-// This version: 01. Jan 2019
+// This version: 05. Jan 2019
 
 package mem
 
@@ -138,13 +138,13 @@ func (m Memory) Contains(addr common.Addr24) bool {
 // memory level
 func (m Memory) Fetch(addr common.Addr24) (byte, bool) {
 	var b byte
-	var found bool = false
+	var ok bool = false
 
 	for _, c := range m.Chunks {
 
 		if c.contains(addr) {
 			b = c.fetch(addr)
-			found = true
+			ok = true
 			break
 		}
 	}
