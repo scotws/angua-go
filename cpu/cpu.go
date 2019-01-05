@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"log"
 	"math/bits"
-	"time"
 
 	"angua/common"
 	"angua/mem"
@@ -265,9 +264,9 @@ func (c *CPU) Run(cmd chan int) {
 
 			if !c.IsHalted && !c.IsStopped {
 				c.Step()
-				time.Sleep(1 * time.Second) // TODO for testing
 
 				if c.SingleStepMode {
+					// TODO print machine status
 					<-cmd
 				}
 
@@ -308,7 +307,7 @@ func (c *CPU) reset() {
 	c.SP = 0x0100 | common.Addr16(common.UndefinedByte())
 
 	// Clear registers
-	// TODO see if this is what really happens, if we have garbage in
+	// TODO see if this is what really happens. If we have garbage in
 	// the registers after a reset, we want to emulate that as well
 	c.A8 = 0
 	c.A16 = 0

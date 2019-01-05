@@ -769,7 +769,8 @@ func parseAddressRange(ws []string) (addr1, addr2 common.Addr24, ok bool) {
 // printCPUStatus print information on the registers, flags and other important
 // CPU data. This assumes that the machine has been halted or interesting things
 // might happen
-// TODO rewrite this is arrays of strings to get rid of the IFs
+// TODO rewrite this is arrays of strings to get rid of the IFs when we're sure
+// of what everything is supposed to look like
 func printCPUStatus(c *cpu.CPU) {
 
 	// --- Print legend --------------------------------------
@@ -790,7 +791,7 @@ func printCPUStatus(c *cpu.CPU) {
 		fmt.Print("  X    Y  ")
 	}
 
-	fmt.Println("DB  DP   SP  NVMXDIZC")
+	fmt.Println("DB  DP   SP  NVMXDIZC E")
 
 	// --- Print data --------------------------------------
 
@@ -810,7 +811,23 @@ func printCPUStatus(c *cpu.CPU) {
 		fmt.Print(" ", c.X16.HexString(), " ", c.Y16.HexString(), " ")
 	}
 
-	fmt.Println(c.DBR.HexString(), c.DP.HexString(), c.SP.HexString(), c.StringStatReg())
+	fmt.Print(c.DBR.HexString(), " ",
+		c.DP.HexString(), " ",
+		c.SP.HexString(), " ",
+		c.StringStatReg(), " ",
+		c.FlagE)
+
+	// It doesn't make sense to print "halted" because we will usually halt
+	// before printing the CPU state
+	if c.IsWaiting {
+		fmt.Print(" waiting")
+	}
+
+	if c.IsStopped {
+		fmt.Print(" stopped")
+	}
+
+	fmt.Println()
 
 	return
 }
