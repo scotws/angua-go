@@ -11,22 +11,25 @@ import (
 
 // clc
 func TestOpcFlags(t *testing.T) {
-
-	c := CPU{}
-
+	var c = CPU{}
 	var tests = []struct {
 		name string
 		init func(*CPU)
-		flag byte
+		flag *byte
 		want byte
 	}{
-		{"0x18 (clc)", Opc18, c.FlagC, CLEAR},
+		{"0x18 (clc)", Opc18, &c.FlagC, CLEAR},
+		{"0x38 (sec)", Opc38, &c.FlagC, SET},
+		{"0x58 (cli)", Opc58, &c.FlagI, CLEAR},
+		{"0x78 (sei)", Opc78, &c.FlagI, SET},
 	}
 
 	for _, test := range tests {
 		test.init(&c)
-		if test.flag != test.want {
-			t.Errorf("TestOpcFlags for %v returns %X, wanted %X", test.name, c.FlagC, test.want)
+
+		if *test.flag != test.want {
+			t.Errorf("TestOpcFlags for %v returns %X, wanted %X",
+				test.name, *test.flag, test.want)
 		}
 	}
 }
