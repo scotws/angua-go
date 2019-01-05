@@ -65,6 +65,10 @@ func GenerateDicts() {
 		1, 2, 343, []string{mpu6502, mpu65c02, mpu65816}, false, false,
 		[]string{"C"}, "On 65816/65802, used to switch to Native Mode"}
 
+	OpcodeDict[0x3A] = InfoEntry{0x3A, "dec.a", "DEC A", "Decrement", Accumulator,
+		1, 2, 352, []string{mpu6502, mpu65c02, mpu65816}, false, false,
+		[]string{"N", "Z"}, "Does not affect carry flag C"}
+
 	OpcodeDict[0x50] = InfoEntry{0x50, "bvc", "BVC", "Branch if Overflow Clear", ProgCountRel,
 		2, 2, 341, []string{mpu6502, mpu65c02, mpu65816}, false, false,
 		[]string{""}, "Also set by Set Overflow Signal to chip"}
@@ -72,14 +76,6 @@ func GenerateDicts() {
 	OpcodeDict[0x70] = InfoEntry{0x70, "bvs", "BVS", "Branch if Overflow Set", ProgCountRel,
 		2, 2, 342, []string{mpu6502, mpu65c02, mpu65816}, false, false,
 		[]string{""}, "Also set by Set Overflow Signal to chip"}
-
-	OpcodeDict[0x3A] = InfoEntry{0x3A, "dec.a", "DEC A", "Decrement", Accumulator,
-		1, 2, 352, []string{mpu6502, mpu65c02, mpu65816}, false, false,
-		[]string{"N", "Z"}, "Does not affect carry flag C"}
-
-	OpcodeDict[0x9C] = InfoEntry{0x9C, "stz", "STZ nnnn", "Store Zero to Memory",
-		Absolute, 3, 4, 405, []string{mpu65c02, mpu65816}, true, false,
-		[]string{""}, "Flags unaffected by store instructions"}
 
 	OpcodeDict[0x74] = InfoEntry{0x74, "stz.dx", "STZ nn,X", "Store Zero to Memory",
 		DirPageIndexX, 2, 4, 405, []string{mpu65c02, mpu65816}, true, false,
@@ -91,6 +87,10 @@ func GenerateDicts() {
 
 	OpcodeDict[0x8E] = InfoEntry{0x8E, "stx", "STX nnnn", "Store Index Register X to Memory",
 		Absolute, 3, 4, 403, []string{mpuAll}, true, false,
+		[]string{""}, "Flags unaffected by store instructions"}
+
+	OpcodeDict[0x9C] = InfoEntry{0x9C, "stz", "STZ nnnn", "Store Zero to Memory",
+		Absolute, 3, 4, 405, []string{mpu65c02, mpu65816}, true, false,
 		[]string{""}, "Flags unaffected by store instructions"}
 
 	OpcodeDict[0xA3] = InfoEntry{0xA3, "lda.s", "LDA nn,S", "Load Accumulator from Memory",
