@@ -22,6 +22,8 @@ func TestOpcFlags(t *testing.T) {
 		{"0x38 (sec)", Opc38, &c.FlagC, SET},
 		{"0x58 (cli)", Opc58, &c.FlagI, CLEAR},
 		{"0x78 (sei)", Opc78, &c.FlagI, SET},
+		{"0xD8 (cld)", OpcD8, &c.FlagD, CLEAR},
+		{"0xB8 (clv)", OpcB8, &c.FlagV, CLEAR},
 	}
 
 	for _, test := range tests {
@@ -31,5 +33,6 @@ func TestOpcFlags(t *testing.T) {
 			t.Errorf("TestOpcFlags for %v returns %X, wanted %X",
 				test.name, *test.flag, test.want)
 		}
+
 	}
 }
