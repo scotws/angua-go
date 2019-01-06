@@ -678,9 +678,10 @@ func main() {
 		},
 	})
 
+	// TODO this word calls BURN and will let you edit ROM
 	shell.AddCmd(&ishell.Cmd{
 		Name:     "store",
-		Help:     "store a byte at a given address",
+		Help:     "store a byte at a given address of RAM or ROM",
 		LongHelp: longHelpStore,
 		Func: func(c *ishell.Context) {
 			c.Println("CLI: DUMMY store")

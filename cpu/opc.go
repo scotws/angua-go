@@ -191,13 +191,25 @@ func OpcAD(c *CPU) { // lda
 	addr := c.getFullPC() + 1
 
 	// Get byte from memory
-	// TODO get one or two bytes depending on size of
-	b, ok := c.Mem.Fetch(addr)
-	if !ok {
-		log.Println("ERROR: Couldn't fetch from", addr.HexString())
+	// TODO generalize this in a routine
+	switch c.WidthA {
+	case W8:
+		b, ok := c.Mem.Fetch(addr)
+		if !ok {
+			log.Println("ERROR: Couldn't fetch byte from", addr.HexString())
+			return
+		}
+		c.A8 = common.Data8(b)
+	case W16:
+		b, ok := c.Mem.FetchMore(addr, 29)
+		if !ok {
+			log.Println("ERROR: Couldn't fetch two bytes from", addr.HexString())
+			return
+		}
+		c.A16 = common.Data16(b)
+	default: // paranoid
+		log.Println("ERROR: Illegal width for register A:", c.WidthA)
 	}
-
-	c.A8 = common.Data8(b)
 
 	return
 }
