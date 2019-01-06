@@ -1,7 +1,7 @@
 // Angua Memory System
 // Scot W. Stevenson <scot.stevenson@gmail.com>
 // First version: 09. Mar 2018
-// This version: 05. Jan 2019
+// This version: 06. Jan 2019
 
 package mem
 
@@ -140,7 +140,16 @@ func (m Memory) Contains(addr common.Addr24) bool {
 // memory level
 func (m Memory) Fetch(addr common.Addr24) (byte, bool) {
 	var b byte
-	var ok bool = false
+
+	// First, see if this triggers a special reading address
+	// Make sure address is not already in SpecRead
+	_, ok := m.SpecRead[addr]
+	if ok {
+		// TODO add real special function
+		fmt.Println("MEM: DUMMY: SpecialRead from", addr.HexString())
+	}
+
+	ok = false
 
 	for _, c := range m.Chunks {
 
@@ -242,7 +251,17 @@ func (m Memory) Size() uint {
 // This is the main store routine for the emulator. See Burn for a function that
 // ignores ROM/RAM differences.
 func (m Memory) Store(addr common.Addr24, b byte) bool {
-	var f bool = false
+
+	// First, see if this triggers a special write address
+	// Make sure address is not already in SpecRead
+	_, ok := m.SpecRead[addr]
+
+	if ok {
+		// TODO add real special function
+		fmt.Println("MEM: DUMMY: SpecialWrite to", addr.HexString())
+	}
+
+	ok = false
 
 	for _, c := range m.Chunks {
 
@@ -250,11 +269,11 @@ func (m Memory) Store(addr common.Addr24, b byte) bool {
 		// not explicitly in the Go specs
 		if c.Type == "ram" && c.contains(addr) {
 			c.store(addr, b) // Does not check if legal address
-			f = true
+			ok = true
 			break
 		}
 	}
-	return f
+	return ok
 }
 
 // Burn takes a 24-bit address and a byte. If the address is part of a chunk,
