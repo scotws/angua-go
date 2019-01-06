@@ -25,6 +25,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"reflect"
 	"runtime"
 	"strings"
 	"unicode"
@@ -475,8 +476,8 @@ func main() {
 
 			addrString := c.Args[0]
 
-			// Skip any "to" if there is one
-			if c.Args[0] == "to" {
+			// Skip any "from" if there is one
+			if c.Args[0] == "from" {
 				addrString = c.Args[1]
 			}
 
@@ -509,10 +510,9 @@ func main() {
 
 	shell.AddCmd(&ishell.Cmd{
 		Name:     "reset",
-		Help:     "rest the machine (RESET)",
+		Help:     "reset the machine (trigger Reset signal)",
 		LongHelp: longHelpReset,
 		Func: func(c *ishell.Context) {
-			c.Println("Triggering RESET signal ...")
 			cmd <- common.RESET
 			shell.Process("run")
 		},
@@ -587,10 +587,24 @@ func main() {
 				case "memory": // This is the same as just calling memory
 					c.Println(memory.List())
 
-				case "specials":
-					c.Println("CLI: DUMMY show specials")
+				case "specs", "special", "specials":
 
-				case "system":
+					if !haveMachine {
+						c.Println("No machine present (use 'init')")
+						return
+					}
+
+					for a, f := range memory.SpecRead {
+						fn := runtime.FuncForPC(reflect.ValueOf(f).Pointer()).Name()
+						c.Println("Reading:", a.HexString(), "calls", fn)
+					}
+
+					for a, f := range memory.SpecWrite {
+						fn := runtime.FuncForPC(reflect.ValueOf(f).Pointer()).Name()
+						c.Println("Writing:", a.HexString(), "calls", fn)
+					}
+
+				case "sys", "system":
 					c.Println("Use 'status host' to show host information")
 
 				case "v", "vecs", "vectors", "interrupts":

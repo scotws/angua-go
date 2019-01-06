@@ -131,8 +131,11 @@ Example:
 	memory 00:000 $00:ffff is ram 
 	memory bank 0 is ram
 
-Calling "memory" by itself will print the current memory configuration and is the
-same as "show memory".`
+You cannot currently define a range of banks, for instance "memory bank 0
+bank 1 is ram".
+
+Calling "memory" by itself will print the current memory configuration and is
+the same as "show memory".`
 
 	longHelpNMI string = `Trigger a non-maskable interrupt (NMI).
 
