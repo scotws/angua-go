@@ -327,7 +327,7 @@ func (c *CPU) reset() error {
 	// Get address at 0xFFFC (Reset Vector)
 	rv, err := c.Mem.FetchMore(common.ResetAddr, 2)
 	if err != nil {
-		return fmt.Errorf("Reset: Couldn't get Reset vector from %s", common.ResetAddr)
+		return fmt.Errorf("Reset: Couldn't get Reset vector from %s", string(common.ResetAddr))
 	}
 
 	addr := common.Addr16(rv)

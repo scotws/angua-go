@@ -14,7 +14,7 @@ func TestOpcFlags(t *testing.T) {
 	var c = CPU{}
 	var tests = []struct {
 		name string
-		init func(*CPU)
+		init func(*CPU) error
 		flag *byte
 		want byte
 	}{
