@@ -1,7 +1,7 @@
 // Common files and type for Angua
 // Scot W. Stevenson <scot.stevenson@gmail.com>
 // This version: 07. Nov 2018
-// First version: 05. Jan 2019
+// First version: 06. Jan 2019
 
 // This package contains base definitions and helper functions for all
 // parts of Angua
@@ -38,6 +38,34 @@ const (
 	NOVERBOSE = 11 // Turns verbose off
 	TRACE     = 12 // Print out trace information
 	NOTRACE   = 13 // Turn off trace information
+
+	// Vectors' addresses relevant for the 65816 in native mode
+	AbortAddr Addr24 = 0xFFE8
+	BRKAddr   Addr24 = 0xFFE6
+	COPAddr   Addr24 = 0xFFE4
+	IRQAddr   Addr24 = 0xFFEE
+	NMIAddr   Addr24 = 0xFFEA
+	ResetAddr Addr24 = 0xFFFC
+)
+
+// Interrupt vectors. Note the reset vector is only for emulated mode.
+// See http://6502.org/tutorials/65c816interrupts.html and Eyes & Lichty
+// p. 195 for details. We store these as 24 bit addresses because that
+// is the way we'll use them during mem.FetchMore().
+type Vector struct {
+	Addr Addr24
+	Name string
+}
+
+var (
+	Vectors = []Vector{
+		{AbortAddr, "Abort"},
+		{BRKAddr, "BRK"},
+		{COPAddr, "COP"},
+		{IRQAddr, "IRQ"},
+		{NMIAddr, "NMI"},
+		{ResetAddr, "Reset"},
+	}
 )
 
 // ==== INTERFACES ===
@@ -183,12 +211,9 @@ func (d Data16) HexString() string {
 // ConvertNum Converts a number string -- hex, binary, or decimal -- to an uint.
 // We accept ':' and '.' as delimiters, use $ or 0x for hex numbers, % for
 // binary numbers, and nothing for decimal numbers. Note octal is not supported
-func ConvertNum(s string) (uint, bool) {
-	var (
-		ok  bool = true
-		n   int64
-		err error
-	)
+func ConvertNum(s string) (uint, error) {
+	var n int64
+	var err error
 
 	ss := StripDelimiters(s)
 
@@ -205,9 +230,10 @@ func ConvertNum(s string) (uint, bool) {
 	}
 
 	if err != nil {
-		return 0, false
+		return 0, fmt.Errorf("ConvertNum: Couldn't convert %s: %v", s, err)
 	}
-	return uint(n), ok
+
+	return uint(n), nil
 }
 
 // stripDelimiters removes '.' and ':' which users can use as number delimiters.

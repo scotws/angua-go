@@ -1,13 +1,12 @@
 // Angua CPU System
 // Scot W. Stevenson <scot.stevenson@gmail.com>
 // First version: 06. Nov 2018
-// This version: 05. Jan 2019
+// This version: 06. Jan 2019
 
 package cpu
 
 import (
 	"fmt"
-	"log"
 	"math/bits"
 
 	"angua/common"
@@ -174,20 +173,19 @@ func (c *CPU) getFullPC() common.Addr24 {
 }
 
 // Step executes a single instruction from PC. This is called by the Run method
-// TODO this is pretty much all fake
+// TODO this is pretty much all fake at the moment
 func (c *CPU) Step() {
 
 	// Get byte at PC
-	ins, ok := c.Mem.Fetch(c.getFullPC())
-	if !ok {
-		log.Println("ERROR: Can't get instruction at", c.getFullPC().HexString())
+	ins, err := c.Mem.Fetch(c.getFullPC())
+	if err != nil {
+		fmt.Errorf("Step: can't get instruction at %s", c.getFullPC().HexString())
 		return
 	}
 
 	// Execute the instruction by accessing the entry in the Instruction
 	// Jump table. We pass a pointer to the CPU struct.
 	InsJump[ins](c)
-
 	c.PC += common.Addr16(InsData[ins].Size)
 }
 
@@ -288,11 +286,10 @@ func (c *CPU) Run(cmd chan int) {
 // cold boot the machine after INIT. Details on the reset procedure are on page
 // 201 of Eyes & Lichty; see http://6502.org/tutorials/65c816interrupts.html for
 // a more detailed discussion
-func (c *CPU) reset() {
-	var ok bool
+func (c *CPU) reset() error {
 
 	// For future reference: If the internal clock was stopped by STP or
-	// WAI, it will be restarted.
+	// WAI, it will be restarted here.
 
 	// Set Direct Page to 0000 (where the Zero Page is on the 6502)
 	c.DP = 0
@@ -339,10 +336,9 @@ func (c *CPU) reset() {
 	c.FlagZ = common.UndefinedBit()
 
 	// Get address at 0xFFFC (Reset Vector)
-	rv, ok := c.Mem.FetchMore(resetAddr, 2)
-	if !ok {
-		log.Println("ERROR: Couldn't get RESET vector from", resetAddr)
-		return
+	rv, err := c.Mem.FetchMore(resetAddr, 2)
+	if err != nil {
+		return fmt.Errorf("Reset: Couldn't get RESET vector from %s", resetAddr)
 	}
 
 	addr := common.Addr16(rv)
@@ -350,15 +346,13 @@ func (c *CPU) reset() {
 	// Make sure we have "magic number" at address: The first instructions
 	// must always be CLC XCE which translates as 0xFB18 because of the
 	// little-endian fetch
-	bootInst, ok := c.Mem.FetchMore(common.Addr24(rv), 2)
-	if !ok {
-		log.Println("ERROR: Couldn't get instructions from Reset target", addr.HexString())
-		return
+	bootInst, err := c.Mem.FetchMore(common.Addr24(rv), 2)
+	if err != nil {
+		return fmt.Errorf("Reset: Couldn't get instructions from Reset target %s", addr.HexString())
 	}
 
 	if common.Data16(bootInst) != MAGICNUMBER {
-		log.Println("ERROR: Reset address must start with 0xFB18 (CLC XCE), got", addr.HexString())
-		return
+		return fmt.Errorf("Reset: Code after reset must start with 0xFB18 (clc xce), got: %s", addr.HexString())
 	}
 
 	// Everything is fine, we are good to go
@@ -366,4 +360,6 @@ func (c *CPU) reset() {
 	c.IsHalted = false
 	c.IsStopped = false
 	c.IsWaiting = false
+
+	return nil
 }

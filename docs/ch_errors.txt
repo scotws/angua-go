@@ -1,0 +1,10 @@
+Error handling 
+Scot W. Stevenson <scot.stevenson@gmail.com>
+First version: 06. Jan 2019
+This version: 06. Jan 2019
+
+(THIS IS A COLLECTION OF NOTES FOR A LATER CHAPTER)
+
+- Propogate errors upwards 
+
+

@@ -1,7 +1,7 @@
 // Angua - An Emulator for the 65816 CPU in Native Mode
 // Scot W. Stevenson <scot.stevenson@gmail.com>
 // First version: 26. Sep 2017
-// This version: 05. Jan 2019
+// This version: 06. Jan 2019
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -46,7 +46,7 @@ const (
 	configDir   string = "configs"
 	shellBanner string = `Welcome to Angua
 An Emulator for the 65816 in Native Mode
-Version ALPHA 0.1  05. Jan 2019
+Version ALPHA 0.1  06. Jan 2019
 Copyright (c) 2018-2019 Scot W. Stevenson
 Angua comes with absolutely NO WARRANTY
 Type 'help' for more information
@@ -67,14 +67,13 @@ var (
 // "configs/<NAME>.cfg" and reads the content, returning it stripped of empty
 // lines and comments as a list of strings. We use bufio.Scanner here because we
 // want to read the test as lines
-// TODO pass bool back to check if stuff went wrong, removing log.Fatal()
 func readConfig(s string) []string {
 	var commands []string
 	config := configDir + string(os.PathSeparator) + s
 
 	configFile, err := os.Open(config)
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println("Couldn't open config file", err)
 	}
 	defer configFile.Close()
 
@@ -229,11 +228,12 @@ func main() {
 			}
 
 			// The arg string is passed without "dump"
-			a1, a2, ok := parseAddressRange(c.Args)
-			if !ok {
-				c.Println("ERROR parsing address range")
+			a1, a2, err := parseAddressRange(c.Args)
+			if err != nil {
+				c.Println("Can't parse address range:", err)
 				return
 			}
+
 			hexDump(a1, a2, memory)
 		},
 	})
@@ -347,9 +347,9 @@ func main() {
 
 			fileName := c.Args[0]
 			addrString := c.Args[len(c.Args)-1]
-			num, ok := common.ConvertNum(addrString)
-			if !ok {
-				c.Println("ERROR: Couldn't convert number", addrString)
+			num, err := common.ConvertNum(addrString)
+			if err != nil {
+				c.Printf("Couldn't convert number %s: %v ", addrString, err)
 				return
 			}
 
@@ -363,10 +363,9 @@ func main() {
 				return
 			}
 
-			ok = memory.BurnBlock(addr, data)
-			if !ok {
-				c.Println("ERROR: Couldn't write binary data to address")
-				return
+			err = memory.BurnBlock(addr, data)
+			if err != nil {
+				c.Println(err)
 			}
 		},
 	})
@@ -426,15 +425,15 @@ func main() {
 			memType := c.Args[len(c.Args)-1]
 
 			// The arg string is passed without "memory"
-			a1, a2, ok := parseAddressRange(c.Args)
-			if !ok {
-				c.Println("ERROR parsing address range")
+			a1, a2, err := parseAddressRange(c.Args)
+			if err != nil {
+				c.Println("Can't parse address range:", err)
 				return
 			}
 
-			nc, ok := mem.NewChunk(a1, a2, memType)
-			if !ok {
-				c.Println("ERROR creating chunk with", a1, "to", a2, "as", memType)
+			nc, err := mem.NewChunk(a1, a2, memType)
+			if err != nil {
+				c.Println("Error: creating chunk with", a1, "to", a2, "as", memType, err)
 				return
 			}
 
@@ -482,16 +481,16 @@ func main() {
 			}
 
 			// Convert the address string to an address
-			ui, ok := common.ConvertNum(addrString)
-			if !ok {
-				c.Println("ERROR: Can't convert address", addrString)
+			ui, err := common.ConvertNum(addrString)
+			if err != nil {
+				c.Printf("Could't convert address %s: %v", addrString, err)
 				return
 			}
 
 			addr := common.Addr24(ui)
 
 			// Make sure address is not already in SpecRead
-			_, ok = memory.SpecRead[addr]
+			_, ok := memory.SpecRead[addr]
 			if ok {
 				c.Println("ERROR: Address", addrString, "already defined.")
 				return
@@ -614,16 +613,18 @@ func main() {
 						return
 					}
 
-					// We only print the vectors relevant to native mode
-					c.Println("Abort (00:FFE8):", getVector(0xFFE8, memory))
-					c.Println("BRK   (00:FFE6):", getVector(0xFFE6, memory))
-					c.Println("COP   (00:FFE4):", getVector(0xFFE4, memory))
-					c.Println("IRQ   (00:FFEE):", getVector(0xFFEE, memory))
-					c.Println("NMI   (00:FFEA):", getVector(0xFFEA, memory))
-					c.Println("Reset (00:FFFC):", getVector(0xFFFC, memory))
+					for _, vecData := range common.Vectors {
+						vec, err := getVector(vecData.Addr, memory)
+						if err != nil {
+							fmt.Printf("Can't get vector for %s at %s:%v ", vecData.Name, vecData.Addr.HexString(), err)
+							return
+						}
+
+						c.Printf("%-5s (%s): %s\n", vecData.Name, vecData.Addr.HexString(), vec)
+					}
 
 				default:
-					c.Println("ERROR: Option", subcmd, "unknown")
+					c.Println("Option", subcmd, "unknown")
 				}
 			}
 		},
@@ -719,16 +720,16 @@ func main() {
 			}
 
 			// Convert the address string to an address
-			ui, ok := common.ConvertNum(addrString)
-			if !ok {
-				c.Println("ERROR: Can't convert address", addrString)
+			ui, err := common.ConvertNum(addrString)
+			if err != nil {
+				c.Printf("Could't convert address %s: %v", addrString, err)
 				return
 			}
 
 			addr := common.Addr24(ui)
 
 			// Make sure address is not already in SpecWriteName
-			_, ok = memory.SpecWrite[addr]
+			_, ok := memory.SpecWrite[addr]
 			if ok {
 				c.Println("ERROR: Address", addrString, "already defined.")
 				return
@@ -751,21 +752,21 @@ func main() {
 
 }
 
-// getVector is helper function for the "show vectors" instruction. It takes a
-// 16 bit address and returns a string with the 24 bit address of the vector at
-// that memory location in the first bank. Note this routine can be used for
-// other memory fetches
-func getVector(addr common.Addr16, m *mem.Memory) string {
-	va24 := common.Addr24(addr)
+// getVectorString takes a 24 bit address and returns a string with the 16 bit
+// address of the vector at that memory location in the first bank. This is a
+// helper function for "show vectors"
 
-	av, ok := m.FetchMore(va24, 2)
-	if !ok {
-		av = 0
+func getVector(addr common.Addr24, m *mem.Memory) (string, error) {
+
+	av, err := m.FetchMore(addr, 2)
+	if err != nil {
+		return "", fmt.Errorf("getVector: Can't get vector %s: %v", addr, err)
 	}
 
 	// FetchMore returns an int
 	avAddr := common.Addr24(av)
-	return avAddr.HexString()
+
+	return avAddr.HexString(), nil
 }
 
 // Hexdump prints the contents of a memory range in a nice hex table. If the
@@ -795,9 +796,9 @@ func hexDump(addr1, addr2 common.Addr24, m *mem.Memory) {
 			fmt.Fprintf(&hb, nextAddr.HexString()+" ")
 		}
 
-		b, ok := m.Fetch(i)
-		if !ok {
-			fmt.Println("ERROR: No memory at address", i.HexString(), "(see 'memory')")
+		b, err := m.Fetch(i)
+		if err != nil {
+			fmt.Println("hexDump:", err)
 			return
 		}
 
@@ -834,36 +835,36 @@ func hexDump(addr1, addr2 common.Addr24, m *mem.Memory) {
 //	[<BANK>[:]]<ADDR16> [<BANK>[:]]<ADDR16>
 //	"bank" <BYTE>
 //
-// and returns two addresses in the common.Addr24 format and a bool for success
-// or failure. This function lives here and not in common because it is part of
-// the command line interface
-func parseAddressRange(ws []string) (addr1, addr2 common.Addr24, ok bool) {
-	ok = true
 
+// and returns two addresses in the common.Addr24 format and error message.  or
+// failure. This function lives here and not in common because it is part of the
+// command line interface
+func parseAddressRange(ws []string) (addr1, addr2 common.Addr24, err error) {
 	// If the first word is "bank", then we are getting a full bank
 	if ws[0] == "bank" {
 
 		// Second word must be the bank byte. We brutally cut off
 		// everything but the lowest byte
-		bankNum, ok := common.ConvertNum(ws[1])
+		bankNum, err := common.ConvertNum(ws[1])
 		bankByte := common.Addr24(bankNum).Lsb()
 		bankAddr := common.Addr24(bankByte) * 0x10000
 		addr1 = bankAddr
 		addr2 = bankAddr + 0xFFFF
 
-		return addr1, addr2, ok
+		return addr1, addr2, err
 	}
 
 	// We at least need two addresses, so that's two words length. We could
 	// parse more carefully, but not at the moment
 	if len(ws) < 2 {
-		addr1 = 0
-		addr2 = 0
-		ok = false
-		return addr1, addr2, ok
+		return 0, 0, fmt.Errorf("parseAddrRange: wrong number of parameters")
 	}
 
-	num, ok := common.ConvertNum(ws[0])
+	num, err := common.ConvertNum(ws[0])
+	if err != nil {
+		return 0, 0, fmt.Errorf("parseAddrRange: can't convert number: %v", err)
+	}
+
 	addr1 = common.Addr24(num)
 
 	// We allow people to slide on the "to" though we don't
@@ -871,15 +872,15 @@ func parseAddressRange(ws []string) (addr1, addr2 common.Addr24, ok bool) {
 	// ConvertNum working, check ws[1] and if there is an error, skip
 	// to ws[2].
 	if ws[1] == "to" {
-		num, ok = common.ConvertNum(ws[2])
+		num, err = common.ConvertNum(ws[2])
 	} else {
-		num, ok = common.ConvertNum(ws[1])
+		num, err = common.ConvertNum(ws[1])
 
 	}
 
 	addr2 = common.Addr24(num)
 
-	return addr1, addr2, ok
+	return addr1, addr2, nil
 }
 
 // printCPUStatus print information on the registers, flags and other important

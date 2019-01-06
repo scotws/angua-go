@@ -7,13 +7,10 @@
 // Note there is redundancy with the information in the info package. We keep
 // these separate for the moment to allow more robustness while editing.
 
-// TODO see about returning error strings from all opcode functions
-
 package cpu
 
 import (
-	"fmt" // TODO This is used for testing only
-	"log"
+	"fmt"
 
 	"angua/common"
 )
@@ -54,8 +51,8 @@ type OpcData struct {
 }
 
 var (
-	InsJump [256]func(*CPU) // Instruction jump table
-	InsData [256]OpcData    // Instruction data
+	InsJump [256]func(*CPU) error // Instruction jump table
+	InsData [256]OpcData          // Instruction data
 )
 
 func init() {
@@ -124,75 +121,83 @@ func init() {
 
 // --- Instruction Functions ---
 
-func Opc00(c *CPU) { // brk
+func Opc00(c *CPU) error { // brk
 	fmt.Println("OPC: DUMMY: Executing brk (00)")
+	return nil
 }
 
-func Opc01(c *CPU) { // ora.dxi
+func Opc01(c *CPU) error { // ora.dxi
 	fmt.Println("OPC: DUMMY: Executing ora.dxi (02)")
+	return nil
 }
 
-func Opc02(c *CPU) { // cop
+func Opc02(c *CPU) error { // cop
 	fmt.Println("OPC: DUMMY: Executing cop (03)")
+	return nil
 }
 
 // ...
 
-func Opc18(c *CPU) { // clc
+func Opc18(c *CPU) error { // clc
 	c.FlagC = CLEAR
+	return nil
 }
 
 // ...
 
-func Opc38(c *CPU) { // sec
+func Opc38(c *CPU) error { // sec
 	c.FlagC = SET
+	return nil
 }
 
 // ...
 
-func Opc58(c *CPU) { // cli
+func Opc58(c *CPU) error { // cli
 	c.FlagI = CLEAR
+	return nil
 }
 
 // ...
 
-func Opc78(c *CPU) { // sei
+func Opc78(c *CPU) error { // sei
 	c.FlagI = SET
+	return nil
 }
 
 // ...
 
-func Opc85(c *CPU) { // sta.d
+func Opc85(c *CPU) error { // sta.d
 	fmt.Println("OPC: DUMMY: Executing sta.d (85) ")
+	return nil
 }
 
 // ...
 
-func Opc8D(c *CPU) { // sta
+func Opc8D(c *CPU) error { // sta
 
 	// Get address from next two bytes
 	// See if address is legal
-	//
 	fmt.Println("OPC: DUMMY: Executing sta (8D) ")
+	return nil
 }
 
 // ...
 
-func OpcA9(c *CPU) { // lda.# (lda.8/lda.16)
+func OpcA9(c *CPU) error { // lda.# (lda.8/lda.16)
 	fmt.Println("OPC: DUMMY: Executing lda.# (A9) ")
+	return nil
 }
 
 // ...
 
-func OpcAD(c *CPU) { // lda
+func OpcAD(c *CPU) error { // lda
 
 	// Get next two bytes for address
 	// TODO move this to general function for ABSOLUTE mode
 	operand := c.getFullPC() + 1
-	addrUint, ok := c.Mem.FetchMore(operand, 2)
-	if !ok {
-		log.Println("ERROR: Couldn't fetch address from", common.Addr24(addrUint).HexString())
-		return
+	addrUint, err := c.Mem.FetchMore(operand, 2)
+	if err != nil {
+		return fmt.Errorf("lda (0xAD): Couldn't fetch address from %s: %v", common.Addr24(addrUint).HexString(), err)
 	}
 
 	// Get actual target address (generalize for all 'lda')
@@ -201,10 +206,9 @@ func OpcAD(c *CPU) { // lda
 	// TODO generalize this in a routine
 	switch c.WidthA {
 	case W8:
-		b, ok := c.Mem.Fetch(addr)
-		if !ok {
-			log.Println("ERROR: Couldn't fetch byte from", addr.HexString())
-			return
+		b, err := c.Mem.Fetch(addr)
+		if err != nil {
+			return fmt.Errorf("lda (0xAD): Couldn't fetch byte from %s: %v", addr.HexString(), err)
 		}
 		c.A8 = common.Data8(b)
 
@@ -213,11 +217,11 @@ func OpcAD(c *CPU) { // lda
 		fmt.Println("OPC: TESTING: 'lda' got", bs, "(hex) from", addr.HexString())
 
 	case W16:
-		b, ok := c.Mem.FetchMore(addr, 29)
-		if !ok {
-			log.Println("ERROR: Couldn't fetch two bytes from", addr.HexString())
-			return
+		b, err := c.Mem.FetchMore(addr, 29)
+		if err != nil {
+			return fmt.Errorf("lda (0xAD): Couldn't fetch two bytes from %s: %v", addr.HexString(), err)
 		}
+
 		c.A16 = common.Data16(b)
 
 		// TODO TESTING
@@ -225,43 +229,48 @@ func OpcAD(c *CPU) { // lda
 		fmt.Println("OPC: TESTING: 'lda' got", ws, "(hex) from", addr.HexString())
 
 	default: // paranoid
-		log.Println("ERROR: Illegal width for register A:", c.WidthA)
+		return fmt.Errorf("lda (0xAD): Illegal width for register A:%d", c.WidthA)
 	}
 
-	return
+	return nil
 }
 
 // ...
 
-func OpcB8(c *CPU) { // clv
+func OpcB8(c *CPU) error { // clv
 	c.FlagV = CLEAR
+	return nil
 }
 
 // ...
 
-func OpcD8(c *CPU) { // cld
+func OpcD8(c *CPU) error { // cld
 	c.FlagD = CLEAR
+	return nil
 }
 
 // ...
 
-func OpcDB(c *CPU) { // stp
+func OpcDB(c *CPU) error { // stp
 	c.IsStopped = true
 	// TODO print Addr24
 	fmt.Println("Machine stopped by STP (0xDB) in block", c.PBR.HexString(), "at address", c.PC.HexString())
+	return nil
 }
 
 // ...
 
-func OpcEA(c *CPU) { // nop
-	// TODO only print if verbose is on
-	// log.Print("WARNING: Executed NOP (0xEA) at ", c.PBR.HexString(), ":", c.PC.HexString(), "\n")
+func OpcEA(c *CPU) error { // nop
+	// We return the execution of a 'nop' as an error and let the higher-ups
+	// decide what to do with it
+	return fmt.Errorf("OpcEA: Executed 'nop' (0xEA) at %s:%s", c.PBR.HexString(), c.PC.HexString())
 }
 
 // ...
 
-func OpcFB(c *CPU) { // xce
+func OpcFB(c *CPU) error { // xce
 	tmp := c.FlagE
 	c.FlagE = c.FlagC
 	c.FlagC = tmp
+	return nil
 }
