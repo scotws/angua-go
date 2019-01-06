@@ -14,17 +14,6 @@ import (
 )
 
 const (
-	// Interrupt vectors. Note the reset vector is only for emulated mode.
-	// See http://6502.org/tutorials/65c816interrupts.html and Eyes & Lichty
-	// p. 195 for details. We store these as 24 bit addresses because that
-	// is the way we'll use them during mem.FetchMore().
-	abortAddr common.Addr24 = 0xFFE8
-	brkAddr   common.Addr24 = 0xFFE6
-	copAddr   common.Addr24 = 0xFFE4
-	irqAddr   common.Addr24 = 0xFFEE
-	nmiAddr   common.Addr24 = 0xFFEA
-	resetAddr common.Addr24 = 0xFFFC // <-- This is the important one
-
 	// Width of accumulator and registers. We follow the flag convention for
 	// M and X flags: 0 (clear) is 16 bits, 1 (set) 8 bit
 	W8  = 1
@@ -336,9 +325,9 @@ func (c *CPU) reset() error {
 	c.FlagZ = common.UndefinedBit()
 
 	// Get address at 0xFFFC (Reset Vector)
-	rv, err := c.Mem.FetchMore(resetAddr, 2)
+	rv, err := c.Mem.FetchMore(common.ResetAddr, 2)
 	if err != nil {
-		return fmt.Errorf("Reset: Couldn't get RESET vector from %s", resetAddr)
+		return fmt.Errorf("Reset: Couldn't get Reset vector from %s", common.ResetAddr)
 	}
 
 	addr := common.Addr16(rv)
