@@ -31,7 +31,7 @@ type Chunk struct {
 // present in memory; see Memory.Contains()
 type Memory struct {
 	Chunks    []Chunk
-	SpecRead  map[common.Addr24]func()
+	SpecRead  map[common.Addr24]func() (byte, bool)
 	SpecWrite map[common.Addr24]func(byte)
 }
 

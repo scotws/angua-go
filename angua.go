@@ -112,7 +112,7 @@ func main() {
 	memory := &mem.Memory{
 		// Remember to initialize the special address maps here or
 		// machine
-		SpecRead:  make(map[common.Addr24]func()),
+		SpecRead:  make(map[common.Addr24]func() (byte, bool)),
 		SpecWrite: make(map[common.Addr24]func(byte)),
 	}
 	cpu := &cpu.CPU{}
@@ -457,12 +457,52 @@ func main() {
 		Help:     "set a special address for reading",
 		LongHelp: longHelpReading,
 		Func: func(c *ishell.Context) {
-			c.Println("CLI: DUMMY reading")
+			// The specials name table takes a lower case string
+			// (for example "getchar") and returns the related
+			// function (GetChar). To add your own special actions,
+			// create a function and add the related string and
+			// function to this table.
+			SpecReadNames := map[string]func() (byte, bool){
+				"getchar":        specials.GetChar,
+				"getchar-blocks": specials.GetCharBlocks,
+			}
 
-			//		SpecReadNames := map[string]func() (byte, bool){
-			//				"getchar":        specials.GetChar,
-			//				"getchar-blocks": specials.GetCharBlocks,
-			//	}
+			// We need at least two arguments
+			if len(c.Args) < 2 {
+				c.Println("ERROR: Need at least address and function name")
+				return
+			}
+
+			addrString := c.Args[0]
+
+			// Skip any "to" if there is one
+			if c.Args[0] == "to" {
+				addrString = c.Args[1]
+			}
+
+			// Convert the address string to an address
+			ui, ok := common.ConvertNum(addrString)
+			if !ok {
+				c.Println("ERROR: Can't convert address", addrString)
+				return
+			}
+
+			addr := common.Addr24(ui)
+
+			// Make sure address is not already in SpecRead
+			_, ok = memory.SpecRead[addr]
+			if ok {
+				c.Println("ERROR: Address", addrString, "already defined.")
+				return
+			}
+
+			// Get the function name as the last part of the line.
+			// We allow user to have more than one address pointing
+			// to the same function
+			funcString := c.Args[len(c.Args)-1]
+
+			// Store the information SpecReadNames
+			memory.SpecRead[addr] = SpecReadNames[funcString]
 
 		},
 	})
