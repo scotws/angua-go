@@ -33,6 +33,7 @@ import (
 	"angua/cpu"
 	"angua/info"
 	"angua/mem"
+	"angua/specials"
 
 	"gopkg.in/abiosoft/ishell.v2" // https://godoc.org/gopkg.in/abiosoft/ishell.v2
 )
@@ -108,7 +109,12 @@ func main() {
 
 	flag.Parse()
 
-	memory := &mem.Memory{}
+	memory := &mem.Memory{
+		// Remember to initialize the special address maps here or
+		// machine
+		SpecRead:  make(map[common.Addr24]func()),
+		SpecWrite: make(map[common.Addr24]func(byte)),
+	}
 	cpu := &cpu.CPU{}
 
 	// We communicate with the system through the command channel, which is
@@ -179,7 +185,7 @@ func main() {
 	shell.AddCmd(&ishell.Cmd{
 		// Format is either
 		//
-		// 	dump <ADDRESS_RANGE>
+		//	dump <ADDRESS_RANGE>
 		//	dump stack
 		//	dump dp
 		Name:     "dump",
@@ -289,6 +295,7 @@ func main() {
 
 			// TODO check for chunk overlap in memory
 			// TODO set up special memory
+			// TODO set up external terminal access
 
 			// Set up CPU
 			cpu.Mem = memory
@@ -315,7 +322,7 @@ func main() {
 		// Load a binary file to memory. Memory has to already exist.
 		// Format is
 		//
-		// 	load <FILENAME> [ to ] <ADDRESS>
+		//	load <FILENAME> [ to ] <ADDRESS>
 		//
 		// The name of the file is not in quotation marks
 		Name:     "load",
@@ -394,7 +401,7 @@ func main() {
 
 	shell.AddCmd(&ishell.Cmd{
 		// Memory commands take the form of
-		// 	 memory <ADDRESS RANGE> ["is"] ("rom" | "ram")
+		//	 memory <ADDRESS RANGE> ["is"] ("rom" | "ram")
 		//       memory bank <NUMBER> ["is"] ("rom" | "ram")
 		//       memory
 		Name:     "memory",
@@ -451,6 +458,12 @@ func main() {
 		LongHelp: longHelpReading,
 		Func: func(c *ishell.Context) {
 			c.Println("CLI: DUMMY reading")
+
+			//		SpecReadNames := map[string]func() (byte, bool){
+			//				"getchar":        specials.GetChar,
+			//				"getchar-blocks": specials.GetCharBlocks,
+			//	}
+
 		},
 	})
 
@@ -616,20 +629,68 @@ func main() {
 		Help:     "store a byte at a given address",
 		LongHelp: longHelpStore,
 		Func: func(c *ishell.Context) {
-			c.Println("(DUMMY store)")
+			c.Println("CLI: DUMMY store")
 		},
 	})
 
+	// Format for writing line is
+	//	writing [to] <ADDRESS> calls <FUNCNAME>
 	shell.AddCmd(&ishell.Cmd{
 		Name:     "writing",
 		Help:     "define a function to be triggered when address written to",
 		LongHelp: longHelpWriting,
 		Func: func(c *ishell.Context) {
-			c.Println("CLI: DUMMY writing")
+
+			// The specials name tables take a lower case string
+			// (for example "getchar") and returns the related
+			// function (GetChar). To add your own special actions,
+			// create a function and add the related string and
+			// function to this table.
+			SpecWriteNames := map[string]func(byte){
+				"putchar": specials.PutChar,
+			}
+
+			// We need at least two arguments
+			if len(c.Args) < 2 {
+				c.Println("ERROR: Need at least address and function name")
+				return
+			}
+
+			addrString := c.Args[0]
+
+			// Skip any "to" if there is one
+			if c.Args[0] == "to" {
+				addrString = c.Args[1]
+			}
+
+			// Convert the address string to an address
+			ui, ok := common.ConvertNum(addrString)
+			if !ok {
+				c.Println("ERROR: Can't convert address", addrString)
+				return
+			}
+
+			addr := common.Addr24(ui)
+
+			// Make sure address is not already in SpecWriteName
+			_, ok = memory.SpecWrite[addr]
+			if ok {
+				c.Println("ERROR: Address", addrString, "already defined.")
+				return
+			}
+
+			// Get the function name as the last part of the line.
+			// We allow user to have more than one address pointing
+			// to the same function
+			funcString := c.Args[len(c.Args)-1]
+
+			// Store the information SpecWritingName
+			memory.SpecWrite[addr] = SpecWriteNames[funcString]
 		},
 	})
 
 	// TODO check for batch mode
+
 	shell.Run()
 	shell.Close()
 
@@ -714,9 +775,9 @@ func hexDump(addr1, addr2 common.Addr24, m *mem.Memory) {
 
 // parseAddressRange takes a list of strings that in the formats of
 //
-// 	[<BANK>[:]]<ADDR16> "to" [<BANK>[:]]<ADDR16>
-// 	[<BANK>[:]]<ADDR16> [<BANK>[:]]<ADDR16>
-// 	"bank" <BYTE>
+//	[<BANK>[:]]<ADDR16> "to" [<BANK>[:]]<ADDR16>
+//	[<BANK>[:]]<ADDR16> [<BANK>[:]]<ADDR16>
+//	"bank" <BYTE>
 //
 // and returns two addresses in the common.Addr24 format and a bool for success
 // or failure. This function lives here and not in common because it is part of

@@ -1,7 +1,7 @@
 // Long Help messages for the Angua Command Line Interface (CLI)
 // Scot W. Stevenson <scot.stevenson@gmail.com>
 // First version: 11. Nov 2018
-// This version: 01. Jan 2019
+// This version: 05. Jan 2019
 
 package main
 
@@ -143,10 +143,20 @@ Example:
 
 	longHelpReading string = `Set a special address for reading.
 
-(THE REST OF THIS ENTRY IS MISSING)
+Reading from these addresses will trigger a function defined in specials/specials.go
+in the map SpecReadName. Pre-defined functions are 
+
+		getchar		- Get character from standard input
+		getchar-blocks  - Wait for character from standard input
+
+The names of functions - usually in the configuration file - should be lower case.
 
 Example:
-		(THE EXAMPLE IS MISSING)`
+		reading from 0xF000 calls getchar
+
+To define your own functions, add the function to specials/specials.go with any
+tests in specials/specials_test.go. Then add a lowercase string name to the
+map SpecReadName.`
 
 	longHelpResume string = `Resume execution of a halted machine.
 
@@ -224,8 +234,19 @@ Example:
 
 	longHelpWriting string = `Define special address for writing.
 
-(THE REST OF THIS ENTRY IS MISSING)
+Stores to these address will trigger a function defined in specials/specials.go
+in the map SpecWriteName. Pre-defined functions are 
+
+		putchar		- Print a character to standard output
+
+The names of functions - usually in the configuration file - should be lower case.
 
 Example:
-		(THE EXAMPLE IS MISSING)`
+		writing to 0xF001 calls putchar
+		writing 0x3000 putmorechar
+		writing $01:FF00 calls myputting
+
+To define your own functions, add the function to specials/specials.go with any
+tests in specials/specials_test.go. Then add a lowercase string name to the
+map SpecWriteName.`
 )

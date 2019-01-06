@@ -30,7 +30,9 @@ type Chunk struct {
 // TODO add a map of addresses to bools to memoize checks if the address is
 // present in memory; see Memory.Contains()
 type Memory struct {
-	Chunks []Chunk
+	Chunks    []Chunk
+	SpecRead  map[common.Addr24]func()
+	SpecWrite map[common.Addr24]func(byte)
 }
 
 // NewChunk takes the start and end address for a new chunk as well as its type
@@ -116,7 +118,7 @@ func (c Chunk) store(addr common.Addr24, b byte) {
 
 // Contains takes an 65816 address and checks to see if it is valid, returning a
 // bool
-// TODO we are going to checking the same addresses over and over again, so we
+// TODO we are going to be checking the same addresses over and over again, so we
 // should speed this up by including a map of addresses to bools as a
 // memoization device in the Memory struct.
 func (m Memory) Contains(addr common.Addr24) bool {
@@ -148,7 +150,7 @@ func (m Memory) Fetch(addr common.Addr24) (byte, bool) {
 			break
 		}
 	}
-	return b, found
+	return b, ok
 }
 
 // FetchMore takes a 65816 address and the number of bytes to get -- 1, 2 or 3

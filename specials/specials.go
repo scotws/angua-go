@@ -19,8 +19,6 @@ import (
 	"fmt"
 )
 
-// === Read Special Actions ===
-
 // GetChar returns a byte that comes from the user stitting at the interface and
 // a bool to indicate success or failure. This routine should, but doesn't have
 // to, always be present.
@@ -30,7 +28,15 @@ func GetChar() (byte, bool) {
 	return 0x61, true
 }
 
-// === Write Special Actions ===
+// GetCharBlocks returns a byte that comes from the user stitting at the
+// interface and a bool to indicate success or failure. This routine should, but
+// doesn't have to, always be present. This variant blocks until a character is
+// received
+func GetCharBlocks() (byte, bool) {
+	// TODO DUMMY: Return ASCII character "a"
+	// TODO move this to actual input
+	return 0x61, true
+}
 
 // PutChar takes a byte and writes it to the standard output. This routine
 // should, but doesn't have to, always be present
