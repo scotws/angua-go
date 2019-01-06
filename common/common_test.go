@@ -441,6 +441,28 @@ func TestConvertNumber(t *testing.T) {
 	}
 }
 
+func TestFullAddr(t *testing.T) {
+
+	type raw struct {
+		bank Data8
+		addr Addr16
+	}
+
+	var tests = []struct {
+		input raw
+		want  Addr24
+	}{
+		{raw{0, 0}, 0},
+	}
+
+	for _, test := range tests {
+		got := FullAddr(test.input.bank, test.input.addr)
+		if got != test.want {
+			t.Errorf("FullAddr(%q) = %v", test.input, got)
+		}
+	}
+}
+
 func TestStripDelimiters(t *testing.T) {
 	var tests = []struct {
 		input string

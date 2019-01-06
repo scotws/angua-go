@@ -1,8 +1,7 @@
 // Common files and type for Angua
 // Scot W. Stevenson <scot.stevenson@gmail.com>
-// This version: 07. Nov 2018
-// First version: 06. Jan 2019
-
+// First version: 07. Nov 2018
+// This version: 06. Jan 2019
 // This package contains base definitions and helper functions for all
 // parts of Angua
 
@@ -234,6 +233,17 @@ func ConvertNum(s string) (uint, error) {
 	}
 
 	return uint(n), nil
+}
+
+// FullAddr takes a byte as 8 bit data and a 16 bit address and merges them to a
+// 24 bit address.
+func FullAddr(b Data8, a Addr16) Addr24 {
+	bc := b & 0xFF   // Make sure we only have 8 bit
+	ac := a & 0xFFFF // Make sure we only have 16 bit
+
+	n := Addr16(bc<<16) + ac
+
+	return Addr24(n)
 }
 
 // stripDelimiters removes '.' and ':' which users can use as number delimiters.
