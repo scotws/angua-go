@@ -1,7 +1,7 @@
 ; Test 8 KB ROM System for Angua
 ; Scot W. Stevenson <scot.stevenson@gmail.com>
 ; First version: 02. Jan 2019
-; This version: 02. Jan 2019
+; This version: 06. Jan 2019
 
 ; After assembly, this creates an 8 kb binary file that can be 
 ; loaded to $E000 in a simulator. The syntax is for the Tinkerer's Assember 
@@ -26,11 +26,13 @@ vectors
 
         nop             ; gotta have a NOP
 
-        lda getchar     ; need to test this
+        lda 0xE000      ; first byte of our own routine should be 0x18
         sta.d 00
 
-        stp             ; enough for the beginning
+        lda getchar     ; test external routine, get one byte
+        sta.d 01
 
+        stp             ; enough for the beginning
 
         ; Jump table for interrupts. We are only interested in those for native
         ; mode, though we keep those in emulation mode 

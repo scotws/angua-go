@@ -188,9 +188,16 @@ func OpcAD(c *CPU) { // lda
 
 	// Get next two bytes for address
 	// TODO move this to general function for ABSOLUTE mode
-	addr := c.getFullPC() + 1
+	operand := c.getFullPC() + 1
+	addrUint, ok := c.Mem.FetchMore(operand, 2)
+	if !ok {
+		log.Println("ERROR: Couldn't fetch address from", common.Addr24(addrUint).HexString())
+		return
+	}
 
-	// Get byte from memory
+	// Get actual target address (generalize for all 'lda')
+	addr := common.Addr24(addrUint)
+
 	// TODO generalize this in a routine
 	switch c.WidthA {
 	case W8:
@@ -200,6 +207,11 @@ func OpcAD(c *CPU) { // lda
 			return
 		}
 		c.A8 = common.Data8(b)
+
+		// TODO TESTING
+		bs := common.Data8(b).HexString()
+		fmt.Println("OPC: TESTING: 'lda' got", bs, "(hex) from", addr.HexString())
+
 	case W16:
 		b, ok := c.Mem.FetchMore(addr, 29)
 		if !ok {
@@ -207,6 +219,11 @@ func OpcAD(c *CPU) { // lda
 			return
 		}
 		c.A16 = common.Data16(b)
+
+		// TODO TESTING
+		ws := common.Data16(b).HexString()
+		fmt.Println("OPC: TESTING: 'lda' got", ws, "(hex) from", addr.HexString())
+
 	default: // paranoid
 		log.Println("ERROR: Illegal width for register A:", c.WidthA)
 	}
