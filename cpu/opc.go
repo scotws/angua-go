@@ -1,16 +1,21 @@
 // Opcodes for Angua
 // Scot W. Stevenson <scot.stevenson@gmail.com>
 // First version: 02. Jan 2019
-// This version: 05. Jan 2019
+// This version: 06. Jan 2019
 
 // This package contains the opcodes and opcode data for the 65816 instructions.
 // Note there is redundancy with the information in the info package. We keep
 // these separate for the moment to allow more robustness while editing.
 
+// TODO see about returning error strings from all opcode functions
+
 package cpu
 
 import (
 	"fmt" // TODO This is used for testing only
+	"log"
+
+	"angua/common"
 )
 
 const (
@@ -180,7 +185,21 @@ func OpcA9(c *CPU) { // lda.# (lda.8/lda.16)
 // ...
 
 func OpcAD(c *CPU) { // lda
-	fmt.Println("OPC: DUMMY: Executing lda (AD) ")
+
+	// Get next two bytes for address
+	// TODO move this to general function for ABSOLUTE mode
+	addr := c.getFullPC() + 1
+
+	// Get byte from memory
+	// TODO get one or two bytes depending on size of
+	b, ok := c.Mem.Fetch(addr)
+	if !ok {
+		log.Println("ERROR: Couldn't fetch from", addr.HexString())
+	}
+
+	c.A8 = common.Data8(b)
+
+	return
 }
 
 // ...
@@ -206,7 +225,8 @@ func OpcDB(c *CPU) { // stp
 // ...
 
 func OpcEA(c *CPU) { // nop
-	// TODO consider a warning if this instruction is encountered
+	// TODO only print if verbose is on
+	// log.Print("WARNING: Executed NOP (0xEA) at ", c.PBR.HexString(), ":", c.PC.HexString(), "\n")
 }
 
 // ...

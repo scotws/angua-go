@@ -194,7 +194,7 @@ func (m Memory) FetchMore(addr common.Addr24, num uint) (uint, bool) {
 // List returns a list of all chunks in memory, as a string
 func (m Memory) List() string {
 	var r string
-	var template string = "%s %s %s (%d bytes)\n"
+	var template string = "%s %s %s (%d bytes)"
 
 	for _, c := range m.Chunks {
 		r += fmt.Sprintf(template,
