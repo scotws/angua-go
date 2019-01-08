@@ -1,7 +1,7 @@
 // Angua - An Emulator for the 65816 CPU in Native Mode
 // Scot W. Stevenson <scot.stevenson@gmail.com>
 // First version: 26. Sep 2017
-// This version: 06. Jan 2019
+// This version: 08. Jan 2019
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -679,13 +679,45 @@ func main() {
 		},
 	})
 
-	// TODO this word calls BURN and will let you edit ROM
+	// This word calls BURN and will let you edit ROM
+	// Format: store <BYTE> <ADDRESS>
 	shell.AddCmd(&ishell.Cmd{
 		Name:     "store",
 		Help:     "store a byte at a given address of RAM or ROM",
 		LongHelp: longHelpStore,
 		Func: func(c *ishell.Context) {
-			c.Println("CLI: DUMMY store")
+
+			// We need exactly two arguments
+			if len(c.Args) != 2 {
+				c.Println("ERROR: Need exactly two arguments, byte and address")
+				return
+			}
+
+			// First argument must be a byte. If it is larger than a
+			// byte, we silently mask any other parts
+			ui, err := common.ConvertNum(c.Args[0])
+			if err != nil {
+				c.Printf("Could't convert byte %s: %v", c.Args[0], err)
+				return
+			}
+
+			b := byte(ui & 0xFF)
+
+			// Second argument must be the address
+			ui, err = common.ConvertNum(c.Args[1])
+			if err != nil {
+				c.Printf("Could't convert address %s: %v", c.Args[1], err)
+				return
+			}
+
+			addr := common.Addr24(ui)
+
+			// We use burn to store the byte even if the user
+			// requested writing to ROM
+			err = memory.Burn(addr, b)
+			if err != nil {
+				c.Printf("Store failed:", err)
+			}
 		},
 	})
 

@@ -1,7 +1,7 @@
 // Long Help messages for the Angua Command Line Interface (CLI)
 // Scot W. Stevenson <scot.stevenson@gmail.com>
 // First version: 11. Nov 2018
-// This version: 05. Jan 2019
+// This version: 08. Jan 2019
 
 package main
 
@@ -230,10 +230,15 @@ Example:
 
 	longHelpStore string = `Store a byte at a given address in memory.
 
-(THE REST OF THIS ENTRY IS MISSING)
+Store takes a byte and the address to store it at (to remember the sequence,
+think of a package that has a label slapped on it). The byte is written to
+the address regardless if it is in RAM or ROM. Attempts to write to special
+reading addresses can produce unspecified results.
 
 Example:
-		(THE EXAMPLE IS MISSING)`
+		store 01 0001
+		store $FF $00:2000
+		store 0x0F 0x10:4000`
 
 	longHelpWriting string = `Define special address for writing.
 
