@@ -1,11 +1,11 @@
 TODO file for Angua
 Scot W. Stevenson <scot.stevenson@gmail.com>
 First version: 16. Mar 2018
-This version: 04. Jan 2019
+This version: 08. Jan 2019
 
 NEXT UP:
 
-- Write tests cpu/cpu_test.go for Status Register stuff
+- Code the STORE command so we can test memory stuff
 - Rewrite common.go to use the math/bits functions, especialls ReverseBytes16
 - Add fake code to sta, lda, and sta.d so we can start special I/O system
 - Add I/O so that we can access through nc

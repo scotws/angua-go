@@ -887,7 +887,8 @@ func parseAddressRange(ws []string) (addr1, addr2 common.Addr24, err error) {
 // CPU data. This assumes that the machine has been halted or interesting things
 // might happen
 // TODO rewrite this is arrays of strings to get rid of the IFs when we're sure
-// of what everything is supposed to look like
+// of what everything is supposed to look like, also get rid of concat operation
+// for bytearrays
 func printCPUStatus(c *cpu.CPU) {
 
 	// --- Print legend --------------------------------------
