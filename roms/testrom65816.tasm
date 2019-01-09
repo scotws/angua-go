@@ -1,7 +1,7 @@
 ; Test 8 KB ROM System for Angua
 ; Scot W. Stevenson <scot.stevenson@gmail.com>
 ; First version: 02. Jan 2019
-; This version: 06. Jan 2019
+; This version: 09. Jan 2019
 
 ; After assembly, this creates an 8 kb binary file that can be 
 ; loaded to $E000 in a simulator. The syntax is for the Tinkerer's Assember 
@@ -11,8 +11,8 @@
         .mpu 65816
         .origin 0xE000
 
-        .equ putchar 0xF000
-        .equ getchar 0xF001
+        .equ putchar 0xF001
+        .equ getchar 0xF002 ; blocks
 
 vectors
         ; All vectors land here because this is just a test
