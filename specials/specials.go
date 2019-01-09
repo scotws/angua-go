@@ -1,7 +1,7 @@
 // List of special routines for memory-mapped actions
 // Scot W. Stevenson <scot.stevenson@gmail.com>
 // First version: 05. Jan 2019
-// This version: 05. Jan 2019
+// This version: 08. Jan 2019
 
 /* To add an action to a certain memory address, create the function here
    either as read or write action. Use the line formats
@@ -43,6 +43,6 @@ func GetCharBlocks() (byte, bool) {
 func PutChar(b byte) {
 	// TODO DUMMY: Print as ASCII char to normal screen
 	// TODO Move this to actual output
-	fmt.Printf("%c", b)
+	fmt.Printf("%X", b)
 	return
 }

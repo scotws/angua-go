@@ -246,10 +246,11 @@ func (m Memory) Store(addr common.Addr24, b byte) error {
 
 	// First, see if this triggers a special write address
 	// Make sure address is not already in SpecRead
-	_, ok := m.SpecRead[addr]
+	_, ok := m.SpecWrite[addr]
 	if ok {
 		// TODO add real special function
 		fmt.Println("MEM: DUMMY: SpecialWrite to", addr.HexString())
+		return nil
 	}
 
 	// Walk through the memory chunks looking for the address. If we don't
@@ -281,6 +282,15 @@ func (m Memory) Store(addr common.Addr24, b byte) error {
 // commands, as well as storing bytes from the CLI. The main routine for
 // assembler instructions is Store.
 func (m Memory) Burn(addr common.Addr24, b byte) error {
+
+	// First, see if this triggers a special write address
+	// Make sure address is not already in SpecRead
+	_, ok := m.SpecWrite[addr]
+	if ok {
+		// TODO add real special function
+		fmt.Println("MEM: DUMMY: SpecialWrite to", addr.HexString())
+		return nil
+	}
 
 	var found bool
 
