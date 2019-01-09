@@ -1,7 +1,7 @@
 // Opcodes for Angua
 // Scot W. Stevenson <scot.stevenson@gmail.com>
 // First version: 02. Jan 2019
-// This version: 06. Jan 2019
+// This version: 09. Jan 2019
 
 // This package contains the opcodes and opcode data for the 65816 instructions.
 // Note there is redundancy with the information in the info package. We keep
@@ -119,7 +119,23 @@ func init() {
 	InsJump[0xFB] = OpcFB // xce
 }
 
+// --- Mode routines ---
+
+// modeAbsolute returns the address stored in the next two bytes after the
+// opcode and an error code.
+func modeAbsolute(c *CPU) (common.Addr24, error) {
+	operand := c.getFullPC() + 1
+	addrUint, err := c.Mem.FetchMore(operand, 2)
+	if err != nil {
+		return 0, fmt.Errorf("Absolute mode: couldn't fetch address from %s: %v", common.Addr24(addrUint).HexString(), err)
+	}
+
+	return common.Addr24(addrUint), nil
+}
+
 // --- Instruction Functions ---
+
+// The opcodes get the next bytes but do not change the PC
 
 func Opc00(c *CPU) error { // brk
 	fmt.Println("OPC: DUMMY: Executing brk (00)")
@@ -175,9 +191,29 @@ func Opc85(c *CPU) error { // sta.d
 
 func Opc8D(c *CPU) error { // sta
 
-	// Get address from next two bytes
-	// See if address is legal
-	fmt.Println("OPC: DUMMY: Executing sta (8D) ")
+	addr, err := modeAbsolute(c)
+	if err != nil {
+		return fmt.Errorf("sta (8D): Couldn't fetch address from %s: %v", addr.HexString(), err)
+	}
+
+	// TODO generalize this in a routine for all STA
+	switch c.WidthA {
+
+	case W8:
+		err = c.Mem.Store(addr, byte(c.A8))
+		if err != nil {
+			return fmt.Errorf("sta (0x8D): couldn't store A8: %v", err)
+		}
+
+	case W16:
+		err = c.Mem.StoreMore(addr, uint(c.A16), 2)
+		if err != nil {
+			return fmt.Errorf("sta (0x8D): couldn't store A16: %v", err)
+		}
+
+	default: // paranoid
+		return fmt.Errorf("sta (0x8D): Illegal width for register A:%d", c.WidthA)
+	}
 	return nil
 }
 
@@ -192,18 +228,12 @@ func OpcA9(c *CPU) error { // lda.# (lda.8/lda.16)
 
 func OpcAD(c *CPU) error { // lda
 
-	// Get next two bytes for address
-	// TODO move this to general function for ABSOLUTE mode
-	operand := c.getFullPC() + 1
-	addrUint, err := c.Mem.FetchMore(operand, 2)
+	addr, err := modeAbsolute(c)
 	if err != nil {
-		return fmt.Errorf("lda (0xAD): Couldn't fetch address from %s: %v", common.Addr24(addrUint).HexString(), err)
+		return fmt.Errorf("lda (AD): Couldn't fetch address from %s: %v", addr.HexString(), err)
 	}
 
-	// Get actual target address (generalize for all 'lda')
-	addr := common.Addr24(addrUint)
-
-	// TODO generalize this in a routine
+	// TODO generalize this in a routine for all LDA
 	switch c.WidthA {
 	case W8:
 		b, err := c.Mem.Fetch(addr)
