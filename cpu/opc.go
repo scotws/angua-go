@@ -1,7 +1,7 @@
 // Opcodes for Angua
 // Scot W. Stevenson <scot.stevenson@gmail.com>
 // First version: 02. Jan 2019
-// This version: 09. Jan 2019
+// This version: 10. Jan 2019
 
 // This package contains the opcodes and opcode data for the 65816 instructions.
 // Note there is redundancy with the information in the info package. We keep
@@ -50,6 +50,10 @@ type OpcData struct {
 	Expands bool // add one byte if register is 16 bit?
 }
 
+// In theory, we could use a giant switch statement instead of a map of
+// functions. However,
+// https://hashrocket.com/blog/posts/switch-vs-map-which-is-the-better-way-to-branch-in-go
+// suggests that maps are by far faster
 var (
 	InsJump [256]func(*CPU) error // Instruction jump table
 	InsData [256]OpcData          // Instruction data
@@ -119,18 +123,60 @@ func init() {
 	InsJump[0xFB] = OpcFB // xce
 }
 
+// --- Store Routines ---
+
+// storeA takes a 24-bit address and stores the A register there, either as one
+// byte (if A is 8 bit) or two bytes in little-endian (if A is 16 bit). An error
+// is returned
+func (c *CPU) storeA(addr common.Addr24) error {
+	var err error
+
+	switch c.WidthA {
+	case W8:
+		err = c.Mem.Store(addr, byte(c.A8))
+		if err != nil {
+			return fmt.Errorf("storeA: couldn't store A8: %v", err)
+		}
+
+	case W16:
+		err = c.Mem.StoreMore(addr, uint(c.A16), 2)
+		if err != nil {
+			return fmt.Errorf("storeA: couldn't store A16: %v", err)
+		}
+
+	default: // paranoid
+		return fmt.Errorf("storeA: illegal width for register A:%d", c.WidthA)
+	}
+
+	return nil
+}
+
 // --- Mode routines ---
 
 // modeAbsolute returns the address stored in the next two bytes after the
 // opcode and an error code.
-func modeAbsolute(c *CPU) (common.Addr24, error) {
-	operand := c.getFullPC() + 1
-	addrUint, err := c.Mem.FetchMore(operand, 2)
+func (c *CPU) modeAbsolute() (common.Addr24, error) {
+	operandAddr := c.getFullPC() + 1
+	addrUint, err := c.Mem.FetchMore(operandAddr, 2)
 	if err != nil {
-		return 0, fmt.Errorf("Absolute mode: couldn't fetch address from %s: %v", common.Addr24(addrUint).HexString(), err)
+		return 0, fmt.Errorf("absolute mode: couldn't fetch address from %s: %v", common.Addr24(addrUint).HexString(), err)
 	}
 
 	return common.Addr24(addrUint), nil
+}
+
+// modeDirectPage returns the address stored on the Direct Page with the LSB as
+// given in the byte after the opcode
+func (c *CPU) modeDirectPage() (common.Addr24, error) {
+	operandAddr := c.getFullPC() + 1
+	dpOffset, err := c.Mem.Fetch(operandAddr)
+	if err != nil {
+		return 0, fmt.Errorf("direct page mode: couldn't fetch address from %s: %v", common.Addr24(operandAddr).HexString(), err)
+	}
+
+	addr := common.Addr24(c.DP) + common.Addr24(dpOffset)
+
+	return addr, nil
 }
 
 // --- Instruction Functions ---
@@ -183,7 +229,17 @@ func Opc78(c *CPU) error { // sei
 // ...
 
 func Opc85(c *CPU) error { // sta.d
-	fmt.Println("OPC: DUMMY: Executing sta.d (85) ")
+
+	addr, err := c.modeDirectPage()
+	if err != nil {
+		return fmt.Errorf("sta.d (85): couldn't fetch address from %s: %v", addr.HexString(), err)
+	}
+
+	err = c.storeA(addr)
+	if err != nil {
+		return fmt.Errorf("sta.d (85): couldn't store A at address %s: %v", addr.HexString(), err)
+	}
+
 	return nil
 }
 
@@ -191,29 +247,16 @@ func Opc85(c *CPU) error { // sta.d
 
 func Opc8D(c *CPU) error { // sta
 
-	addr, err := modeAbsolute(c)
+	addr, err := c.modeAbsolute()
 	if err != nil {
-		return fmt.Errorf("sta (8D): Couldn't fetch address from %s: %v", addr.HexString(), err)
+		return fmt.Errorf("sta (8D): couldn't fetch address from %s: %v", addr.HexString(), err)
 	}
 
-	// TODO generalize this in a routine for all STA
-	switch c.WidthA {
-
-	case W8:
-		err = c.Mem.Store(addr, byte(c.A8))
-		if err != nil {
-			return fmt.Errorf("sta (0x8D): couldn't store A8: %v", err)
-		}
-
-	case W16:
-		err = c.Mem.StoreMore(addr, uint(c.A16), 2)
-		if err != nil {
-			return fmt.Errorf("sta (0x8D): couldn't store A16: %v", err)
-		}
-
-	default: // paranoid
-		return fmt.Errorf("sta (0x8D): Illegal width for register A:%d", c.WidthA)
+	err = c.storeA(addr)
+	if err != nil {
+		return fmt.Errorf("sta (8D): couldn't store A at address %s: %v", addr.HexString(), err)
 	}
+
 	return nil
 }
 
@@ -228,7 +271,7 @@ func OpcA9(c *CPU) error { // lda.# (lda.8/lda.16)
 
 func OpcAD(c *CPU) error { // lda
 
-	addr, err := modeAbsolute(c)
+	addr, err := c.modeAbsolute()
 	if err != nil {
 		return fmt.Errorf("lda (AD): Couldn't fetch address from %s: %v", addr.HexString(), err)
 	}
@@ -240,11 +283,9 @@ func OpcAD(c *CPU) error { // lda
 		if err != nil {
 			return fmt.Errorf("lda (0xAD): Couldn't fetch byte from %s: %v", addr.HexString(), err)
 		}
-		c.A8 = common.Data8(b)
 
-		// TODO TESTING
-		bs := common.Data8(b).HexString()
-		fmt.Println("OPC: TESTING: 'lda' got", bs, "(hex) from", addr.HexString())
+		c.A8 = common.Data8(b)
+		c.TestNZ8(c.A8)
 
 	case W16:
 		b, err := c.Mem.FetchMore(addr, 29)
@@ -253,10 +294,7 @@ func OpcAD(c *CPU) error { // lda
 		}
 
 		c.A16 = common.Data16(b)
-
-		// TODO TESTING
-		ws := common.Data16(b).HexString()
-		fmt.Println("OPC: TESTING: 'lda' got", ws, "(hex) from", addr.HexString())
+		c.TestNZ16(c.A16)
 
 	default: // paranoid
 		return fmt.Errorf("lda (0xAD): Illegal width for register A:%d", c.WidthA)
