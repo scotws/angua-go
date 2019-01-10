@@ -125,9 +125,15 @@ func init() {
 
 // --- Store Routines ---
 
+/*
+   storeA, storeX, and storeY are variants on the same theme and could be
+   combined to one routine, passing the register involved as the parameter.
+   For the moment, we leave them separate until we are sure everything works.
+*/
+
 // storeA takes a 24-bit address and stores the A register there, either as one
 // byte (if A is 8 bit) or two bytes in little-endian (if A is 16 bit). An error
-// is returned
+// is returned.
 func (c *CPU) storeA(addr common.Addr24) error {
 	var err error
 
@@ -146,6 +152,58 @@ func (c *CPU) storeA(addr common.Addr24) error {
 
 	default: // paranoid
 		return fmt.Errorf("storeA: illegal width for register A:%d", c.WidthA)
+	}
+
+	return nil
+}
+
+// storeX takes a 24-bit address and stores the X register there, either as one
+// byte (if X is 8 bit) or two bytes in little-endian (if X is 16 bit). An error
+// is returned.
+func (c *CPU) storeX(addr common.Addr24) error {
+	var err error
+
+	switch c.WidthXY {
+	case W8:
+		err = c.Mem.Store(addr, byte(c.X8))
+		if err != nil {
+			return fmt.Errorf("storeX: couldn't store X8: %v", err)
+		}
+
+	case W16:
+		err = c.Mem.StoreMore(addr, uint(c.X16), 2)
+		if err != nil {
+			return fmt.Errorf("storeX: couldn't store X16: %v", err)
+		}
+
+	default: // paranoid
+		return fmt.Errorf("storeX: illegal width for register X:%d", c.WidthXY)
+	}
+
+	return nil
+}
+
+// storeY takes a 24-bit address and stores the Y register there, either as one
+// byte (if Y is 8 bit) or two bytes in little-endian (if Y is 16 bit). An error
+// is returned.
+func (c *CPU) storeY(addr common.Addr24) error {
+	var err error
+
+	switch c.WidthXY {
+	case W8:
+		err = c.Mem.Store(addr, byte(c.Y8))
+		if err != nil {
+			return fmt.Errorf("storeY: couldn't store Y8: %v", err)
+		}
+
+	case W16:
+		err = c.Mem.StoreMore(addr, uint(c.Y16), 2)
+		if err != nil {
+			return fmt.Errorf("storeY: couldn't store Y16: %v", err)
+		}
+
+	default: // paranoid
+		return fmt.Errorf("storeY: illegal width for register Y:%d", c.WidthXY)
 	}
 
 	return nil
@@ -177,6 +235,30 @@ func (c *CPU) modeDirectPage() (common.Addr24, error) {
 	addr := common.Addr24(c.DP) + common.Addr24(dpOffset)
 
 	return addr, nil
+}
+
+// modeImmediate8 returns the byte stored in the address after the opcode and an
+// error
+func (c *CPU) modeImmediate8() (common.Data8, error) {
+	operandAddr := c.getFullPC() + 1
+	operand, err := c.Mem.Fetch(operandAddr)
+	if err != nil {
+		return 0, fmt.Errorf("immediate 8 mode: couldn't fetch data from %s: %v", common.Addr24(operandAddr).HexString(), err)
+	}
+
+	return common.Data8(operand), nil
+}
+
+// modeImmediate16 returns the byte stored in the address after the opcode and an
+// error
+func (c *CPU) modeImmediate16() (common.Data16, error) {
+	operandAddr := c.getFullPC() + 1
+	operand, err := c.Mem.Fetch(operandAddr)
+	if err != nil {
+		return 0, fmt.Errorf("immediate 16 mode: couldn't fetch data from %s: %v", common.Addr24(operandAddr).HexString(), err)
+	}
+
+	return common.Data16(operand), nil
 }
 
 // --- Instruction Functions ---
@@ -263,7 +345,30 @@ func Opc8D(c *CPU) error { // sta
 // ...
 
 func OpcA9(c *CPU) error { // lda.# (lda.8/lda.16)
-	fmt.Println("OPC: DUMMY: Executing lda.# (A9) ")
+
+	switch c.WidthA {
+	case W8:
+		operand, err := c.modeImmediate8()
+		if err != nil {
+			return fmt.Errorf("lda.8 (A9): Couldn't fetch data:", err)
+		}
+
+		c.A8 = operand
+		c.TestNZ8(c.A8)
+
+	case W16:
+		operand, err := c.modeImmediate16()
+		if err != nil {
+			return fmt.Errorf("lda.16 (A9): Couldn't fetch data:", err)
+		}
+
+		c.A16 = operand
+		c.TestNZ16(c.A16)
+
+	default: // paranoid
+		return fmt.Errorf("lda.# (0xA9): Illegal width for register A:%d", c.WidthA)
+	}
+
 	return nil
 }
 
@@ -288,7 +393,7 @@ func OpcAD(c *CPU) error { // lda
 		c.TestNZ8(c.A8)
 
 	case W16:
-		b, err := c.Mem.FetchMore(addr, 29)
+		b, err := c.Mem.FetchMore(addr, 2)
 		if err != nil {
 			return fmt.Errorf("lda (0xAD): Couldn't fetch two bytes from %s: %v", addr.HexString(), err)
 		}
