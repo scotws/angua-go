@@ -1,12 +1,14 @@
 // Test file for Angua CPU
 // Scot W. Stevenson <scot.stevenson@gmail.com>
 // First version: 05. Jan 2019
-// This version: 05. Jan 2019
+// This version: 10. Jan 2019
 
 package cpu
 
 import (
 	"testing"
+
+	"angua/common"
 )
 
 func TestGetStatReg(t *testing.T) {
@@ -60,6 +62,51 @@ func TestPutStatReg(t *testing.T) {
 		gotStatReg.SetStatReg(test.input)
 		if gotStatReg != test.want {
 			t.Errorf("cpu.SetStatReg(%q) = %v", test.input, gotStatReg)
+		}
+	}
+}
+
+func TestTestNZ8(t *testing.T) {
+
+	var myStatReg StatReg
+
+	var tests = []struct {
+		input common.Data8
+		want  StatReg
+	}{
+		{0x00, StatReg{FlagN: CLEAR, FlagZ: SET}},
+		{0x01, StatReg{FlagN: CLEAR, FlagZ: CLEAR}},
+		{0x80, StatReg{FlagN: SET, FlagZ: CLEAR}},
+		{0xFF, StatReg{FlagN: SET, FlagZ: CLEAR}},
+	}
+
+	for _, test := range tests {
+		myStatReg.TestNZ8(test.input)
+		if myStatReg != test.want {
+			t.Errorf("StatReg.TestNZ8(%q) = %v", test.input, myStatReg)
+		}
+	}
+}
+
+func TestTestNZ16(t *testing.T) {
+
+	var myStatReg StatReg
+
+	var tests = []struct {
+		input common.Data16
+		want  StatReg
+	}{
+		{0x0000, StatReg{FlagN: CLEAR, FlagZ: SET}},
+		{0x0001, StatReg{FlagN: CLEAR, FlagZ: CLEAR}},
+		{0x8000, StatReg{FlagN: SET, FlagZ: CLEAR}},
+		{0x0080, StatReg{FlagN: CLEAR, FlagZ: CLEAR}},
+		{0xFFFF, StatReg{FlagN: SET, FlagZ: CLEAR}},
+	}
+
+	for _, test := range tests {
+		myStatReg.TestNZ16(test.input)
+		if myStatReg != test.want {
+			t.Errorf("StatReg.TestNZ16(%q) = %v", test.input, myStatReg)
 		}
 	}
 }

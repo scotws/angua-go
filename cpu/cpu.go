@@ -1,7 +1,7 @@
 // Angua CPU System
 // Scot W. Stevenson <scot.stevenson@gmail.com>
 // First version: 06. Nov 2018
-// This version: 06. Jan 2019
+// This version: 10. Jan 2019
 
 package cpu
 
@@ -105,19 +105,26 @@ func (s *StatReg) StringStatReg() string {
 	return fmt.Sprintf("%08b", sb)
 }
 
-// TestZ takes an int and sets the Z flag to true if the value is zero and to
-// false otherwise
-func (s *StatReg) TestAndSetZ(i int) {
-	if i == 0 {
+// TestNZ8 takes a 8-bit data type such as a register and sets the N or Z flag
+func (s *StatReg) TestNZ8(d common.Data8) {
+	s.FlagN = byte((d >> 7) & 0x01)
+
+	if d == 0 {
 		s.FlagZ = SET
 	} else {
 		s.FlagZ = CLEAR
 	}
 }
 
-// TestN takes a int and sets the N flag if highest bit is set, else clears it
-func (s *StatReg) TestAndSetN(i int) {
-	// TODO check based on register size
+// TestNZ16 takes a 16-bit data type such as a register and sets the N or Z flag
+func (s *StatReg) TestNZ16(d common.Data16) {
+	s.FlagN = byte((d >> 15) & 0x0001)
+
+	if d == 0 {
+		s.FlagZ = SET
+	} else {
+		s.FlagZ = CLEAR
+	}
 }
 
 // --------------------------------------------------
