@@ -1,7 +1,7 @@
 // Opcodes for Angua
 // Scot W. Stevenson <scot.stevenson@gmail.com>
 // First version: 02. Jan 2019
-// This version: 10. Jan 2019
+// This version: 11. Jan 2019
 
 // This package contains the opcodes and opcode data for the 65816 instructions.
 // Note there is redundancy with the information in the info package. We keep
@@ -83,6 +83,8 @@ func init() {
 	// ...
 	InsData[0xB8] = OpcData{1, IMPLIED, false} // clv
 	// ...
+	InsData[0xC2] = OpcData{2, IMMEDIATE, false} // rep
+	// ...
 	InsData[0xD8] = OpcData{1, IMPLIED, false} // cld
 	// ...
 	InsData[0xDB] = OpcData{1, IMPLIED, false} // stp
@@ -114,6 +116,8 @@ func init() {
 	// ...
 	InsJump[0xB8] = OpcB8 // clv
 	// ...
+	InsJump[0xC2] = OpcC2 // rep
+	// ...
 	InsJump[0xD8] = OpcD8 // cld
 	// ...
 	InsJump[0xDB] = OpcDB // stp
@@ -123,7 +127,7 @@ func init() {
 	InsJump[0xFB] = OpcFB // xce
 }
 
-// --- Store Routines ---
+// --- Store routines ---
 
 /*
    storeA, storeX, and storeY are variants on the same theme and could be
@@ -238,7 +242,8 @@ func (c *CPU) modeDirectPage() (common.Addr24, error) {
 }
 
 // modeImmediate8 returns the byte stored in the address after the opcode and an
-// error
+// error. This is a variant of getNextByte, except that we return a common.Data8
+// instead of a byte. Keep these routines separate to allow modifications
 func (c *CPU) modeImmediate8() (common.Data8, error) {
 	operandAddr := c.getFullPC() + 1
 	operand, err := c.Mem.Fetch(operandAddr)
@@ -261,9 +266,26 @@ func (c *CPU) modeImmediate16() (common.Data16, error) {
 	return common.Data16(operand), nil
 }
 
-// --- Instruction Functions ---
+// --- Low-level helper functions ---
 
-// The opcodes get the next bytes but do not change the PC
+// getNextByte takes a pointer to the CPU and returns the next byte - usually
+// the byte after the opcode - and an error message. This is a slight variation
+// in modeImmediate8, except we return a byte and not common.Data8. Keep them
+// separate so we can modify them if required
+func getNextByte(c *CPU) (byte, error) {
+	byteAddr := c.getFullPC() + 1
+	b, err := c.Mem.Fetch(byteAddr)
+	if err != nil {
+		return 0, fmt.Errorf("getNextByte: couldn't fetch data from %s: %v", common.Addr24(byteAddr).HexString(), err)
+	}
+
+	return b, nil
+}
+
+// --- Instruction functions ---
+
+// The opcodes get the next bytes but do not change the PC, this is left for the
+// main loop
 
 func Opc00(c *CPU) error { // brk
 	fmt.Println("OPC: DUMMY: Executing brk (00)")
@@ -346,6 +368,7 @@ func Opc8D(c *CPU) error { // sta
 
 func OpcA9(c *CPU) error { // lda.# (lda.8/lda.16)
 
+	// TODO generalize this in a rountine for LDA
 	switch c.WidthA {
 	case W8:
 		operand, err := c.modeImmediate8()
@@ -375,7 +398,6 @@ func OpcA9(c *CPU) error { // lda.# (lda.8/lda.16)
 // ...
 
 func OpcAD(c *CPU) error { // lda
-
 	addr, err := c.modeAbsolute()
 	if err != nil {
 		return fmt.Errorf("lda (AD): Couldn't fetch address from %s: %v", addr.HexString(), err)
@@ -417,6 +439,41 @@ func OpcB8(c *CPU) error { // clv
 
 // ...
 
+func OpcC2(c *CPU) error { // rep
+	rb, err := getNextByte(c)
+	if err != nil {
+		return fmt.Errorf("rep (0xC2): can't get next byte: %v:", err)
+	}
+
+	// The sequence is NVMXDIZE. All bits which are set turn the equivalent
+	// flag to zero. Most imporant are the M X flags because they trigger
+	// the changes to the width of the A and XY registers.
+	oldFlagM := c.FlagM
+	oldFlagX := c.FlagX
+
+	sb := c.GetStatReg()
+	nb := ^rb & sb // complement (inverse) is ^ not ~ in Go
+	c.SetStatReg(nb)
+
+	// Now that we've gotten the formal part out of the way, we need to see
+	// if we've reset the M or X flags. We need to do something if the flag
+	// was SET before and CLEAR now
+
+	if (oldFlagM == SET) && (c.FlagM == CLEAR) {
+		// TODO Change A size
+		fmt.Println("OPC: REP: DUMMY: changed size of A")
+	}
+
+	if (oldFlagX == SET) && (c.FlagX == CLEAR) {
+		// TODO Change XY size
+		fmt.Println("OPC: REP: DUMMY: changed size of XY")
+	}
+
+	return nil
+}
+
+// ...
+
 func OpcD8(c *CPU) error { // cld
 	c.FlagD = CLEAR
 	return nil
@@ -425,8 +482,8 @@ func OpcD8(c *CPU) error { // cld
 // ...
 
 func OpcDB(c *CPU) error { // stp
-	c.IsStopped = true
 	// TODO print Addr24
+	c.IsStopped = true
 	fmt.Println("Machine stopped by STP (0xDB) in block", c.PBR.HexString(), "at address", c.PC.HexString())
 	return nil
 }
@@ -436,7 +493,7 @@ func OpcDB(c *CPU) error { // stp
 func OpcEA(c *CPU) error { // nop
 	// We return the execution of a 'nop' as an error and let the higher-ups
 	// decide what to do with it
-	return fmt.Errorf("OpcEA: Executed 'nop' (0xEA) at %s:%s", c.PBR.HexString(), c.PC.HexString())
+	return fmt.Errorf("OpcEA: executed 'nop' (0xEA) at %s:%s", c.PBR.HexString(), c.PC.HexString())
 }
 
 // ...
