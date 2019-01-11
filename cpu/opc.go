@@ -92,6 +92,8 @@ func init() {
 	// ...
 	InsData[0xE2] = OpcData{2, IMPLIED, false} // sep
 	// ...
+	InsData[0xE8] = OpcData{1, IMPLIED, true} // inx
+	// ...
 	InsData[0xEA] = OpcData{1, IMPLIED, false} // nop
 	InsData[0xEB] = OpcData{1, IMPLIED, false} // xba
 	// ...
@@ -127,6 +129,8 @@ func init() {
 	InsJump[0xDB] = OpcDB // stp
 	// ...
 	InsJump[0xE2] = OpcE2 // sep
+	// ...
+	InsJump[0xE8] = OpcE8 // inx
 	// ...
 	InsJump[0xEA] = OpcEA // nop
 	InsJump[0xEB] = OpcEB // xba
@@ -543,6 +547,24 @@ func OpcE2(c *CPU) error { // sep
 		c.WidthXY = W8
 		c.X8 = common.Data8(c.X16 & 0x00FF)
 		c.Y8 = common.Data8(c.Y16 & 0x00FF)
+	}
+
+	return nil
+}
+
+func OpcE8(c *CPU) error { // inx
+	switch c.WidthXY {
+
+	case W8:
+		c.X8 += 1
+		c.TestNZ8(c.X8)
+
+	case W16:
+		c.X16 += 1
+		c.TestNZ16(c.X16)
+
+	default: // paranoid
+		return fmt.Errorf("inx (0xE8): illegal WidthXY value: %v", c.WidthXY)
 	}
 
 	return nil

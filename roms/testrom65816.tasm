@@ -32,9 +32,12 @@ vectors
                 lda 0xE000      ; first byte of our own routine should be 0x18
                 sta.d 00
 
+                inx
                 lda.# 0xFF      ; lda.8
         .axy16                  ; switch to wide A and XY (REP 0x30)
                 xba             
+
+                inx
         .a8
                 stp             ; enough for the beginning
 
