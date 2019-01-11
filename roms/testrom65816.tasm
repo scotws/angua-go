@@ -33,9 +33,9 @@ vectors
                 sta.d 00
 
                 lda.# 0xFF      ; lda.8
-                xba             
         .axy16                  ; switch to wide A and XY (REP 0x30)
-
+                xba             
+        .a8
                 stp             ; enough for the beginning
 
         ; Jump table for interrupts. We are only interested in those for native

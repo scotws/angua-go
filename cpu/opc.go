@@ -90,6 +90,8 @@ func init() {
 	// ...
 	InsData[0xDB] = OpcData{1, IMPLIED, false} // stp
 	// ...
+	InsData[0xE2] = OpcData{2, IMPLIED, false} // sep
+	// ...
 	InsData[0xEA] = OpcData{1, IMPLIED, false} // nop
 	InsData[0xEB] = OpcData{1, IMPLIED, false} // xba
 	// ...
@@ -123,6 +125,8 @@ func init() {
 	InsJump[0xD8] = OpcD8 // cld
 	// ...
 	InsJump[0xDB] = OpcDB // stp
+	// ...
+	InsJump[0xE2] = OpcE2 // sep
 	// ...
 	InsJump[0xEA] = OpcEA // nop
 	InsJump[0xEB] = OpcEB // xba
@@ -370,9 +374,10 @@ func Opc8D(c *CPU) error { // sta
 
 // ...
 
+// ---- AAAA ----
+
 func OpcA9(c *CPU) error { // lda.# (lda.8/lda.16)
 
-	// TODO generalize this in a rountine for LDA
 	switch c.WidthA {
 	case W8:
 		operand, err := c.modeImmediate8()
@@ -436,12 +441,16 @@ func OpcAD(c *CPU) error { // lda
 
 // ...
 
+// ---- BBBB ----
+
 func OpcB8(c *CPU) error { // clv
 	c.FlagV = CLEAR
 	return nil
 }
 
 // ...
+
+// ---- CCCC ----
 
 func OpcC2(c *CPU) error { // rep
 	rb, err := getNextByte(c)
@@ -481,6 +490,8 @@ func OpcC2(c *CPU) error { // rep
 
 // ...
 
+// ---- DDDD ----
+
 func OpcD8(c *CPU) error { // cld
 	c.FlagD = CLEAR
 	return nil
@@ -496,6 +507,46 @@ func OpcDB(c *CPU) error { // stp
 }
 
 // ...
+
+// ---- EEEE ----
+
+func OpcE2(c *CPU) error { // sep
+
+	rb, err := getNextByte(c)
+	if err != nil {
+		return fmt.Errorf("sep (0xE2): can't get next byte: %v:", err)
+	}
+
+	// The sequence is NVMXDIZE. All bits which are set also set the
+	// corresponding flag. Most imporant are the M X flags because they
+	// trigger the changes to the width of the A and XY registers.
+	oldFlagM := c.FlagM
+	oldFlagX := c.FlagX
+
+	sb := c.GetStatReg()
+	nb := rb | sb
+	c.SetStatReg(nb)
+
+	// Now that we've gotten the formal part out of the way, we need to see
+	// if we've reset the M or X flags. We need to do something if the flag
+	// was SET before and CLEAR now
+
+	// Change A size from 16 bit to 8 bit, see p. 51
+	if (oldFlagM == CLEAR) && (c.FlagM == SET) {
+		c.WidthA = W8
+		c.A8 = common.Data8(c.A16 & 0x00FF)
+		c.B = common.Data8((c.A16 >> 8) & 0x00FF)
+	}
+
+	// Change XY size from 16 bit to 8 bit, see p. 51
+	if (oldFlagX == CLEAR) && (c.FlagX == SET) {
+		c.WidthXY = W8
+		c.X8 = common.Data8(c.X16 & 0x00FF)
+		c.Y8 = common.Data8(c.Y16 & 0x00FF)
+	}
+
+	return nil
+}
 
 func OpcEA(c *CPU) error { // nop
 	// We return the execution of a 'nop' as an error and let the higher-ups
@@ -527,7 +578,7 @@ func OpcEB(c *CPU) error { // xba p.422
 	return nil
 }
 
-// ...
+// ---- FFFF ----
 
 func OpcFB(c *CPU) error { // xce
 	tmp := c.FlagE
