@@ -21,6 +21,9 @@ vectors
         .native         ; switch to native mode. CLC XCE as "magic number"
 
                 ; We need a few instructions to get started with testing
+                lda getchar     ; test external routine, get one byte
+                sta.d 01
+
                 lda.# 'a'       ; this will later be lda.8
                 sta putchar
 
@@ -29,9 +32,8 @@ vectors
                 lda 0xE000      ; first byte of our own routine should be 0x18
                 sta.d 00
 
-                lda getchar     ; test external routine, get one byte
-                sta.d 01
-
+                lda.# 0xFF      ; lda.8
+                xba             
         .axy16                  ; switch to wide A and XY (REP 0x30)
 
                 stp             ; enough for the beginning

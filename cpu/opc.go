@@ -15,6 +15,7 @@ import (
 	"angua/common"
 )
 
+// TODO see if we even need these modes
 const (
 	// Modes
 	ABSOLUTE          = 1  // Absolute                  lda $1000
@@ -90,6 +91,7 @@ func init() {
 	InsData[0xDB] = OpcData{1, IMPLIED, false} // stp
 	// ...
 	InsData[0xEA] = OpcData{1, IMPLIED, false} // nop
+	InsData[0xEB] = OpcData{1, IMPLIED, false} // xba
 	// ...
 	InsData[0xFB] = OpcData{1, IMPLIED, false} // xce
 
@@ -123,6 +125,7 @@ func init() {
 	InsJump[0xDB] = OpcDB // stp
 	// ...
 	InsJump[0xEA] = OpcEA // nop
+	InsJump[0xEB] = OpcEB // xba
 	// ...
 	InsJump[0xFB] = OpcFB // xce
 }
@@ -243,7 +246,8 @@ func (c *CPU) modeDirectPage() (common.Addr24, error) {
 
 // modeImmediate8 returns the byte stored in the address after the opcode and an
 // error. This is a variant of getNextByte, except that we return a common.Data8
-// instead of a byte. Keep these routines separate to allow modifications
+// instead of a byte. Keep these routines separate to allow modifications. This
+// could also be named getNextData8()
 func (c *CPU) modeImmediate8() (common.Data8, error) {
 	operandAddr := c.getFullPC() + 1
 	operand, err := c.Mem.Fetch(operandAddr)
@@ -373,7 +377,7 @@ func OpcA9(c *CPU) error { // lda.# (lda.8/lda.16)
 	case W8:
 		operand, err := c.modeImmediate8()
 		if err != nil {
-			return fmt.Errorf("lda.8 (A9): Couldn't fetch data:", err)
+			return fmt.Errorf("lda.8 (A9): Couldn't fetch data: %v", err)
 		}
 
 		c.A8 = operand
@@ -382,7 +386,7 @@ func OpcA9(c *CPU) error { // lda.# (lda.8/lda.16)
 	case W16:
 		operand, err := c.modeImmediate16()
 		if err != nil {
-			return fmt.Errorf("lda.16 (A9): Couldn't fetch data:", err)
+			return fmt.Errorf("lda.16 (A9): Couldn't fetch data: %v", err)
 		}
 
 		c.A16 = operand
@@ -459,14 +463,17 @@ func OpcC2(c *CPU) error { // rep
 	// if we've reset the M or X flags. We need to do something if the flag
 	// was SET before and CLEAR now
 
+	// Change A size from 8 bit to 16 bit, see p. 51
 	if (oldFlagM == SET) && (c.FlagM == CLEAR) {
-		// TODO Change A size
-		fmt.Println("OPC: REP: DUMMY: changed size of A")
+		c.WidthA = W16
+		c.A16 = (common.Data16(c.B) << 8) + common.Data16(c.A8)
 	}
 
+	// Change XY size from 8 bit to 16 bit, see p. 51
 	if (oldFlagX == SET) && (c.FlagX == CLEAR) {
-		// TODO Change XY size
-		fmt.Println("OPC: REP: DUMMY: changed size of XY")
+		c.WidthXY = W16
+		c.X16 = 0x000 + common.Data16(c.X8) // emphasise: MSB is zero
+		c.Y16 = 0x000 + common.Data16(c.Y8) // emphasise: MSB is zero
 	}
 
 	return nil
@@ -494,6 +501,30 @@ func OpcEA(c *CPU) error { // nop
 	// We return the execution of a 'nop' as an error and let the higher-ups
 	// decide what to do with it
 	return fmt.Errorf("OpcEA: executed 'nop' (0xEA) at %s:%s", c.PBR.HexString(), c.PC.HexString())
+}
+
+func OpcEB(c *CPU) error { // xba p.422
+	switch c.WidthA {
+
+	case W8:
+		// Exchange A8 and B
+		tmp := c.B
+		c.B = c.A8
+		c.A8 = tmp
+		c.TestNZ8(c.A8)
+
+	case W16:
+		// Swap LSB and MSB
+		tmp := (c.A16 >> 8) & 0x00FF
+		c.A16 = (c.A16 << 8) & 0xFF00
+		c.A16 = c.A16 | tmp
+		c.TestNZ8(common.Data8(tmp)) // XBA tests the lower byte always
+
+	default: // paranoid
+		return fmt.Errorf("xba (0xEB): illegal WidthA value: %v", c.WidthA)
+	}
+
+	return nil
 }
 
 // ...
