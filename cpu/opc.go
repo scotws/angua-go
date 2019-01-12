@@ -255,6 +255,10 @@ func (c *CPU) modeImmediate8() (common.Data8, error) {
 	return common.Data8(operand), nil
 }
 
+func (c *CPU) getNextData8() (common.Data8, error) {
+	return c.modeImmediate8()
+}
+
 // modeImmediate16 returns the word stored in the address after the opcode and an
 // error. This could also be named getNextData16()
 func (c *CPU) modeImmediate16() (common.Data16, error) {
@@ -268,8 +272,6 @@ func (c *CPU) modeImmediate16() (common.Data16, error) {
 
 	return d, nil
 }
-
-// --- Low-level helper functions ---
 
 // getNextByte takes a pointer to the CPU and returns the next byte - usually
 // the byte after the opcode - and an error message. This is a slight variation
