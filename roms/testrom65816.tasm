@@ -29,24 +29,13 @@ vectors
 
                 nop             ; gotta have a NOP
 
-                lda 0xE000      ; first byte of our own routine should be 0x18
-                sta.d 00
+                jmp to_aaaa
 
-                inx
-                inx
-                inx
+                phe.# 0xBBBB    ; never reached
 
-                txs             ; SP should be 0002
+to_aaaa
+                phe.# 0xAAAA
 
-                lda.# 0xFF      ; lda.8
-                pha
-                
-                phe.# 0xAABB
-
-        .axy16                  ; switch to wide A and XY (REP 0x30)
-                xba             ; B should be 0xFF
-
-        .a8
                 stp             ; enough for the beginning
 
         ; Jump table for interrupts. We are only interested in those for native

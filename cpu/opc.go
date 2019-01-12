@@ -39,6 +39,8 @@ func init() {
 	// ...
 	InsSet[0x48] = OpcData{1, Opc48} // pha
 	// ...
+	InsSet[0x4C] = OpcData{3, Opc4C} // jmp
+	// ...
 	InsSet[0x58] = OpcData{1, Opc58} // cli
 	// ...
 	InsSet[0x78] = OpcData{1, Opc78} // sei
@@ -243,8 +245,7 @@ func (c *CPU) modeDirectPage() (common.Addr24, error) {
 
 // modeImmediate8 returns the byte stored in the address after the opcode and an
 // error. This is a variant of getNextByte, except that we return a common.Data8
-// instead of a byte. Keep these routines separate to allow modifications. This
-// could also be named getNextData8()
+// instead of a byte. Keep these routines separate to allow modifications.
 func (c *CPU) modeImmediate8() (common.Data8, error) {
 	operandAddr := c.getFullPC() + 1
 	operand, err := c.Mem.Fetch(operandAddr)
@@ -255,12 +256,13 @@ func (c *CPU) modeImmediate8() (common.Data8, error) {
 	return common.Data8(operand), nil
 }
 
+// getNextData8 is a synonym for modeImmediate8
 func (c *CPU) getNextData8() (common.Data8, error) {
 	return c.modeImmediate8()
 }
 
 // modeImmediate16 returns the word stored in the address after the opcode and an
-// error. This could also be named getNextData16()
+// error.
 func (c *CPU) modeImmediate16() (common.Data16, error) {
 	operandAddr := c.getFullPC() + 1
 	ui, err := c.Mem.FetchMore(operandAddr, 2)
@@ -271,6 +273,11 @@ func (c *CPU) modeImmediate16() (common.Data16, error) {
 	d := common.Data16(ui)
 
 	return d, nil
+}
+
+// getNextData16 is a synonym for modeImmediate16
+func (c *CPU) getNextData16() (common.Data16, error) {
+	return c.modeImmediate16()
 }
 
 // getNextByte takes a pointer to the CPU and returns the next byte - usually
@@ -322,6 +329,22 @@ func Opc38(c *CPU) error { // sec
 }
 
 // ---- 4444 ----
+
+func Opc4C(c *CPU) error { // jmp p. 360
+
+	addr, err := c.modeAbsolute()
+	if err != nil {
+		return fmt.Errorf("jmp (4C): couldn't fetch address from %s: %v", addr.HexString(), err)
+	}
+
+	// We need to subtract three from the address because the loop will add
+	// three
+	c.PC = common.Addr16(addr) - 3
+
+	return nil
+}
+
+// ...
 
 func Opc48(c *CPU) error { // pha p. 375
 	var err error
@@ -645,7 +668,7 @@ func OpcEB(c *CPU) error { // xba p.422
 // ---- FFFF ----
 
 func OpcF4(c *CPU) error { // phe.#
-	d, err := c.modeImmediate16()
+	d, err := c.getNextData16()
 	if err != nil {
 		return fmt.Errorf("phe.# (0xF4): couldn't get operand: %v", err)
 	}
