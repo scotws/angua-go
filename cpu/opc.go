@@ -17,7 +17,7 @@ import (
 
 type OpcData struct {
 	Size int              // number of bytes including operand (1 to 4)
-	Code func(*CPU) error // jump table for assembler instructions
+	Code func(*CPU) error // function for actual code of instruction
 }
 
 // In theory, we could use a giant switch statement instead of a map of
@@ -44,6 +44,8 @@ func init() {
 	InsSet[0x85] = OpcData{2, Opc85} // sta.d
 	// ...
 	InsSet[0x8D] = OpcData{3, Opc8D} // sta
+	// ...
+	InsSet[0x9A] = OpcData{1, Opc9A} // txs
 	// ...
 	InsSet[0xA9] = OpcData{2, OpcA9} // lda.# (lda.8/lda.16)
 	// ...
@@ -305,7 +307,27 @@ func Opc8D(c *CPU) error { // sta
 	return nil
 }
 
-// ...
+// ---- 9999 ----
+
+// txs (0x9a) transfers the X register to the Stack Pointer. Note that if we
+// have 8-bit index registers, the MSB of the Stack Pointer is zeroed, not set
+// to 01. See p. 416 for details. Flags are not affected by this operation. Note
+// that internally, the Stack Pointer type is an an Addr16, while X is a
+// Data8/Data16
+func Opc9A(c *CPU) error { // txs
+	switch c.WidthXY {
+	case W8:
+		c.SP = common.Addr16(0x0000 + common.Data16(c.X8)) // emphasise MSB is zero
+
+	case W16:
+		c.SP = common.Addr16(c.X16)
+
+	default: // paranoid
+		return fmt.Errorf("txs (0x9A): Illegal width for register X:%d", c.WidthXY)
+	}
+
+	return nil
+}
 
 // ---- AAAA ----
 

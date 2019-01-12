@@ -38,6 +38,7 @@ vectors
                 xba             
 
                 inx
+                txs             ; SP should be 0002
         .a8
                 stp             ; enough for the beginning
 
