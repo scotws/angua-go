@@ -53,13 +53,13 @@ func init() {
 	// ...
 	InsSet[0xB8] = OpcData{1, OpcB8} // clv
 	// ...
-	InsSet[0xC2] = OpcData{2, OpcC2} // rep
+	InsSet[0xC2] = OpcData{2, OpcC2} // rep.#
 	// ...
 	InsSet[0xD8] = OpcData{1, OpcD8} // cld
 	// ...
 	InsSet[0xDB] = OpcData{1, OpcDB} // stp
 	// ...
-	InsSet[0xE2] = OpcData{2, OpcE2} // sep
+	InsSet[0xE2] = OpcData{2, OpcE2} // sep.#
 	// ...
 	InsSet[0xE8] = OpcData{1, OpcE8} // inx
 	// ...
@@ -407,10 +407,10 @@ func OpcB8(c *CPU) error { // clv
 
 // ---- CCCC ----
 
-func OpcC2(c *CPU) error { // rep
+func OpcC2(c *CPU) error { // rep.#
 	rb, err := getNextByte(c)
 	if err != nil {
-		return fmt.Errorf("rep (0xC2): can't get next byte: %v:", err)
+		return fmt.Errorf("rep.# (0xC2): can't get next byte: %v:", err)
 	}
 
 	// The sequence is NVMXDIZE. All bits which are set turn the equivalent
@@ -465,11 +465,11 @@ func OpcDB(c *CPU) error { // stp
 
 // ---- EEEE ----
 
-func OpcE2(c *CPU) error { // sep
+func OpcE2(c *CPU) error { // sep.#
 
 	rb, err := getNextByte(c)
 	if err != nil {
-		return fmt.Errorf("sep (0xE2): can't get next byte: %v:", err)
+		return fmt.Errorf("sep.# (0xE2): can't get next byte: %v:", err)
 	}
 
 	// The sequence is NVMXDIZE. All bits which are set also set the
