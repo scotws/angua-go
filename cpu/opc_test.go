@@ -1,7 +1,7 @@
 // Test file for Angua CPU opcodes
 // Scot W. Stevenson <scot.stevenson@gmail.com>
 // First version: 05. Jan 2019
-// This version: 11. Jan 2019
+// This version: 12. Jan 2019
 
 package cpu
 
@@ -42,6 +42,53 @@ func TestOpcFlags(t *testing.T) {
 	}
 }
 
+// txs. Does not affect flags
+func TestOpc9A(t *testing.T) {
+	var c = CPU{}
+
+	// Test with 8 bit X
+
+	var tests8 = []struct {
+		init func(*CPU) error
+		have common.Data8
+		want common.Addr16 // SP is Addr16
+	}{
+		{Opc9A, 0x01, 0x0001},
+	}
+
+	c.WidthXY = W8
+
+	for _, test8 := range tests8 {
+		c.X8 = test8.have
+		_ = test8.init(&c) // executes opcode, dump err
+
+		if c.SP != test8.want {
+			t.Errorf("TestOpc9A (txs) 8 returns %X for c.SP, wanted %X", c.SP, test8.want)
+		}
+	}
+
+	// Test with 16 bit X
+
+	var tests16 = []struct {
+		init func(*CPU) error
+		have common.Data16
+		want common.Addr16 // SP is Addr16
+	}{
+		{Opc9A, 0x01, 0x0001},
+	}
+
+	c.WidthXY = W16
+
+	for _, test16 := range tests16 {
+		c.X16 = test16.have
+		_ = test16.init(&c) // executes opcode, dump err
+
+		if c.SP != test16.want {
+			t.Errorf("TestOpc9A (txs) 16 returns %X for c.SP, wanted %X", c.SP, test16.want)
+		}
+	}
+}
+
 // xba
 func TestOpcEB(t *testing.T) {
 	var c = CPU{}
@@ -61,7 +108,7 @@ func TestOpcEB(t *testing.T) {
 
 	for _, test8 := range tests8 {
 		c.A8 = test8.have
-		_ = test8.init(&c) // executes opcode
+		_ = test8.init(&c) // executes opcode, dump err
 
 		if c.B != test8.want {
 			t.Errorf("TestOpcEB (xba) A8 returns %X for B and %X for A, wanted %X", c.B, c.A8, test8.want)
