@@ -1,7 +1,7 @@
 // Long Help messages for the Angua Command Line Interface (CLI)
 // Scot W. Stevenson <scot.stevenson@gmail.com>
 // First version: 11. Nov 2018
-// This version: 08. Jan 2019
+// This version: 12. Jan 2019
 
 package main
 
@@ -34,7 +34,7 @@ Example:
 Example:
 		(THE EXAMPLE IS MISSING)`
 
-	longHelpDump string = `Create a hex dump of the address range
+	longHelpDump string = `Display hexdump, Direct Page or stack
 
 Supply an address range in the usual format "<ADDRESS> to <ADDRESS>" or as a
 bank with "bank <BANK>"; or dump the stack or direct page. Output is formatted
@@ -46,10 +46,12 @@ Examples:
                 dump 0x1000 to 0xFFFF     ; defaults to bank 0
                 dump bank 2
                 dump bank 0x1F
-		dump sp			  ; synomyms "stack", "stackpointer"
-		dump dp		          ; synonyms "direct", "directpage"
+		dump stack 10		  ; synomyms "sp", "stackpointer"
+		dump dp			  ; synonyms "direct", "directpage"
 		
-Because of the size of the stack, only the first elements are shown.`
+A range of banks ("dump bank 2 to bank 3") is currently not supported. The
+"dump stack" options takes a parameter for the depth in bytes. If it is left
+out, the depth will be set to eight.`
 
 	longHelpEcho string = `Print a character string.
 
@@ -224,7 +226,7 @@ a hex dump of a given range, use "dump <ADDRESS RANGE>".`
 (THE REST OF THIS ENTRY IS MISSING)
 
 Example:
-	        status		- Print all information on system
+		status		- Print all information on system
 		status cpu	- Only print registers and other CPU info
 		status host	- Print info on the host machine and Go version`
 

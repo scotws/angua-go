@@ -1,7 +1,7 @@
 // Angua - An Emulator for the 65816 CPU in Native Mode
 // Scot W. Stevenson <scot.stevenson@gmail.com>
 // First version: 26. Sep 2017
-// This version: 08. Jan 2019
+// This version: 12. Jan 2019
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -27,6 +27,7 @@ import (
 	"os"
 	"reflect"
 	"runtime"
+	"strconv"
 	"strings"
 	"unicode"
 
@@ -46,7 +47,7 @@ const (
 	configDir   string = "configs"
 	shellBanner string = `Welcome to Angua
 An Emulator for the 65816 in Native Mode
-Version ALPHA 0.1  11. Jan 2019
+Version ALPHA 0.1  12. Jan 2019
 Copyright (c) 2018-2019 Scot W. Stevenson
 Angua comes with absolutely NO WARRANTY
 Type 'help' for more information
@@ -193,7 +194,8 @@ func main() {
 		LongHelp: longHelpDump,
 		Func: func(c *ishell.Context) {
 
-			const ruler string = "         00 01 02 03 04 05 06 07  08 09 0A 0B 0C 0D 0E 0F"
+			const rulerLine string = "         00 01 02 03 04 05 06 07  08 09 0A 0B 0C 0D 0E 0F"
+			const stackLine string = "     <-- SP"
 
 			if !haveMachine {
 				c.Println("ERROR: No machine present")
@@ -205,36 +207,70 @@ func main() {
 				return
 			}
 
-			if len(c.Args) == 1 {
+			switch c.Args[0] {
 
-				switch c.Args[0] {
+			case "sp", "stack", "stackpointer":
+				// The stack pointer dump command takes
+				// an optional parameter for depth. If
+				// not present, this defaults to 8
+				var depth int = 8
 
-				case "sp", "stack", "stackpointer":
-					// TODO make this a list with a pointer;
-					// consider taking second parameter for
-					// depth
-					addrSP := common.Addr24(cpu.SP)
-					hexDump(addrSP, addrSP+0xF, memory)
+				if len(c.Args) == 2 {
+					para, err := strconv.Atoi(c.Args[1])
+					if err != nil {
+						c.Println("ERROR:", c.Args[1], "not a valid number for depth")
+						return
+					}
 
-				case "dp", "direct", "directpage":
-					addrDP := common.Addr24(cpu.DP)
-					fmt.Println(ruler)
-					hexDump(addrDP, addrDP+0xFF, memory)
-
-				default:
-					fmt.Println("ERROR: Unknown option:", c.Args[0])
+					depth = para
 				}
-				return
-			}
 
-			// The arg string is passed without "dump"
-			a1, a2, err := parseAddressRange(c.Args)
-			if err != nil {
-				c.Println("Can't parse address range:", err)
-				return
-			}
+				// Print first line
+				sp0 := common.Addr24(cpu.SP).HexString()
+				c.Println(sp0, stackLine)
 
-			hexDump(a1, a2, memory)
+				if depth == 0 {
+					return
+				}
+
+				// We want more than just the first line
+				limit := depth + int(cpu.SP)
+
+				// Go, for some weird reason, doesn't
+				// have a max() function for int, only
+				// for float64. It's stuff like this
+				// that makes you miss Forth
+				if limit > 0xFFFF {
+					limit = 0xFFFF
+				}
+
+				for i := int(cpu.SP + 1); i <= limit; i++ {
+
+					b, err := cpu.Mem.Fetch(common.Addr24(i))
+					if err != nil {
+						c.Println("ERROR: Can't fetch stack value at", i)
+						return
+					}
+
+					a := common.Addr24(i).HexString()
+					c.Printf("%s  %02X\n", a, b)
+				}
+
+			case "dp", "direct", "directpage":
+				addrDP := common.Addr24(cpu.DP)
+				fmt.Println(rulerLine)
+				hexDump(addrDP, addrDP+0xFF, memory)
+
+			default:
+				a1, a2, err := parseAddressRange(c.Args)
+
+				if err != nil {
+					c.Println("Can't parse address range:", err)
+					return
+				}
+
+				hexDump(a1, a2, memory)
+			}
 		},
 	})
 
