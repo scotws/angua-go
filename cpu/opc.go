@@ -37,6 +37,8 @@ func init() {
 	// ...
 	InsSet[0x38] = OpcData{1, Opc38} // sec
 	// ...
+	InsSet[0x48] = OpcData{1, Opc48} // pha
+	// ...
 	InsSet[0x58] = OpcData{1, Opc58} // cli
 	// ...
 	InsSet[0x78] = OpcData{1, Opc78} // sei
@@ -155,6 +157,68 @@ func (c *CPU) storeY(addr common.Addr24) error {
 	return nil
 }
 
+// --- Stack routines ---
+
+// pushByte pushes a byte defined to the stack as defined by the stack pointer,
+// which it then adusts. This internal routine is used by all other stack push
+// instructions such as pushData8 and pushData16.
+func (c *CPU) pushByte(b byte) error {
+	addr := common.Addr24(c.SP) // c.SP is defined as common.Addr16
+
+	// TODO testing
+	fmt.Println("*** addr:", addr, "SP:", c.SP)
+
+	err := c.Mem.Store(addr, b)
+	if err != nil {
+		return fmt.Errorf("pushByte: couldn't push byte %X to stack at %s: %v",
+			b, addr.HexString(), err)
+	}
+
+	// TODO testing
+	fmt.Println("*** preSP:", c.SP)
+
+	// Since we don't support emulation mode, we don't have to care about
+	// the weird wrapping behavior, see p. 278
+	c.SP--
+
+	// TODO testing
+	fmt.Println("*** postSP:", c.SP)
+
+	return nil
+}
+
+// pushData8 is a wrapper function for pushByte that takes a common.Data8
+// parameter as defined by our registers
+func (c *CPU) pushData8(d common.Data8) error {
+	b := byte(d)
+	err := c.pushByte(b)
+
+	if err != nil {
+		return fmt.Errorf("pushData8: couldn't push %X to stack: %v", d.HexString(), err)
+	}
+
+	return nil
+}
+
+// pushData16 is a wrapper function for pushByte that takes a common.Data16
+// parameter as defined by our registers. Remember the MSB is pushed first
+func (c *CPU) pushData16(d common.Data16) error {
+
+	msb := d.Msb()
+	err := c.pushByte(msb)
+	if err != nil {
+		return fmt.Errorf("pushData16: couldn't push %X to stack: %v", msb, err)
+	}
+
+	lsb := d.Lsb()
+	err = c.pushByte(lsb)
+	if err != nil {
+		return fmt.Errorf("pushData16: couldn't push %X to stack: %v", lsb, err)
+	}
+
+	return nil
+}
+
 // --- Mode routines ---
 
 // modeAbsolute returns the address stored in the next two bytes after the
@@ -252,14 +316,42 @@ func Opc18(c *CPU) error { // clc
 	return nil
 }
 
-// ...
+// ---- 3333 ----
 
 func Opc38(c *CPU) error { // sec
 	c.FlagC = SET
 	return nil
 }
 
-// ...
+// ---- 4444 ----
+
+func Opc48(c *CPU) error { // pha p. 375
+	var err error
+
+	switch c.WidthA {
+
+	case W8:
+		err = c.pushData8(c.A8)
+		if err != nil {
+			return fmt.Errorf("pha (0x48) 8 bit: couldn't push byte %s to stack: %v",
+				c.A8.HexString(), err)
+		}
+
+	case W16:
+		err = c.pushData16(c.A16)
+		if err != nil {
+			return fmt.Errorf("pha (0x48) 16 bit: couldn't push %s to stack: %v",
+				c.A16.HexString(), err)
+		}
+
+	default:
+		return fmt.Errorf("pha (0x48): illegal width for register A:%d", c.WidthA)
+	}
+
+	return nil
+}
+
+// ---- 5555 ----
 
 func Opc58(c *CPU) error { // cli
 	c.FlagI = CLEAR
@@ -316,6 +408,7 @@ func Opc8D(c *CPU) error { // sta
 // Data8/Data16
 func Opc9A(c *CPU) error { // txs
 	switch c.WidthXY {
+
 	case W8:
 		c.SP = common.Addr16(0x0000 + common.Data16(c.X8)) // emphasise MSB is zero
 
@@ -457,7 +550,7 @@ func OpcD8(c *CPU) error { // cld
 func OpcDB(c *CPU) error { // stp
 	// TODO print Addr24
 	c.IsStopped = true
-	fmt.Println("Machine stopped by STP (0xDB) in block", c.PBR.HexString(), "at address", c.PC.HexString())
+	fmt.Println("Machine stopped by stp (0xDB) in block", c.PBR.HexString(), "at address", c.PC.HexString())
 	return nil
 }
 

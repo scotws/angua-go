@@ -67,26 +67,6 @@ var (
 	}
 )
 
-// ==== INTERFACES ===
-
-type Lsber interface {
-	Lsb() byte
-}
-
-type Msber interface {
-	Msb() byte
-}
-
-type Banker interface {
-	Bank() byte
-}
-
-// LilEnder is an interface for types that have a routine to convert numbers to
-// little endian byte arrarys
-type LilEnder interface {
-	LilEnd() []byte
-}
-
 // Ensure24 takes a 24 bit address and makes sure that the upper byte of the
 // underlying uint32 is actually zero
 func Ensure24(a Addr24) Addr24 {
