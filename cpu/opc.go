@@ -68,6 +68,8 @@ func init() {
 	InsSet[0xEA] = OpcData{1, OpcEA} // nop
 	InsSet[0xEB] = OpcData{1, OpcEB} // xba
 	// ...
+	InsSet[0xF4] = OpcData{3, OpcF4} // pha.#
+	// ...
 	InsSet[0xFB] = OpcData{1, OpcFB} // xce
 }
 
@@ -194,14 +196,15 @@ func (c *CPU) pushData8(d common.Data8) error {
 // pushData16 is a wrapper function for pushByte that takes a common.Data16
 // parameter as defined by our registers. Remember the MSB is pushed first
 func (c *CPU) pushData16(d common.Data16) error {
-
 	msb := d.Msb()
+
 	err := c.pushByte(msb)
 	if err != nil {
 		return fmt.Errorf("pushData16: couldn't push %X to stack: %v", msb, err)
 	}
 
 	lsb := d.Lsb()
+
 	err = c.pushByte(lsb)
 	if err != nil {
 		return fmt.Errorf("pushData16: couldn't push %X to stack: %v", lsb, err)
@@ -252,16 +255,18 @@ func (c *CPU) modeImmediate8() (common.Data8, error) {
 	return common.Data8(operand), nil
 }
 
-// modeImmediate16 returns the byte stored in the address after the opcode and an
-// error
+// modeImmediate16 returns the word stored in the address after the opcode and an
+// error. This could also be named getNextData16()
 func (c *CPU) modeImmediate16() (common.Data16, error) {
 	operandAddr := c.getFullPC() + 1
-	operand, err := c.Mem.Fetch(operandAddr)
+	ui, err := c.Mem.FetchMore(operandAddr, 2)
 	if err != nil {
 		return 0, fmt.Errorf("immediate 16 mode: couldn't fetch data from %s: %v", common.Addr24(operandAddr).HexString(), err)
 	}
 
-	return common.Data16(operand), nil
+	d := common.Data16(ui)
+
+	return d, nil
 }
 
 // --- Low-level helper functions ---
@@ -636,6 +641,20 @@ func OpcEB(c *CPU) error { // xba p.422
 }
 
 // ---- FFFF ----
+
+func OpcF4(c *CPU) error { // phe.#
+	d, err := c.modeImmediate16()
+	if err != nil {
+		return fmt.Errorf("phe.# (0xF4): couldn't get operand: %v", err)
+	}
+
+	err = c.pushData16(d)
+	if err != nil {
+		return fmt.Errorf("phe.# (0xF4): couldn't push operand: %v", err)
+	}
+
+	return nil
+}
 
 func OpcFB(c *CPU) error { // xce
 	tmp := c.FlagE

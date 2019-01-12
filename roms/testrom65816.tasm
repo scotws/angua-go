@@ -39,8 +39,9 @@ vectors
                 txs             ; SP should be 0002
 
                 lda.# 0xFF      ; lda.8
-                pha             ; 0xFF should be TOS
                 pha
+                
+                phe.# 0xAABB
 
         .axy16                  ; switch to wide A and XY (REP 0x30)
                 xba             ; B should be 0xFF
