@@ -179,7 +179,24 @@ func main() {
 		Help:     "disassemble a range of memory",
 		LongHelp: longHelpDisasm,
 		Func: func(c *ishell.Context) {
-			c.Println("CLI: DUMMY: disassemble memory")
+
+			if !haveMachine {
+				c.Println("ERROR: No machine present")
+				return
+			}
+
+			if len(c.Args) == 0 {
+				c.Println("ERROR: Need at least one argument (see 'dump help')")
+				return
+			}
+			a1, a2, err := parseAddressRange(c.Args)
+
+			if err != nil {
+				c.Println("Can't parse address range:", err)
+				return
+			}
+
+			disassemble(a1, a2, memory)
 		},
 	})
 
@@ -195,7 +212,7 @@ func main() {
 		Func: func(c *ishell.Context) {
 
 			const rulerLine string = "         00 01 02 03 04 05 06 07  08 09 0A 0B 0C 0D 0E 0F"
-			const stackLine string = "     <-- SP"
+			const stackLine string = "     < SP"
 
 			if !haveMachine {
 				c.Println("ERROR: No machine present")
@@ -859,6 +876,78 @@ func getVector(addr common.Addr24, m *mem.Memory) (string, error) {
 	avAddr := common.Addr24(av)
 
 	return avAddr.HexString(), nil
+}
+
+// Disassemble prints out the content of a given memory range in SAN notation
+func disassemble(addr1, addr2 common.Addr24, m *mem.Memory) {
+
+	pc := addr1
+
+	for {
+
+		fmt.Printf("%s  ", pc.HexString())
+
+		b, err := m.Fetch(pc)
+		if err != nil {
+			fmt.Println("ERROR: Couldn't read opcode at %s", pc.HexString())
+			return
+		}
+
+		len := cpu.InsSet[b].Size
+		mne := cpu.InsSet[b].Mnemonic
+		// exp := cpu.InsSet[b].Expands
+
+		// During development, this can happen if the instruction hasn't
+		// been coded yet
+		if len == 0 {
+			break
+		}
+
+		// Print the instuction as hex numbers
+		for i := 0; i < len; i++ {
+
+			b1, err := m.Fetch(pc + common.Addr24(i))
+			if err != nil {
+				fmt.Println("ERROR: Couldn't read opcode at %s",
+					common.Addr24(i).HexString())
+				return
+			}
+
+			fmt.Printf("%02X ", b1)
+		}
+
+		// Fill up any whitespace we need for formatting
+		for i := 0; i < (4 - len); i++ {
+			fmt.Printf("   ")
+		}
+
+		// Now it's time for the mnemonic
+		fmt.Printf("%s ", mne)
+
+		// Add the operand
+		if len > 1 {
+			ui, err := m.FetchMore(pc+1, uint(len-1))
+			if err != nil {
+				fmt.Println("ERROR: Couldn't read operand data at %s",
+					common.Addr24(pc+1).HexString())
+				return
+			}
+
+			fmt.Printf("0x%02X ", ui)
+		}
+
+		fmt.Printf("\n")
+
+		// Loop control: Stop when we're outside of the disassemble
+		// space
+		pc = pc + common.Addr24(len)
+
+		if pc > addr2 {
+			break
+		}
+
+	}
+	return
 }
 
 // Hexdump prints the contents of a memory range in a nice hex table. If the
