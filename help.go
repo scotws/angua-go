@@ -29,10 +29,14 @@ Example:
 
 	longHelpDisasm string = `Disassemble a memory range.
 
-(THE REST OF THIS ENTRY IS MISSING)
+Disassemble the given memory range to Simpler Assember Notation (SAN). Includes
+the line number, values in hex and mnemonics with operands.
 
 Example:
-		(THE EXAMPLE IS MISSING)`
+		disasm 0xe000 to 0xe00f
+		disasm bank 0
+
+All output is in hex.`
 
 	longHelpDump string = `Display hexdump, Direct Page or stack
 

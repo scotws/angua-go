@@ -78,7 +78,7 @@ func init() {
 	InsSet[0xEA] = OpcData{1, OpcEA, false, "nop"}
 	InsSet[0xEB] = OpcData{1, OpcEB, false, "xba"}
 	// ...
-	InsSet[0xF4] = OpcData{3, OpcF4, false, "pha.#"}
+	InsSet[0xF4] = OpcData{3, OpcF4, false, "phe.#"}
 	// ...
 	InsSet[0xFB] = OpcData{1, OpcFB, false, "xce"}
 }

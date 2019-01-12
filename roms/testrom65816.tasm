@@ -41,10 +41,6 @@ vectors
                 lda.# 0xAA
                 pha
 
-        .A16
-                lda.# 0xBBCC
-                pha
-
                 phe.# 0xFFFF
 
                 stp

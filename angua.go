@@ -879,9 +879,15 @@ func getVector(addr common.Addr24, m *mem.Memory) (string, error) {
 }
 
 // Disassemble prints out the content of a given memory range in SAN notation
+// TODO this is a rough first version that doesn't recognize the changes in
+// instruction length for immediate instructions such as lda.#
+// TODO move this to a separate file
 func disassemble(addr1, addr2 common.Addr24, m *mem.Memory) {
-
 	pc := addr1
+	var ui uint
+
+	fmt.Println("WARNING: Disassembler does not handle 8/16 bit immediate size changes")
+	fmt.Println()
 
 	for {
 
@@ -921,12 +927,13 @@ func disassemble(addr1, addr2 common.Addr24, m *mem.Memory) {
 			fmt.Printf("   ")
 		}
 
-		// Now it's time for the mnemonic
+		// --- Now it's time for the mnemonic
 		fmt.Printf("%s ", mne)
 
-		// Add the operand
+		// --- Add the operand
+		// TODO if this is a branch instruction, calculate the target
 		if len > 1 {
-			ui, err := m.FetchMore(pc+1, uint(len-1))
+			ui, err = m.FetchMore(pc+1, uint(len-1))
 			if err != nil {
 				fmt.Println("ERROR: Couldn't read operand data at %s",
 					common.Addr24(pc+1).HexString())
@@ -936,6 +943,39 @@ func disassemble(addr1, addr2 common.Addr24, m *mem.Memory) {
 			fmt.Printf("0x%02X ", ui)
 		}
 
+		// --- See if operand is a special address
+
+		// TODO only trigger if this is a load instruction
+		_, ok := m.SpecRead[common.Addr24(ui)]
+		if ok {
+			fmt.Printf("   ; special read address ")
+		}
+
+		// TODO only trigger if this is a store instruction
+		_, ok = m.SpecWrite[common.Addr24(ui)]
+		if ok {
+			fmt.Printf("   ; special write address ")
+		}
+
+		// --- Take care of special cases
+
+		// rep.# and sep.#
+		if b == 0xC2 || b == 0xE2 {
+			fmt.Printf("   ; %%%08b", ui)
+		}
+
+		// stp
+		if b == 0xDB {
+			fmt.Printf("          ; ** HALT **")
+		}
+
+		// xce
+		// TODO go back one byte and see if it is a CLC
+		if b == 0xFB {
+			fmt.Printf("   ; mode swich ")
+		}
+
+		// --- Done
 		fmt.Printf("\n")
 
 		// Loop control: Stop when we're outside of the disassemble
