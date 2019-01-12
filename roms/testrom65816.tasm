@@ -20,6 +20,17 @@ vectors
         ; add a SEI
         .native         ; switch to native mode. CLC XCE as "magic number"
 
+
+                inx
+                inx
+                inx
+                inx
+                inx
+                inx
+                inx
+                inx
+                txs
+
                 ; We need a few instructions to get started with testing
                 lda getchar     ; test external routine, get one byte
                 sta.d 01
@@ -27,16 +38,17 @@ vectors
                 lda.# 'a'       ; this will later be lda.8
                 sta putchar
 
-                jsr frog
+                lda.# 0xAA
+                pha
 
-                phe.# 0xAAAA    ; shows it worked
+        .A16
+                lda.# 0xBBCC
+                pha
+
+                phe.# 0xFFFF
 
                 stp
 
-frog
-        .!a8
-                lda.# 0xFF
-                rts
                 
 
         ; Jump table for interrupts. We are only interested in those for native

@@ -15,7 +15,9 @@ import (
 
 const (
 	// Width of accumulator and registers. We follow the flag convention for
-	// M and X flags: 0 (clear) is 16 bits, 1 (set) 8 bit
+	// M and X flags: 0 (clear) is 16 bits, 1 (set) 8 bit. If these are
+	// changed, the function immediateOffset further below must be changed
+	// as well
 	W8  = 1
 	W16 = 0
 
@@ -168,24 +170,6 @@ func (c *CPU) getFullPC() common.Addr24 {
 	return common.Ensure24(addr)
 }
 
-// immediateOffset is a helper function for the Step routine that takes the
-// opcode of an instruction in immediate mode and returns the offset to the PC
-// required depending on which mode the register is in.
-func (c *CPU) immediateOffset(opc byte) common.Addr16 {
-
-	// TODO this is just for testing
-	var r common.Addr16
-
-	if opc == 0xA9 { // lda.#
-		if c.WidthA == W8 {
-			r = 0
-		} else {
-			r = 1
-		}
-	}
-	return r
-}
-
 // Step executes a single instruction from PC. This is called by the Run method
 // TODO this is pretty much all fake at the moment
 func (c *CPU) Step() {
@@ -200,15 +184,9 @@ func (c *CPU) Step() {
 	}
 
 	// Execute the instruction by accessing the entry in the Instruction
-	// Jump table. We pass a pointer to the CPU struct.
+	// Jump table. We pass a pointer to the CPU struct. The instructions are
+	// responsible for updating the PC
 	InsSet[ins].Code(c)
-	c.PC += common.Addr16(InsSet[ins].Size)
-
-	// Deal with immediate instructions such as lda.# that use up one more
-	// byte if we are in a 16-bit register mode
-	if InsSet[ins].Expands {
-		c.PC = c.PC + c.immediateOffset(ins)
-	}
 }
 
 // Run is the main loop of the CPU.

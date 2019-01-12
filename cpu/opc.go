@@ -16,9 +16,10 @@ import (
 )
 
 type OpcData struct {
-	Size    int              // number of bytes including operand (1 to 4)
-	Code    func(*CPU) error // function for actual code of instruction
-	Expands bool             // true if size affected by 8->16 bit register switch
+	Size     int              // number of bytes including operand (1 to 4)
+	Code     func(*CPU) error // function for actual code of instruction
+	Expands  bool             // true if size affected by 8->16 bit register switch
+	Mnemonic string           // SAN mnemonic (for the disassembler)
 }
 
 // In theory, we could use a giant switch statement instead of a map of
@@ -30,56 +31,56 @@ var (
 )
 
 func init() {
-	InsSet[0x00] = OpcData{2, Opc00, false} // brk with signature byte
-	InsSet[0x01] = OpcData{2, Opc01, false} // ora.dxi
-	InsSet[0x02] = OpcData{2, Opc02, false} // cop
+	InsSet[0x00] = OpcData{2, Opc00, false, "brk"} // with signature byte
+	InsSet[0x01] = OpcData{2, Opc01, false, "ora.dxi"}
+	InsSet[0x02] = OpcData{2, Opc02, false, "cop"} // with signature byte
 	// ...
-	InsSet[0x18] = OpcData{1, Opc18, false} // clc
+	InsSet[0x18] = OpcData{1, Opc18, false, "clc"}
 	// ...
-	InsSet[0x20] = OpcData{3, Opc20, false} // jsr
+	InsSet[0x20] = OpcData{3, Opc20, false, "jsr"}
 	// ...
-	InsSet[0x38] = OpcData{1, Opc38, false} // sec
+	InsSet[0x38] = OpcData{1, Opc38, false, "sec"}
 	// ...
-	InsSet[0x48] = OpcData{1, Opc48, false} // pha
+	InsSet[0x48] = OpcData{1, Opc48, false, "pha"}
 	// ...
-	InsSet[0x4C] = OpcData{3, Opc4C, false} // jmp
+	InsSet[0x4C] = OpcData{3, Opc4C, false, "jmp"}
 	// ...
-	InsSet[0x58] = OpcData{1, Opc58, false} // cli
+	InsSet[0x58] = OpcData{1, Opc58, false, "cli"}
 	// ...
-	InsSet[0x60] = OpcData{1, Opc60, false} // rts
+	InsSet[0x60] = OpcData{1, Opc60, false, "rts"}
 	// ...
-	InsSet[0x68] = OpcData{1, Opc68, false} // pla
+	InsSet[0x68] = OpcData{1, Opc68, false, "pla"}
 	// ...
-	InsSet[0x78] = OpcData{1, Opc78, false} // sei
+	InsSet[0x78] = OpcData{1, Opc78, false, "sei"}
 	// ...
-	InsSet[0x85] = OpcData{2, Opc85, false} // sta.d
+	InsSet[0x85] = OpcData{2, Opc85, false, "sta.d"}
 	// ...
-	InsSet[0x8D] = OpcData{3, Opc8D, false} // sta
+	InsSet[0x8D] = OpcData{3, Opc8D, false, "sta"}
 	// ...
-	InsSet[0x9A] = OpcData{1, Opc9A, false} // txs
+	InsSet[0x9A] = OpcData{1, Opc9A, false, "txs"}
 	// ...
-	InsSet[0xA9] = OpcData{2, OpcA9, true} // lda.# (lda.8/lda.16)
+	InsSet[0xA9] = OpcData{2, OpcA9, true, "lda.#"} // includes lda.8/lda.16
 	// ...
-	InsSet[0xAD] = OpcData{3, OpcAD, false} // lda
+	InsSet[0xAD] = OpcData{3, OpcAD, false, "lda"}
 	// ...
-	InsSet[0xB8] = OpcData{1, OpcB8, false} // clv
+	InsSet[0xB8] = OpcData{1, OpcB8, false, "clv"}
 	// ...
-	InsSet[0xC2] = OpcData{2, OpcC2, false} // rep.#
+	InsSet[0xC2] = OpcData{2, OpcC2, false, "rep.#"}
 	// ...
-	InsSet[0xD8] = OpcData{1, OpcD8, false} // cld
+	InsSet[0xD8] = OpcData{1, OpcD8, false, "cld"}
 	// ...
-	InsSet[0xDB] = OpcData{1, OpcDB, false} // stp
+	InsSet[0xDB] = OpcData{1, OpcDB, false, "stp"}
 	// ...
-	InsSet[0xE2] = OpcData{2, OpcE2, false} // sep.#
+	InsSet[0xE2] = OpcData{2, OpcE2, false, "sep.#"}
 	// ...
-	InsSet[0xE8] = OpcData{1, OpcE8, false} // inx
+	InsSet[0xE8] = OpcData{1, OpcE8, false, "inx"}
 	// ...
-	InsSet[0xEA] = OpcData{1, OpcEA, false} // nop
-	InsSet[0xEB] = OpcData{1, OpcEB, false} // xba
+	InsSet[0xEA] = OpcData{1, OpcEA, false, "nop"}
+	InsSet[0xEB] = OpcData{1, OpcEB, false, "xba"}
 	// ...
-	InsSet[0xF4] = OpcData{3, OpcF4, false} // pha.#
+	InsSet[0xF4] = OpcData{3, OpcF4, false, "pha.#"}
 	// ...
-	InsSet[0xFB] = OpcData{1, OpcFB, false} // xce
+	InsSet[0xFB] = OpcData{1, OpcFB, false, "xce"}
 }
 
 // --- Store routines ---
@@ -350,8 +351,7 @@ func getNextByte(c *CPU) (byte, error) {
 
 // --- Instruction functions ---
 
-// The opcodes get the next bytes but do not change the PC, this is left for the
-// main loop
+// ---- 0000 ----
 
 func Opc00(c *CPU) error { // brk
 	fmt.Println("OPC: DUMMY: Executing brk (00) at", c.PC.HexString())
@@ -374,6 +374,7 @@ func Opc02(c *CPU) error { // cop
 
 func Opc18(c *CPU) error { // clc
 	c.FlagC = CLEAR
+	c.PC++
 	return nil
 }
 
@@ -395,9 +396,7 @@ func Opc20(c *CPU) error { // jsr p. 362
 		return fmt.Errorf("jsr (0x20): couldn't push address to stack: %v", err)
 	}
 
-	// We need to subtract three from the address because the loop will add
-	// three
-	c.PC = common.Addr16(addr) - 3
+	c.PC = common.Addr16(addr)
 
 	return nil
 }
@@ -406,6 +405,7 @@ func Opc20(c *CPU) error { // jsr p. 362
 
 func Opc38(c *CPU) error { // sec
 	c.FlagC = SET
+	c.PC++
 	return nil
 }
 
@@ -420,7 +420,7 @@ func Opc4C(c *CPU) error { // jmp p. 360
 
 	// We need to subtract three from the address because the loop will add
 	// three
-	c.PC = common.Addr16(addr) - 3
+	c.PC = common.Addr16(addr)
 
 	return nil
 }
@@ -450,6 +450,8 @@ func Opc48(c *CPU) error { // pha p. 375
 		return fmt.Errorf("pha (0x48): illegal width for register A:%d", c.WidthA)
 	}
 
+	c.PC++
+
 	return nil
 }
 
@@ -457,6 +459,7 @@ func Opc48(c *CPU) error { // pha p. 375
 
 func Opc58(c *CPU) error { // cli
 	c.FlagI = CLEAR
+	c.PC++
 	return nil
 }
 
@@ -476,6 +479,9 @@ func Opc60(c *CPU) error { // rts p. 394
 	}
 
 	c.PC = (common.Addr16(msb) << 8) | common.Addr16(lsb)
+
+	// Remember we saved one byte less
+	c.PC++
 
 	return nil
 }
@@ -506,12 +512,14 @@ func Opc68(c *CPU) error { // pla p. 382
 
 	}
 
+	c.PC++
 	return nil
 }
 
 // ---- 7777 ----
 func Opc78(c *CPU) error { // sei
 	c.FlagI = SET
+	c.PC++
 	return nil
 }
 
@@ -529,6 +537,8 @@ func Opc85(c *CPU) error { // sta.d
 		return fmt.Errorf("sta.d (85): couldn't store A at address %s: %v", addr.HexString(), err)
 	}
 
+	c.PC += 2
+
 	return nil
 }
 
@@ -545,6 +555,8 @@ func Opc8D(c *CPU) error { // sta
 	if err != nil {
 		return fmt.Errorf("sta (8D): couldn't store A at address %s: %v", addr.HexString(), err)
 	}
+
+	c.PC += 3
 
 	return nil
 }
@@ -568,6 +580,7 @@ func Opc9A(c *CPU) error { // txs
 	default: // paranoid
 		return fmt.Errorf("txs (0x9A): Illegal width for register X:%d", c.WidthXY)
 	}
+	c.PC++
 
 	return nil
 }
@@ -585,6 +598,7 @@ func OpcA9(c *CPU) error { // lda.# (lda.8/lda.16)
 
 		c.A8 = operand
 		c.TestNZ8(c.A8)
+		c.PC += 2
 
 	case W16:
 		operand, err := c.modeImmediate16()
@@ -594,6 +608,7 @@ func OpcA9(c *CPU) error { // lda.# (lda.8/lda.16)
 
 		c.A16 = operand
 		c.TestNZ16(c.A16)
+		c.PC += 3
 
 	default: // paranoid
 		return fmt.Errorf("lda.# (0xA9): Illegal width for register A:%d", c.WidthA)
@@ -634,6 +649,7 @@ func OpcAD(c *CPU) error { // lda
 		return fmt.Errorf("lda (0xAD): Illegal width for register A:%d", c.WidthA)
 	}
 
+	c.PC += 3
 	return nil
 }
 
@@ -643,6 +659,7 @@ func OpcAD(c *CPU) error { // lda
 
 func OpcB8(c *CPU) error { // clv
 	c.FlagV = CLEAR
+	c.PC++
 	return nil
 }
 
@@ -683,6 +700,8 @@ func OpcC2(c *CPU) error { // rep.#
 		c.Y16 = 0x000 + common.Data16(c.Y8) // emphasise: MSB is zero
 	}
 
+	c.PC += 2
+
 	return nil
 }
 
@@ -692,15 +711,17 @@ func OpcC2(c *CPU) error { // rep.#
 
 func OpcD8(c *CPU) error { // cld
 	c.FlagD = CLEAR
+	c.PC++
 	return nil
 }
 
 // ...
 
 func OpcDB(c *CPU) error { // stp
-	// TODO print Addr24
+	// TODO make sure we actually add one to the PC here
 	c.IsStopped = true
 	fmt.Println("Machine stopped by stp (0xDB) in block", c.PBR.HexString(), "at address", c.PC.HexString())
+	c.PC++
 	return nil
 }
 
@@ -743,6 +764,8 @@ func OpcE2(c *CPU) error { // sep.#
 		c.Y8 = common.Data8(c.Y16 & 0x00FF)
 	}
 
+	c.PC += 2
+
 	return nil
 }
 
@@ -761,12 +784,14 @@ func OpcE8(c *CPU) error { // inx
 		return fmt.Errorf("inx (0xE8): illegal WidthXY value: %v", c.WidthXY)
 	}
 
+	c.PC++
 	return nil
 }
 
 func OpcEA(c *CPU) error { // nop
 	// We return the execution of a 'nop' as an error and let the higher-ups
 	// decide what to do with it
+	c.PC++
 	return fmt.Errorf("OpcEA: executed 'nop' (0xEA) at %s:%s", c.PBR.HexString(), c.PC.HexString())
 }
 
@@ -791,6 +816,7 @@ func OpcEB(c *CPU) error { // xba p.422
 		return fmt.Errorf("xba (0xEB): illegal WidthA value: %v", c.WidthA)
 	}
 
+	c.PC++
 	return nil
 }
 
@@ -807,6 +833,7 @@ func OpcF4(c *CPU) error { // phe.#
 		return fmt.Errorf("phe.# (0xF4): couldn't push operand: %v", err)
 	}
 
+	c.PC += 3
 	return nil
 }
 
@@ -814,5 +841,6 @@ func OpcFB(c *CPU) error { // xce
 	tmp := c.FlagE
 	c.FlagE = c.FlagC
 	c.FlagC = tmp
+	c.PC++
 	return nil
 }
