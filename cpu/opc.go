@@ -16,8 +16,9 @@ import (
 )
 
 type OpcData struct {
-	Size int              // number of bytes including operand (1 to 4)
-	Code func(*CPU) error // function for actual code of instruction
+	Size    int              // number of bytes including operand (1 to 4)
+	Code    func(*CPU) error // function for actual code of instruction
+	Expands bool             // true if size affected by 8->16 bit register switch
 }
 
 // In theory, we could use a giant switch statement instead of a map of
@@ -29,50 +30,56 @@ var (
 )
 
 func init() {
-	InsSet[0x00] = OpcData{2, Opc00} // brk with signature byte
-	InsSet[0x01] = OpcData{2, Opc01} // ora.dxi
-	InsSet[0x02] = OpcData{2, Opc02} // cop
+	InsSet[0x00] = OpcData{2, Opc00, false} // brk with signature byte
+	InsSet[0x01] = OpcData{2, Opc01, false} // ora.dxi
+	InsSet[0x02] = OpcData{2, Opc02, false} // cop
 	// ...
-	InsSet[0x18] = OpcData{1, Opc18} // clc
+	InsSet[0x18] = OpcData{1, Opc18, false} // clc
 	// ...
-	InsSet[0x38] = OpcData{1, Opc38} // sec
+	InsSet[0x20] = OpcData{3, Opc20, false} // jsr
 	// ...
-	InsSet[0x48] = OpcData{1, Opc48} // pha
+	InsSet[0x38] = OpcData{1, Opc38, false} // sec
 	// ...
-	InsSet[0x4C] = OpcData{3, Opc4C} // jmp
+	InsSet[0x48] = OpcData{1, Opc48, false} // pha
 	// ...
-	InsSet[0x58] = OpcData{1, Opc58} // cli
+	InsSet[0x4C] = OpcData{3, Opc4C, false} // jmp
 	// ...
-	InsSet[0x78] = OpcData{1, Opc78} // sei
+	InsSet[0x58] = OpcData{1, Opc58, false} // cli
 	// ...
-	InsSet[0x85] = OpcData{2, Opc85} // sta.d
+	// InsSet[0x60] = OpcData{1, Opc60, false} // rts
 	// ...
-	InsSet[0x8D] = OpcData{3, Opc8D} // sta
+	InsSet[0x68] = OpcData{1, Opc68, false} // pla
 	// ...
-	InsSet[0x9A] = OpcData{1, Opc9A} // txs
+	InsSet[0x78] = OpcData{1, Opc78, false} // sei
 	// ...
-	InsSet[0xA9] = OpcData{2, OpcA9} // lda.# (lda.8/lda.16)
+	InsSet[0x85] = OpcData{2, Opc85, false} // sta.d
 	// ...
-	InsSet[0xAD] = OpcData{3, OpcAD} // lda
+	InsSet[0x8D] = OpcData{3, Opc8D, false} // sta
 	// ...
-	InsSet[0xB8] = OpcData{1, OpcB8} // clv
+	InsSet[0x9A] = OpcData{1, Opc9A, false} // txs
 	// ...
-	InsSet[0xC2] = OpcData{2, OpcC2} // rep.#
+	InsSet[0xA9] = OpcData{2, OpcA9, true} // lda.# (lda.8/lda.16)
 	// ...
-	InsSet[0xD8] = OpcData{1, OpcD8} // cld
+	InsSet[0xAD] = OpcData{3, OpcAD, false} // lda
 	// ...
-	InsSet[0xDB] = OpcData{1, OpcDB} // stp
+	InsSet[0xB8] = OpcData{1, OpcB8, false} // clv
 	// ...
-	InsSet[0xE2] = OpcData{2, OpcE2} // sep.#
+	InsSet[0xC2] = OpcData{2, OpcC2, false} // rep.#
 	// ...
-	InsSet[0xE8] = OpcData{1, OpcE8} // inx
+	InsSet[0xD8] = OpcData{1, OpcD8, false} // cld
 	// ...
-	InsSet[0xEA] = OpcData{1, OpcEA} // nop
-	InsSet[0xEB] = OpcData{1, OpcEB} // xba
+	InsSet[0xDB] = OpcData{1, OpcDB, false} // stp
 	// ...
-	InsSet[0xF4] = OpcData{3, OpcF4} // pha.#
+	InsSet[0xE2] = OpcData{2, OpcE2, false} // sep.#
 	// ...
-	InsSet[0xFB] = OpcData{1, OpcFB} // xce
+	InsSet[0xE8] = OpcData{1, OpcE8, false} // inx
+	// ...
+	InsSet[0xEA] = OpcData{1, OpcEA, false} // nop
+	InsSet[0xEB] = OpcData{1, OpcEB, false} // xba
+	// ...
+	InsSet[0xF4] = OpcData{3, OpcF4, false} // pha.#
+	// ...
+	InsSet[0xFB] = OpcData{1, OpcFB, false} // xce
 }
 
 // --- Store routines ---
@@ -215,6 +222,55 @@ func (c *CPU) pushData16(d common.Data16) error {
 	return nil
 }
 
+// pullByte is the basic function for pulling a byte of the stack and then
+// imcrementing the sack pointer
+func (c *CPU) pullByte() (byte, error) {
+
+	// We need to increment the stack pointer first
+	c.SP++
+
+	addr := common.Addr24(c.SP) // c.SP is defined as common.Addr16
+	b, err := c.Mem.Fetch(addr)
+	if err != nil {
+		return 0, fmt.Errorf("pullByte: couldn't get byte from stack: %v", err)
+	}
+
+	return b, err
+}
+
+// pullData8 is a wrapper function to get a byte off the stack and return it as
+// a common.Data8 that registers use
+func (c *CPU) pullData8() (common.Data8, error) {
+
+	b, err := c.pullByte()
+	if err != nil {
+		return 0, fmt.Errorf("pullData8: couldn't get byte from stack: %v", err)
+	}
+
+	return common.Data8(b), nil
+}
+
+// pullData16 is a wrapper function to get a word off the stack and return it as
+// a common.Data16 that registers use
+func (c *CPU) pullData16() (common.Data16, error) {
+
+	// LSB is pulled first
+	lsb, err := c.pullByte()
+	if err != nil {
+		return 0, fmt.Errorf("pullData16: couldn't get LSB from stack: %v", err)
+	}
+
+	// MSB is next
+	msb, err := c.pullByte()
+	if err != nil {
+		return 0, fmt.Errorf("pullData16: couldn't get MSB from stack: %v", err)
+	}
+
+	d := (common.Data16(msb) << 8) | common.Data16(lsb)
+
+	return d, nil
+}
+
 // --- Mode routines ---
 
 // modeAbsolute returns the address stored in the next two bytes after the
@@ -270,9 +326,7 @@ func (c *CPU) modeImmediate16() (common.Data16, error) {
 		return 0, fmt.Errorf("immediate 16 mode: couldn't fetch data from %s: %v", common.Addr24(operandAddr).HexString(), err)
 	}
 
-	d := common.Data16(ui)
-
-	return d, nil
+	return common.Data16(ui), nil
 }
 
 // getNextData16 is a synonym for modeImmediate16
@@ -316,8 +370,35 @@ func Opc02(c *CPU) error { // cop
 
 // ...
 
+// ---- 1111 ----
+
 func Opc18(c *CPU) error { // clc
 	c.FlagC = CLEAR
+	return nil
+}
+
+// ---- 2222 ----
+
+func Opc20(c *CPU) error { // jsr p. 362
+
+	addr, err := c.modeAbsolute()
+	if err != nil {
+		return fmt.Errorf("jsr (0x20): couldn't fetch address from %s: %v",
+			addr.HexString(), err)
+	}
+
+	// Push the PC to the stack: The PC plus the length of this instruction
+	// minus one (in other words, plus 2). We push MSB first
+	returnPC := c.PC + 2
+	err = c.pushData16(common.Data16(returnPC))
+	if err != nil {
+		return fmt.Errorf("jsr (0x20): couldn't push address to stack: %v", err)
+	}
+
+	// We need to subtract three from the address because the loop will add
+	// three
+	c.PC = common.Addr16(addr) - 3
+
 	return nil
 }
 
@@ -379,8 +460,38 @@ func Opc58(c *CPU) error { // cli
 	return nil
 }
 
-// ...
+// ---- 6666 ----
 
+func Opc68(c *CPU) error { // pla p. 382
+	switch c.WidthA {
+
+	case W8:
+		d, err := c.pullData8()
+		if err != nil {
+			return fmt.Errorf("pla (0x68) A8: couldn't get byte off the stack: %v", err)
+		}
+
+		c.A8 = d
+		c.TestNZ8(c.A8)
+
+	case W16:
+		d, err := c.pullData16()
+		if err != nil {
+			return fmt.Errorf("pla (0x68) A16: couldn't get word off the stack: %v", err)
+		}
+
+		c.A16 = d
+		c.TestNZ16(c.A16)
+
+	default:
+		return fmt.Errorf("pla (0x68): illegal width for register A:%d", c.WidthA)
+
+	}
+
+	return nil
+}
+
+// ---- 7777 ----
 func Opc78(c *CPU) error { // sei
 	c.FlagI = SET
 	return nil

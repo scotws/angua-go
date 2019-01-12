@@ -183,6 +183,12 @@ func (c *CPU) Step() {
 	// Jump table. We pass a pointer to the CPU struct.
 	InsSet[ins].Code(c)
 	c.PC += common.Addr16(InsSet[ins].Size)
+
+	// Deal with immediate instructions such as lda.# that use up one more
+	// byte if we are in a 16-bit register mode
+	if InsSet[ins].Expands {
+		c.PC++
+	}
 }
 
 // Run is the main loop of the CPU.
