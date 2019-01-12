@@ -165,24 +165,15 @@ func (c *CPU) storeY(addr common.Addr24) error {
 func (c *CPU) pushByte(b byte) error {
 	addr := common.Addr24(c.SP) // c.SP is defined as common.Addr16
 
-	// TODO testing
-	fmt.Println("*** addr:", addr, "SP:", c.SP)
-
 	err := c.Mem.Store(addr, b)
 	if err != nil {
 		return fmt.Errorf("pushByte: couldn't push byte %X to stack at %s: %v",
 			b, addr.HexString(), err)
 	}
 
-	// TODO testing
-	fmt.Println("*** preSP:", c.SP)
-
 	// Since we don't support emulation mode, we don't have to care about
 	// the weird wrapping behavior, see p. 278
 	c.SP--
-
-	// TODO testing
-	fmt.Println("*** postSP:", c.SP)
 
 	return nil
 }
