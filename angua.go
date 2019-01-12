@@ -597,7 +597,29 @@ func main() {
 		Help:     "set various parameters",
 		LongHelp: longHelpSet,
 		Func: func(c *ishell.Context) {
-			c.Println("CLI: DUMMY set")
+
+			// Need two arguments
+			if len(c.Args) != 2 {
+				c.Println("ERROR: Need two arguments")
+				return
+			}
+
+			switch c.Args[0] {
+			case "ss", "step", "singlestep":
+
+				if c.Args[1] == "on" {
+					cpu.SingleStepMode = true
+				} else {
+					cpu.SingleStepMode = false
+				}
+
+			case "tr", "trace":
+				c.Println("CLI: DUMMY: set: trace")
+			case "verbose", "verb":
+				c.Println("CLI: DUMMY: set: verbose")
+			default:
+				c.Println("ERROR: Unknown option", c.Args[0], "see 'set help'")
+			}
 		},
 	})
 
@@ -606,62 +628,64 @@ func main() {
 		Help:     "display information on various parts of the system",
 		LongHelp: longHelpShow,
 		Func: func(c *ishell.Context) {
+
 			if len(c.Args) != 1 {
 				c.Println("ERROR: Need an argument")
-			} else {
-				subcmd := c.Args[0]
+				return
+			}
 
-				switch subcmd {
+			subcmd := c.Args[0]
 
-				case "breakpoints":
-					c.Println("CLI: SHOW: DUMMY show breakpoints")
+			switch subcmd {
 
-				case "config":
-					c.Println("CLI: DUMMY show config")
+			case "breakpoints":
+				c.Println("CLI: SHOW: DUMMY show breakpoints")
 
-				case "memory": // This is the same as just calling memory
-					c.Println(memory.List())
+			case "config":
+				c.Println("CLI: DUMMY show config")
 
-				case "specs", "special", "specials":
+			case "memory": // This is the same as just calling memory
+				c.Println(memory.List())
 
-					if !haveMachine {
-						c.Println("No machine present (use 'init')")
-						return
-					}
+			case "specs", "special", "specials":
 
-					for a, f := range memory.SpecRead {
-						fn := runtime.FuncForPC(reflect.ValueOf(f).Pointer()).Name()
-						c.Println("Reading:", a.HexString(), "calls", fn)
-					}
-
-					for a, f := range memory.SpecWrite {
-						fn := runtime.FuncForPC(reflect.ValueOf(f).Pointer()).Name()
-						c.Println("Writing:", a.HexString(), "calls", fn)
-					}
-
-				case "sys", "system":
-					c.Println("Use 'status host' to show host information")
-
-				case "v", "vecs", "vectors", "interrupts":
-
-					if !haveMachine {
-						c.Println("No machine present (use 'init')")
-						return
-					}
-
-					for _, vecData := range common.Vectors {
-						vec, err := getVector(vecData.Addr, memory)
-						if err != nil {
-							fmt.Printf("Can't get vector for %s at %s:%v ", vecData.Name, vecData.Addr.HexString(), err)
-							return
-						}
-
-						c.Printf("%-5s (%s): %s\n", vecData.Name, vecData.Addr.HexString(), vec)
-					}
-
-				default:
-					c.Println("Option", subcmd, "unknown")
+				if !haveMachine {
+					c.Println("No machine present (use 'init')")
+					return
 				}
+
+				for a, f := range memory.SpecRead {
+					fn := runtime.FuncForPC(reflect.ValueOf(f).Pointer()).Name()
+					c.Println("Reading:", a.HexString(), "calls", fn)
+				}
+
+				for a, f := range memory.SpecWrite {
+					fn := runtime.FuncForPC(reflect.ValueOf(f).Pointer()).Name()
+					c.Println("Writing:", a.HexString(), "calls", fn)
+				}
+
+			case "sys", "system":
+				c.Println("Use 'status host' to show host information")
+
+			case "v", "vecs", "vectors", "interrupts":
+
+				if !haveMachine {
+					c.Println("No machine present (use 'init')")
+					return
+				}
+
+				for _, vecData := range common.Vectors {
+					vec, err := getVector(vecData.Addr, memory)
+					if err != nil {
+						fmt.Printf("Can't get vector for %s at %s:%v ", vecData.Name, vecData.Addr.HexString(), err)
+						return
+					}
+
+					c.Printf("%-5s (%s): %s\n", vecData.Name, vecData.Addr.HexString(), vec)
+				}
+
+			default:
+				c.Println("Option", subcmd, "unknown")
 			}
 		},
 	})

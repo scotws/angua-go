@@ -195,7 +195,7 @@ Example:
 
 Use this to set verbose and trace modes. 
 
-	set step [on|off]	- Single step mode
+	set singlestep [on|off]	- Single step mode, synonyms "ss", "step"
 	set trace [on|off]	- Print trace (lots and lots of output)
 	set verbose [on|off]    - Give more information (more output)
 

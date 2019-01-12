@@ -3,10 +3,10 @@ Version BETA 11. Jan 2019
 Copyright 2015-2019 Scot W. Stevenson <scot.stevenson@gmail.com>
 This program comes with ABSOLUTELY NO WARRANTY
 Hexdump file of testrom65816.tasm (total of 8192 bytes)
-Generated on Sat Jan 12 11:24:40 2019
+Generated on Sat Jan 12 12:25:53 2019
 
-00e000: 18 fb ad 02 f0 85 01 a9 61 8d 01 f0 c2 20 a9 bb 
-00e010: aa 48 e2 20 68 eb 68 f4 ff ee db 00 00 00 00 00 
+00e000: 18 fb ad 02 f0 85 01 a9 61 8d 01 f0 20 13 e0 f4 
+00e010: aa aa db a9 ff 60 00 00 00 00 00 00 00 00 00 00 
 00e020: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
 00e030: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
 00e040: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 

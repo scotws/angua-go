@@ -46,7 +46,7 @@ func init() {
 	// ...
 	InsSet[0x58] = OpcData{1, Opc58, false} // cli
 	// ...
-	// InsSet[0x60] = OpcData{1, Opc60, false} // rts
+	InsSet[0x60] = OpcData{1, Opc60, false} // rts
 	// ...
 	InsSet[0x68] = OpcData{1, Opc68, false} // pla
 	// ...
@@ -354,12 +354,12 @@ func getNextByte(c *CPU) (byte, error) {
 // main loop
 
 func Opc00(c *CPU) error { // brk
-	fmt.Println("OPC: DUMMY: Executing brk (00)")
+	fmt.Println("OPC: DUMMY: Executing brk (00) at", c.PC.HexString())
 	return nil
 }
 
 func Opc01(c *CPU) error { // ora.dxi
-	fmt.Println("OPC: DUMMY: Executing ora.dxi (02)")
+	fmt.Println("OPC: DUMMY: Executing ora.dxi (02) at", c.PC.HexString())
 	return nil
 }
 
@@ -413,7 +413,7 @@ func Opc38(c *CPU) error { // sec
 
 func Opc4C(c *CPU) error { // jmp p. 360
 
-	addr, err := c.modeAbsolute()
+	addr, err := c.getNextData16()
 	if err != nil {
 		return fmt.Errorf("jmp (4C): couldn't fetch address from %s: %v", addr.HexString(), err)
 	}
@@ -461,6 +461,24 @@ func Opc58(c *CPU) error { // cli
 }
 
 // ---- 6666 ----
+
+func Opc60(c *CPU) error { // rts p. 394
+
+	// The LSB ist stored on top of the stack
+	lsb, err := c.pullByte()
+	if err != nil {
+		return fmt.Errorf("rts (0x60): couldn't get LSB off the stack: %v", err)
+	}
+
+	msb, err := c.pullByte()
+	if err != nil {
+		return fmt.Errorf("rts (0x60): couldn't get MSB off the stack: %v", err)
+	}
+
+	c.PC = (common.Addr16(msb) << 8) | common.Addr16(lsb)
+
+	return nil
+}
 
 func Opc68(c *CPU) error { // pla p. 382
 	switch c.WidthA {

@@ -19,7 +19,6 @@ vectors
         ; The 65816 automatically sets the interrupt flag so we don't have to
         ; add a SEI
         .native         ; switch to native mode. CLC XCE as "magic number"
-        .!a8
 
                 ; We need a few instructions to get started with testing
                 lda getchar     ; test external routine, get one byte
@@ -27,19 +26,17 @@ vectors
 
                 lda.# 'a'       ; this will later be lda.8
                 sta putchar
-        .a16
-                lda.# 0xAABB
-                pha
 
-        .a8
-                pla
-                xba             ; B should be 0xBB
+                jsr frog
 
-                pla             ; A should be 0xAA
-
-                phe.# 0xEEFF
+                phe.# 0xAAAA    ; shows it worked
 
                 stp
+
+frog
+        .!a8
+                lda.# 0xFF
+                rts
                 
 
         ; Jump table for interrupts. We are only interested in those for native
