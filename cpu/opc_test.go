@@ -1,7 +1,7 @@
 // Test file for Angua CPU opcodes
 // Scot W. Stevenson <scot.stevenson@gmail.com>
 // First version: 05. Jan 2019
-// This version: 12. Jan 2019
+// This version: 15. Jan 2019
 
 package cpu
 
@@ -9,7 +9,40 @@ import (
 	"testing"
 
 	"angua/common"
+	"angua/mem"
 )
+
+// ===== MODE TESTS =====
+
+func TestModeBranch(t *testing.T) {
+	var c = CPU{}
+	var m = mem.Memory{}
+	nc, _ := mem.NewChunk(0000, 0xFFFF, "ram")
+	m.Chunks = append(m.Chunks, nc)
+	c.Mem = &m
+
+	var tests = []struct {
+		pc     common.Addr16
+		offset byte
+		addr   common.Addr16
+	}{
+		{0x0000, 0x00, 0x0002},
+		{0x0003, 0xFB, 0x0000},
+		{0x0004, 0xFA, 0x0000},
+		{0x0005, 0xFC, 0x0003},
+	}
+
+	for _, test := range tests {
+		c.PC = test.pc
+		got, _ := c.modeBranch(test.offset)
+		if got != test.addr {
+			t.Errorf("TestModeBranch for 0x%0X returns %X, wanted %X",
+				test.offset, got, test.addr)
+		}
+	}
+}
+
+// ===== TESTS FOR INDIVIDUAL INSTRUCTIONS =====
 
 // clc, cld, cli, clv, sec, sei, sev
 func TestOpcFlags(t *testing.T) {

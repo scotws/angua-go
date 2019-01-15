@@ -5,7 +5,6 @@ This version: 15. Jan 2019
 
 NEXT UP:
 
-- Add special write address SLEEP for testing
 - Add code for interrupts NMI in own file cpu/interrupts.go
 - Test nmi command
 - Expand to periodic interrupts ("nmi repeat <N> sec")
