@@ -6,7 +6,10 @@
 package specials
 
 import (
+	"fmt"
 	"testing"
+
+	"angua/common"
 )
 
 // TODO This is a temporary test
@@ -23,5 +26,28 @@ func TestGetChar(t *testing.T) {
 		if got != test.want {
 			t.Errorf("GetChar(%q) = 0x%X", test.want, got)
 		}
+	}
+}
+
+// Test of sleep function
+func TestSleep(t *testing.T) {
+
+	var tests = []struct {
+		duration common.Data8
+	}{
+		{1},
+		{5},
+	}
+
+	for _, test := range tests {
+		fmt.Printf("Starting 8 in %d seconds ...", test.duration)
+		Sleep8(test.duration)
+		fmt.Println(" done.")
+	}
+
+	for _, test := range tests {
+		fmt.Printf("Starting 16 in %d seconds ...", test.duration)
+		Sleep16(common.Data16(test.duration))
+		fmt.Println(" done.")
 	}
 }

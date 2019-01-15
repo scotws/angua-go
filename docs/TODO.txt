@@ -1,20 +1,29 @@
 TODO file for Angua
 Scot W. Stevenson <scot.stevenson@gmail.com>
 First version: 16. Mar 2018
-This version: 08. Jan 2019
+This version: 15. Jan 2019
 
 NEXT UP:
 
-- Code the STORE command so we can test memory stuff
-- Rewrite common.go to use the math/bits functions, especialls ReverseBytes16
+- Add special write address SLEEP for testing
+- Add code for interrupts NMI in own file cpu/interrupts.go
+- Test nmi command
+- Expand to periodic interrupts ("nmi repeat <N> sec")
 - Add fake code to sta, lda, and sta.d so we can start special I/O system
 - Add I/O so that we can access through nc
 - Create a lot more test routines for mem (incl read across chunk boundries)
+- Add SET STEP ON, SET STEP OFF, test CPU main loop
 - Add SET VERBOSE ON, SET VERBOSE OFF so we have the option to print 
 - Add SET TRACE ON, SET TRACE OFF so we have the option to print 
   diagnostic information
-- Add SET STEP ON, SET STEP OFF, test CPU main loop
 
+- Add special write addres for DELAY which waits for 0.1 sec * cpu.A, use this
+  for experiments with loops
+- IRQ, NMI, etc need parameter "run" if one-shot and "repeat <N> sec" for
+  repeats"
+- breakpoint gets format "breakpoint <ADDR> <ACTION>" where action can be "IRQ",
+  "NMI", "HALT", "STATUS", "CLEAR" (removes that BP), and "SHOW" (prints all bp). 
+  Synonym is "bp". 
 
 FAR GOALS: 
 
