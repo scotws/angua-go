@@ -191,6 +191,7 @@ func (c *CPU) Step() {
 
 // Run is the main loop of the CPU.
 func (c *CPU) Run(cmd chan int) {
+	var err error
 	c.IsHalted = false  // User freezes execution, resume with 'resume'
 	c.IsStopped = false // STP instruction
 	c.IsWaiting = false // WAI instruction
@@ -206,14 +207,19 @@ func (c *CPU) Run(cmd chan int) {
 			switch order {
 
 			case common.ABORT:
-				fmt.Println("CPU: DUMMY: Received cmd ABORT")
+				err = c.Abort()
+				if err != nil {
+					fmt.Printf("Abort returned error: %v", err)
+				}
 
 			case common.HALT:
-				fmt.Println("CPU: DUMMY: Received *** HALT ***")
 				c.IsHalted = true
 
 			case common.IRQ:
-				fmt.Println("CPU: DUMMY: Received cmd IRQ")
+				err = c.IRQ()
+				if err != nil {
+					fmt.Printf("IRQ returned error: %v", err)
+				}
 
 			case common.NOTRACE:
 				fmt.Println("CPU: DUMMY: Received cmd NOTRACE")
@@ -224,10 +230,17 @@ func (c *CPU) Run(cmd chan int) {
 				verbose = false
 
 			case common.NMI:
-				fmt.Println("CPU: DUMMY: Received cmd NMI")
+				err = c.NMI()
+				if err != nil {
+					fmt.Printf("NMI returned error: %v", err)
+				}
 
 			case common.RESET: // Also used for cold boot
-				c.reset()
+				err = c.Reset()
+				if err != nil {
+					fmt.Printf("Reset returned error: %v", err)
+				}
+
 				c.IsHalted = false
 				c.SingleStepMode = false
 
@@ -279,86 +292,4 @@ func (c *CPU) Run(cmd chan int) {
 		}
 	}
 
-}
-
-// Reset the machine. This is handled by the RESET signal and is also how we
-// cold boot the machine after INIT. Details on the reset procedure are on page
-// 201 of Eyes & Lichty; see http://6502.org/tutorials/65c816interrupts.html for
-// a more detailed discussion
-func (c *CPU) reset() error {
-
-	// For future reference: If the internal clock was stopped by STP or
-	// WAI, it will be restarted here.
-
-	// Set Direct Page to 0000 (where the Zero Page is on the 6502)
-	c.DP = 0
-
-	// Set Program and Data Bank Registers to 00
-	c.PBR = 0
-	c.DBR = 0
-
-	// The LSB of the SP is in an undefined state after a reset, while the
-	// MSB is set to 01. We simulate this to avoid users getting used to a
-	// certain value
-	c.SP = 0x0100 | common.Addr16(common.UndefinedByte())
-
-	// Clear registers
-	// TODO see if this is what really happens. If we have garbage in
-	// the registers after a reset, we want to emulate that as well
-	c.A8 = 0
-	c.A16 = 0
-	c.B = 0
-	c.X8 = 0
-	c.X16 = 0
-	c.Y8 = 0
-	c.Y16 = 0
-
-	// Set register widths the fast way
-	c.WidthA = W8
-	c.WidthXY = W8
-
-	// Status Register: M=1, X=1, D=0, I=1
-	c.FlagM = SET   // Width of A is 8 bit
-	c.FlagX = SET   // Width of XY is 8 bit
-	c.FlagD = CLEAR // "Best practice" though we don't use it
-	c.FlagI = SET   // Stop interrupts
-
-	// Reset switches us to emulated mode, which means we'll have to get
-	// out of it as soon as possible
-	c.FlagE = SET
-
-	// The flags CNVZ are undefined after a reset. We simulated this to make
-	// sure the user doesn't get used to this.
-	c.FlagC = common.UndefinedBit()
-	c.FlagN = common.UndefinedBit()
-	c.FlagV = common.UndefinedBit()
-	c.FlagZ = common.UndefinedBit()
-
-	// Get address at 0xFFFC (Reset Vector)
-	rv, err := c.Mem.FetchMore(common.ResetAddr, 2)
-	if err != nil {
-		return fmt.Errorf("Reset: Couldn't get Reset vector from %s", string(common.ResetAddr))
-	}
-
-	addr := common.Addr16(rv)
-
-	// Make sure we have "magic number" at address: The first instructions
-	// must always be CLC XCE which translates as 0xFB18 because of the
-	// little-endian fetch
-	bootInst, err := c.Mem.FetchMore(common.Addr24(rv), 2)
-	if err != nil {
-		return fmt.Errorf("Reset: Couldn't get instructions from Reset target %s", addr.HexString())
-	}
-
-	if common.Data16(bootInst) != MAGICNUMBER {
-		return fmt.Errorf("Reset: Code after reset must start with 0xFB18 (clc xce), got: %s", addr.HexString())
-	}
-
-	// Everything is fine, we are good to go
-	c.PC = addr
-	c.IsHalted = false
-	c.IsStopped = false
-	c.IsWaiting = false
-
-	return nil
 }

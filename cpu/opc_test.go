@@ -27,6 +27,7 @@ func TestModeBranch(t *testing.T) {
 		addr   common.Addr16
 	}{
 		{0x0000, 0x00, 0x0002},
+		{0x0002, 0x01, 0x0005},
 		{0x0003, 0xFB, 0x0000},
 		{0x0004, 0xFA, 0x0000},
 		{0x0005, 0xFC, 0x0003},
@@ -36,7 +37,7 @@ func TestModeBranch(t *testing.T) {
 		c.PC = test.pc
 		got, _ := c.modeBranch(test.offset)
 		if got != test.addr {
-			t.Errorf("TestModeBranch for 0x%0X returns %X, wanted %X",
+			t.Errorf("TestModeBranch for 0x%20X returns %X, wanted %X",
 				test.offset, got, test.addr)
 		}
 	}

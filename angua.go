@@ -157,6 +157,12 @@ func main() {
 		Help:     "trigger the ABORT vector",
 		LongHelp: longHelpAbort,
 		Func: func(c *ishell.Context) {
+
+			if !haveMachine {
+				c.Println("Machine must be initialized first by 'init'")
+				return
+			}
+
 			c.Println("Sending ABORT signal to machine ...")
 			cmd <- common.ABORT
 		},
@@ -332,8 +338,15 @@ func main() {
 		Help:     "halt the machine (freeze)",
 		LongHelp: longHelpHalt,
 		Func: func(c *ishell.Context) {
+
+			if !haveMachine {
+				c.Println("No machine present, initialize with 'init'")
+				return
+			}
+
 			cmd <- common.HALT
-			printCPUStatus(cpu) // TODO see if we are really giving current status
+			c.Println("Halting machine ...")
+			printCPUStatus(cpu)
 		},
 	})
 
@@ -385,6 +398,12 @@ func main() {
 		Help:     "trigger an interrupt request (IRQ)",
 		LongHelp: longHelpIRQ,
 		Func: func(c *ishell.Context) {
+
+			if !haveMachine {
+				c.Println("Machine must be initialized first by 'init'")
+				return
+			}
+
 			c.Println("Triggering maskable interrupt request (IRQ) ...")
 			cmd <- common.IRQ
 		},
@@ -518,6 +537,12 @@ func main() {
 		Help:     "trigger a non-maskable interrupt (NMI)",
 		LongHelp: longHelpNMI,
 		Func: func(c *ishell.Context) {
+
+			if !haveMachine {
+				c.Println("Machine must be initialized first by 'init'")
+				return
+			}
+
 			c.Println("Triggering non-maskable interrupt (NMI) ...")
 			cmd <- common.NMI
 		},
@@ -574,8 +599,15 @@ func main() {
 		Help:     "reset the machine (trigger Reset signal)",
 		LongHelp: longHelpReset,
 		Func: func(c *ishell.Context) {
+
+			if !haveMachine {
+				c.Println("Machine must be initialized first by 'init'")
+				return
+			}
+
+			cmd <- common.HALT
 			cmd <- common.RESET
-			shell.Process("run")
+			go cpu.Run(cmd)
 		},
 	})
 
@@ -586,26 +618,6 @@ func main() {
 		Func: func(c *ishell.Context) {
 			c.Println("Resuming at current PC location ...")
 			cmd <- common.RESUME
-		},
-	})
-
-	// Run is only used after HALT. To start the machine, use INIT followed
-	// by RESET. After INIT, the PC is not in a defined state.
-	// TODO see about replacing by RESUME
-	shell.AddCmd(&ishell.Cmd{
-		Name:     "run",
-		Help:     "run a machine created with 'init'",
-		LongHelp: longHelpRun,
-		Func: func(c *ishell.Context) {
-
-			if !haveMachine {
-				c.Println("Machine must be initialized first")
-				return
-			}
-
-			// TODO print message about interfacing with machine
-			c.Println("Running machine ...")
-			go cpu.Run(cmd)
 		},
 	})
 
