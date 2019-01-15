@@ -292,9 +292,13 @@ func (c *CPU) modeAbsolute() (common.Addr24, error) {
 // offset to the PC. Note the return address is common.Addr16, not
 // common.Addr24
 func (c *CPU) modeBranch(b byte) (common.Addr16, error) {
-	offset := int(b)
+
+	// Convert byte offset to int8 first to preserve the sign
+	offset := int8(b)
 	addr := int(c.PC)
-	newAddr := common.Addr16(addr + offset)
+
+	// Now we need to calculate it all in int
+	newAddr := common.Addr16(addr+int(offset)) + 2
 
 	if !c.Mem.Contains(common.Addr24(newAddr)) {
 		return 0, fmt.Errorf("modeBranch: address %s illegal", newAddr.HexString())

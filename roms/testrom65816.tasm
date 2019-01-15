@@ -21,12 +21,14 @@ vectors
         ; add a SEI
         .native         ; switch to native mode. CLC XCE as "magic number"
 
+loop
                 lda.# 'a'
                 sta putchar
-                lda.# 0x0A
+                lda.# 1
                 sta sleep8
-                lda.# 'b'
-                sta putchar
+
+                bra loop
+
 
                 stp
 
