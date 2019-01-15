@@ -1,7 +1,7 @@
 // Opcodes for Angua
 // Scot W. Stevenson <scot.stevenson@gmail.com>
 // First version: 02. Jan 2019
-// This version: 12. Jan 2019
+// This version: 15. Jan 2019
 
 // This package contains the opcodes and opcode data for the 65816 instructions.
 // Note there is redundancy with the information in the info package. We keep
@@ -52,6 +52,8 @@ func init() {
 	InsSet[0x68] = OpcData{1, Opc68, false, "pla"}
 	// ...
 	InsSet[0x78] = OpcData{1, Opc78, false, "sei"}
+	// ...
+	InsSet[0x80] = OpcData{2, Opc80, false, "bra"}
 	// ...
 	InsSet[0x85] = OpcData{2, Opc85, false, "sta.d"}
 	// ...
@@ -286,6 +288,21 @@ func (c *CPU) modeAbsolute() (common.Addr24, error) {
 	return common.Addr24(addrUint), nil
 }
 
+// modeBranch takes a byte as a signed int and returns the address created by an
+// offset to the PC. Note the return address is common.Addr16, not
+// common.Addr24
+func (c *CPU) modeBranch(b byte) (common.Addr16, error) {
+	offset := int(b)
+	addr := int(c.PC)
+	newAddr := common.Addr16(addr + offset)
+
+	if !c.Mem.Contains(common.Addr24(newAddr)) {
+		return 0, fmt.Errorf("modeBranch: address %s illegal", newAddr.HexString())
+	}
+
+	return newAddr, nil
+}
+
 // modeDirectPage returns the address stored on the Direct Page with the LSB as
 // given in the byte after the opcode
 func (c *CPU) modeDirectPage() (common.Addr24, error) {
@@ -339,7 +356,7 @@ func (c *CPU) getNextData16() (common.Data16, error) {
 // the byte after the opcode - and an error message. This is a slight variation
 // in modeImmediate8, except we return a byte and not common.Data8. Keep them
 // separate so we can modify them if required
-func getNextByte(c *CPU) (byte, error) {
+func (c *CPU) getNextByte() (byte, error) {
 	byteAddr := c.getFullPC() + 1
 	b, err := c.Mem.Fetch(byteAddr)
 	if err != nil {
@@ -517,9 +534,28 @@ func Opc68(c *CPU) error { // pla p. 382
 }
 
 // ---- 7777 ----
+
 func Opc78(c *CPU) error { // sei
 	c.FlagI = SET
 	c.PC++
+	return nil
+}
+
+// ---- 8888 ----
+
+func Opc80(c *CPU) error { // bra
+	b, err := c.getNextByte()
+	if err != nil {
+		return fmt.Errorf("bra (0x80): couldn't get offset: %v", err)
+	}
+
+	addr, err := c.modeBranch(b)
+	if err != nil {
+		return fmt.Errorf("bra (0x80): branch target wrong: %v", err)
+	}
+
+	c.PC = addr
+
 	return nil
 }
 
@@ -668,7 +704,7 @@ func OpcB8(c *CPU) error { // clv
 // ---- CCCC ----
 
 func OpcC2(c *CPU) error { // rep.#
-	rb, err := getNextByte(c)
+	rb, err := c.getNextByte()
 	if err != nil {
 		return fmt.Errorf("rep.# (0xC2): can't get next byte: %v:", err)
 	}
@@ -731,7 +767,7 @@ func OpcDB(c *CPU) error { // stp
 
 func OpcE2(c *CPU) error { // sep.#
 
-	rb, err := getNextByte(c)
+	rb, err := c.getNextByte()
 	if err != nil {
 		return fmt.Errorf("sep.# (0xE2): can't get next byte: %v:", err)
 	}

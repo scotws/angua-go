@@ -29,7 +29,6 @@ import (
 // to, always be present.
 func GetChar() (byte, error) {
 	// TODO DUMMY: Return ASCII character "a"
-	// TODO move this to actual input
 	return 0x61, nil
 }
 
@@ -39,7 +38,6 @@ func GetChar() (byte, error) {
 // received
 func GetCharBlocks() (byte, error) {
 	// TODO DUMMY: Return ASCII character "a"
-	// TODO move this to actual input
 	return 0x61, nil
 }
 
