@@ -27,43 +27,37 @@ import (
 // GetChar returns a byte that comes from the user stitting at the interface and
 // a bool to indicate success or failure. This routine should, but doesn't have
 // to, always be present.
-func GetChar() (byte, bool) {
+func GetChar() (byte, error) {
 	// TODO DUMMY: Return ASCII character "a"
 	// TODO move this to actual input
-	return 0x61, true
+	return 0x61, nil
 }
 
 // GetCharBlocks returns a byte that comes from the user stitting at the
 // interface and a bool to indicate success or failure. This routine should, but
 // doesn't have to, always be present. This variant blocks until a character is
 // received
-func GetCharBlocks() (byte, bool) {
+func GetCharBlocks() (byte, error) {
 	// TODO DUMMY: Return ASCII character "a"
 	// TODO move this to actual input
-	return 0x61, true
+	return 0x61, nil
 }
 
 // ---- WRITING ----
 
-// PutChar takes a byte and writes it to the standard output. This routine
-// should, but doesn't have to, always be present
-func PutChar(b byte) {
+// PutChar takes a common.Data8 as present in an 8-bit register and writes it to
+// the standard output. This routine should, but doesn't have to, always be
+// present
+func PutChar(c common.Data8) {
 	// TODO DUMMY: Print as ASCII char to normal screen
 	// TODO Move this to actual output
-	fmt.Printf("%c", b)
+	fmt.Printf("%c", byte(c))
 	return
 }
 
 // Sleep8 takes the value of A in 8 bit width and uses this as the number of
 // seconds to sleep.
 func Sleep8(a common.Data8) {
-	sec := time.Duration(a)
-	time.Sleep(sec * time.Second)
-}
-
-// Sleep16 takes the value of A in 16 bit width and uses this as the number of
-// seconds to sleep.
-func Sleep16(a common.Data16) {
 	sec := time.Duration(a)
 	time.Sleep(sec * time.Second)
 }

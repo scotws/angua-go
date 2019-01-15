@@ -1,7 +1,7 @@
 // Angua - An Emulator for the 65816 CPU in Native Mode
 // Scot W. Stevenson <scot.stevenson@gmail.com>
 // First version: 26. Sep 2017
-// This version: 12. Jan 2019
+// This version: 15. Jan 2019
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -47,7 +47,7 @@ const (
 	configDir   string = "configs"
 	shellBanner string = `Welcome to Angua
 An Emulator for the 65816 in Native Mode
-Version ALPHA 0.1  12. Jan 2019
+Version ALPHA 0.1  15. Jan 2019
 Copyright (c) 2018-2019 Scot W. Stevenson
 Angua comes with absolutely NO WARRANTY
 Type 'help' for more information
@@ -113,10 +113,28 @@ func main() {
 	memory := &mem.Memory{
 		// Remember to initialize the special address maps here or
 		// machine
-		SpecRead:  make(map[common.Addr24]func() (byte, bool)),
-		SpecWrite: make(map[common.Addr24]func(byte)),
+		SpecRead:  make(map[common.Addr24]func() (byte, error)),
+		SpecWrite: make(map[common.Addr24]func(common.Data8)),
 	}
 	cpu := &cpu.CPU{}
+
+	// The specials name table takes a lower case string (for example
+	// "getchar") and returns the related function (GetChar). To add your
+	// own special actions, create a function and add the related string and
+	// function to this table.
+	SpecReadNames := map[string]func() (byte, error){
+		"getchar":       specials.GetChar,
+		"getchar-block": specials.GetCharBlocks,
+	}
+
+	// The specials name tables take a lower case string (for example
+	// "getchar") and returns the related function (GetChar). To add your
+	// own special actions, create a function and add the related string and
+	// function to this table.
+	SpecWriteNames := map[string]func(common.Data8){
+		"putchar": specials.PutChar,
+		"sleep8":  specials.Sleep8,
+	}
 
 	// We communicate with the system through the command channel, which is
 	// buffered because other stuff might be going on.
@@ -212,7 +230,7 @@ func main() {
 		Func: func(c *ishell.Context) {
 
 			const rulerLine string = "         00 01 02 03 04 05 06 07  08 09 0A 0B 0C 0D 0E 0F"
-			const stackLine string = "     < SP"
+			const stackLine string = "      < SP"
 
 			if !haveMachine {
 				c.Println("ERROR: No machine present")
@@ -270,7 +288,7 @@ func main() {
 					}
 
 					a := common.Addr24(i).HexString()
-					c.Printf("%s  %02X\n", a, b)
+					c.Printf("%s  0x%02X\n", a, b)
 				}
 
 			case "dp", "direct", "directpage":
@@ -510,15 +528,6 @@ func main() {
 		Help:     "set a special address for reading",
 		LongHelp: longHelpReading,
 		Func: func(c *ishell.Context) {
-			// The specials name table takes a lower case string
-			// (for example "getchar") and returns the related
-			// function (GetChar). To add your own special actions,
-			// create a function and add the related string and
-			// function to this table.
-			SpecReadNames := map[string]func() (byte, bool){
-				"getchar":        specials.GetChar,
-				"getchar-blocks": specials.GetCharBlocks,
-			}
 
 			// We need at least two arguments
 			if len(c.Args) < 2 {
@@ -805,15 +814,6 @@ func main() {
 		Help:     "define a function to be triggered when address written to",
 		LongHelp: longHelpWriting,
 		Func: func(c *ishell.Context) {
-
-			// The specials name tables take a lower case string
-			// (for example "getchar") and returns the related
-			// function (GetChar). To add your own special actions,
-			// create a function and add the related string and
-			// function to this table.
-			SpecWriteNames := map[string]func(byte){
-				"putchar": specials.PutChar,
-			}
 
 			// We need at least two arguments
 			if len(c.Args) < 2 {

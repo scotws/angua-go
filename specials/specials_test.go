@@ -12,7 +12,6 @@ import (
 	"angua/common"
 )
 
-// TODO This is a temporary test
 func TestGetChar(t *testing.T) {
 
 	var tests = []struct {
@@ -29,6 +28,23 @@ func TestGetChar(t *testing.T) {
 	}
 }
 
+func TestPutChar(t *testing.T) {
+
+	var tests = []struct {
+		char common.Data8
+	}{
+		{0x61}, // ASCII hex for "a"
+		{0x62}, // ASCII hex for "a"
+		{0x63}, // ASCII hex for "a"
+	}
+
+	for _, test := range tests {
+		fmt.Printf("Printing '%c': ", test.char)
+		PutChar(test.char)
+		fmt.Println()
+	}
+}
+
 // Test of sleep function
 func TestSleep(t *testing.T) {
 
@@ -42,12 +58,6 @@ func TestSleep(t *testing.T) {
 	for _, test := range tests {
 		fmt.Printf("Starting 8 in %d seconds ...", test.duration)
 		Sleep8(test.duration)
-		fmt.Println(" done.")
-	}
-
-	for _, test := range tests {
-		fmt.Printf("Starting 16 in %d seconds ...", test.duration)
-		Sleep16(common.Data16(test.duration))
 		fmt.Println(" done.")
 	}
 }

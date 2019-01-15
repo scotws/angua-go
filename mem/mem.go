@@ -31,8 +31,8 @@ type Chunk struct {
 // present in memory; see Memory.Contains()
 type Memory struct {
 	Chunks    []Chunk
-	SpecRead  map[common.Addr24]func() (byte, bool)
-	SpecWrite map[common.Addr24]func(byte)
+	SpecRead  map[common.Addr24]func() (byte, error)
+	SpecWrite map[common.Addr24]func(common.Data8)
 }
 
 // NewChunk takes the start and end address for a new chunk as well as its type
@@ -134,14 +134,19 @@ func (m Memory) Contains(addr common.Addr24) bool {
 // memory level. This is the basic fetch operation
 func (m Memory) Fetch(addr common.Addr24) (byte, error) {
 	var b byte
+	var err error
 	var found bool
 
 	// First, see if this triggers a special reading address
-	// Make sure address is not already in SpecRead
-	_, ok := m.SpecRead[addr]
+	f, ok := m.SpecRead[addr]
 	if ok {
 		// TODO add real special function
-		fmt.Println("MEM: DUMMY: SpecialRead from", addr.HexString())
+		b, err = f()
+		if err != nil {
+			return 0, fmt.Errorf("Fetch: special read failed: %v", err)
+		}
+
+		return b, nil
 	}
 
 	for _, c := range m.Chunks {
@@ -245,11 +250,11 @@ func (m Memory) Size() uint {
 func (m Memory) Store(addr common.Addr24, b byte) error {
 
 	// First, see if this triggers a special write address
-	// Make sure address is not already in SpecRead
+	// Make sure address is not already in SpecWrite
 	_, ok := m.SpecWrite[addr]
 	if ok {
 		// TODO add real special function
-		fmt.Println("MEM: DUMMY: SpecialWrite to", addr.HexString())
+		m.SpecWrite[addr](common.Data8(b))
 		return nil
 	}
 
