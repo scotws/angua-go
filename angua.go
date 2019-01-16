@@ -1,7 +1,7 @@
 // Angua - An Emulator for the 65816 CPU in Native Mode
 // Scot W. Stevenson <scot.stevenson@gmail.com>
 // First version: 26. Sep 2017
-// This version: 15. Jan 2019
+// This version: 16. Jan 2019
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -386,7 +386,6 @@ func main() {
 			c.Println("Processed configuration file", *configFile, "...")
 
 			// TODO check for chunk overlap in memory
-			// TODO set up special memory
 			// TODO set up external terminal access
 
 			// Set up CPU
@@ -782,9 +781,6 @@ func main() {
 				c.Println("No machine present (use 'init')")
 				return
 			}
-
-			// TODO remember if machine is halted or not, then halt
-			// machine
 
 			// If we were told to print all data with "status all",
 			// well, print all data

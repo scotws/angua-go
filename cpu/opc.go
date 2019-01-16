@@ -45,6 +45,7 @@ func init() {
 	// ...
 	InsSet[0x48] = OpcData{1, (*CPU).Opc48, false, "pha"}
 	// ...
+	InsSet[0x4B] = OpcData{1, (*CPU).Opc4B, false, "phk"} // pushes PBR
 	InsSet[0x4C] = OpcData{3, (*CPU).Opc4C, false, "jmp"}
 	// ...
 	InsSet[0x58] = OpcData{1, (*CPU).Opc58, false, "cli"}
@@ -59,9 +60,12 @@ func init() {
 	// ...
 	InsSet[0x85] = OpcData{2, (*CPU).Opc85, false, "sta.d"}
 	// ...
+	InsSet[0x8B] = OpcData{1, (*CPU).Opc8B, false, "phb"} // pushes DBR
+	// ...
 	InsSet[0x8D] = OpcData{3, (*CPU).Opc8D, false, "sta"}
 	// ...
 	InsSet[0x9A] = OpcData{1, (*CPU).Opc9A, false, "txs"}
+	InsSet[0x9B] = OpcData{1, (*CPU).Opc9B, false, "txy"}
 	// ...
 	InsSet[0xA9] = OpcData{2, (*CPU).OpcA9, true, "lda.#"} // includes lda.8/lda.16
 	// ...
@@ -69,7 +73,11 @@ func init() {
 	// ...
 	InsSet[0xB8] = OpcData{1, (*CPU).OpcB8, false, "clv"}
 	// ...
+	InsSet[0xBB] = OpcData{1, (*CPU).OpcBB, false, "tyx"}
+	// ...
 	InsSet[0xC2] = OpcData{2, (*CPU).OpcC2, false, "rep.#"}
+	// ...
+	InsSet[0xC8] = OpcData{1, (*CPU).OpcC8, false, "iny"}
 	// ...
 	InsSet[0xD8] = OpcData{1, (*CPU).OpcD8, false, "cld"}
 	// ...
@@ -470,6 +478,17 @@ func (c *CPU) Opc40() error { // rti p. 391 (note wrong drawings)
 	return nil
 }
 
+func (c *CPU) Opc4B() error { // phk (Program Bank Register)
+	err := c.pushData8(c.PBR)
+	if err != nil {
+		return fmt.Errorf("phk (0x4B): couldn't push byte to stack: %v", err)
+	}
+
+	c.PC++
+
+	return nil
+}
+
 func (c *CPU) Opc4C() error { // jmp p. 360
 
 	addr, err := c.getNextData16()
@@ -607,12 +626,12 @@ func (c *CPU) Opc85() error { // sta.d
 
 	addr, err := c.modeDirectPage()
 	if err != nil {
-		return fmt.Errorf("sta.d (85): couldn't fetch address from %s: %v", addr.HexString(), err)
+		return fmt.Errorf("sta.d (0x85): couldn't fetch address from %s: %v", addr.HexString(), err)
 	}
 
 	err = c.storeA(addr)
 	if err != nil {
-		return fmt.Errorf("sta.d (85): couldn't store A at address %s: %v", addr.HexString(), err)
+		return fmt.Errorf("sta.d (0x85): couldn't store A at address %s: %v", addr.HexString(), err)
 	}
 
 	c.PC += 2
@@ -620,7 +639,16 @@ func (c *CPU) Opc85() error { // sta.d
 	return nil
 }
 
-// ...
+func (c *CPU) Opc8B() error { // phb (Data Bank Register)
+	err := c.pushData8(c.DBR)
+	if err != nil {
+		return fmt.Errorf("phb (0x8B): couldn't push byte to stack: %v", err)
+	}
+
+	c.PC++
+
+	return nil
+}
 
 func (c *CPU) Opc8D() error { // sta
 
@@ -657,6 +685,25 @@ func (c *CPU) Opc9A() error { // txs
 
 	default: // paranoid
 		return fmt.Errorf("txs (0x9A): Illegal width for register X:%d", c.WidthXY)
+	}
+	c.PC++
+
+	return nil
+}
+
+func (c *CPU) Opc9B() error { // txy
+	switch c.WidthXY {
+
+	case W8:
+		c.Y8 = c.X8
+		c.TestNZ8(c.X8)
+
+	case W16:
+		c.Y16 = c.X16
+		c.TestNZ16(c.X16)
+
+	default: // paranoid
+		return fmt.Errorf("txy (0x9B): Illegal width for register X or Y:%d", c.WidthXY)
 	}
 	c.PC++
 
@@ -741,6 +788,25 @@ func (c *CPU) OpcB8() error { // clv
 	return nil
 }
 
+func (c *CPU) OpcBB() error { // tyx
+	switch c.WidthXY {
+
+	case W8:
+		c.X8 = c.Y8
+		c.TestNZ8(c.Y8)
+
+	case W16:
+		c.X16 = c.Y16
+		c.TestNZ16(c.Y16)
+
+	default: // paranoid
+		return fmt.Errorf("tyx (0xBB): Illegal width for register X or Y:%d", c.WidthXY)
+	}
+	c.PC++
+
+	return nil
+}
+
 // ...
 
 // ---- CCCC ----
@@ -780,6 +846,25 @@ func (c *CPU) OpcC2() error { // rep.#
 
 	c.PC += 2
 
+	return nil
+}
+
+func (c *CPU) OpcC8() error { // iny
+	switch c.WidthXY {
+
+	case W8:
+		c.Y8 += 1
+		c.TestNZ8(c.Y8)
+
+	case W16:
+		c.Y16 += 1
+		c.TestNZ16(c.Y16)
+
+	default: // paranoid
+		return fmt.Errorf("iny (0xC8): illegal WidthXY value: %v", c.WidthXY)
+	}
+
+	c.PC++
 	return nil
 }
 
