@@ -4,11 +4,11 @@ Copyright 2015-2019 Scot W. Stevenson <scot.stevenson@gmail.com>
 This program comes with ABSOLUTELY NO WARRANTY
 
 Code listing for file testrom.tasm
-Generated on Wed Jan 16 12:05:41 2019
+Generated on Wed Jan 16 12:12:03 2019
 Target MPU: 65816
 Number of passes executed: 35
 Number of steps executed: 10
-Assembly time: 0.02103 seconds
+Assembly time: 0.02086 seconds
 Code origin: 00e000
 Bytes of machine code: 8192
 
@@ -32,78 +32,83 @@ LISTING:
   16:000 | DONE dir | em  8  8 |        |             |         .equ sleep8  0xF003          sleeps for A8 seconds
   17:000 | DONE wsp | em  8  8 |        |             |
   18:000 | DONE lbl | em  8  8 | 00e000 |             | vectors                              
-  19:000 | DONE cmt | em  8  8 |        |             |         ; All vectors land here because this is just a test
-  20:000 | DONE cmt | em  8  8 |        |             |         ; The 65816 automatically sets the interrupt flag so we don't have to
-  21:000 | DONE cmt | em  8  8 |        |             |         ; add a SEI
-  22:000 | DONE ins | em  8  8 | 00e000 | 18          |                 clc                  
-  22:001 | DONE ins | em  8  8 | 00e001 | fb          |                 xce                  
-  22:002 | DONE ctl | na  8  8 |        |             |         .!native
-  23:000 | DONE wsp | na  8  8 |        |             |
-  24:000 | DONE lbl | na  8  8 | 00e002 |             | loop                                 
-  25:000 | DONE ins | na  8  8 | 00e002 | 20 0e e0    |                 jsr 00e00e           
-  26:000 | DONE ins | na  8  8 | 00e005 | 20 14 e0    |                 jsr 00e014           
-  27:000 | DONE wsp | na  8  8 |        |             |
-  28:000 | DONE ins | na  8  8 | 00e008 | a9 01       |                 lda.# 01             
-  29:000 | DONE ins | na  8  8 | 00e00a | 8d 03 f0    |                 sta 00f003           
+  19:000 | DONE lbl | em  8  8 | 00e000 |             | inter_reset                          
+  20:000 | DONE cmt | em  8  8 |        |             |         ; All vectors land here because this is just a test
+  21:000 | DONE cmt | em  8  8 |        |             |         ; The 65816 automatically sets the interrupt flag so we don't have to
+  22:000 | DONE cmt | em  8  8 |        |             |         ; add a SEI
+  23:000 | DONE ins | em  8  8 | 00e000 | 18          |                 clc                  
+  23:001 | DONE ins | em  8  8 | 00e001 | fb          |                 xce                  
+  23:002 | DONE ctl | na  8  8 |        |             |         .!native
+  24:000 | DONE wsp | na  8  8 |        |             |
+  25:000 | DONE lbl | na  8  8 | 00e002 |             | loop                                 
+  26:000 | DONE ins | na  8  8 | 00e002 | a9 01       |                 lda.# 01             
+  27:000 | DONE ins | na  8  8 | 00e004 | 8d 03 f0    |                 sta 00f003           
+  28:000 | DONE wsp | na  8  8 |        |             |
+  29:000 | DONE ins | na  8  8 | 00e007 | 80 f9       |                 bra 00e002           
   30:000 | DONE wsp | na  8  8 |        |             |
-  31:000 | DONE ins | na  8  8 | 00e00d | db          |                 stp                  
-  32:000 | DONE wsp | na  8  8 |        |             |
-  33:000 | DONE wsp | na  8  8 |        |             |
-  34:000 | DONE lbl | na  8  8 | 00e00e |             | print_a                              
-  35:000 | DONE ins | na  8  8 | 00e00e | a9 61       |                 lda.# 61             
-  36:000 | DONE ins | na  8  8 | 00e010 | 8d 01 f0    |                 sta 00f001           
-  37:000 | DONE ins | na  8  8 | 00e013 | 60          |                 rts                  
-  38:000 | DONE wsp | na  8  8 |        |             |
-  39:000 | DONE lbl | na  8  8 | 00e014 |             | print_b                              
-  40:000 | DONE ins | na  8  8 | 00e014 | a9 62       |                 lda.# 62             
-  41:000 | DONE ins | na  8  8 | 00e016 | 8d 01 f0    |                 sta 00f001           
-  42:000 | DONE ins | na  8  8 | 00e019 | 60          |                 rts                  
-  43:000 | DONE wsp | na  8  8 |        |             |
-  44:000 | DONE wsp | na  8  8 |        |             |
-  45:000 | DONE cmt | na  8  8 |        |             |         ; Jump table for interrupts. We are only interested in those for native
-  46:000 | DONE cmt | na  8  8 |        |             |         ; mode, though we keep those in emulation mode
+  31:000 | DONE lbl | na  8  8 | 00e009 |             | inter_abort                          
+  32:000 | DONE ins | na  8  8 | 00e009 | a9 61       |                 lda.# 61             
+  33:000 | DONE ins | na  8  8 | 00e00b | 8d 03 f0    |                 sta 00f003           
+  34:000 | DONE ins | na  8  8 | 00e00e | 40          |                 rti                  
+  35:000 | DONE wsp | na  8  8 |        |             |
+  36:000 | DONE lbl | na  8  8 | 00e00f |             | inter_irq                            
+  37:000 | DONE ins | na  8  8 | 00e00f | a9 69       |                 lda.# 69             
+  38:000 | DONE ins | na  8  8 | 00e011 | 8d 03 f0    |                 sta 00f003           
+  39:000 | DONE ins | na  8  8 | 00e014 | 40          |                 rti                  
+  40:000 | DONE wsp | na  8  8 |        |             |
+  41:000 | DONE lbl | na  8  8 | 00e015 |             | inter_nmi                            
+  42:000 | DONE ins | na  8  8 | 00e015 | a9 6e       |                 lda.# 6e             
+  43:000 | DONE ins | na  8  8 | 00e017 | 8d 03 f0    |                 sta 00f003           
+  44:000 | DONE ins | na  8  8 | 00e01a | 40          |                 rti                  
+  45:000 | DONE wsp | na  8  8 |        |             |
+  46:000 | DONE wsp | na  8  8 |        |             |
   47:000 | DONE wsp | na  8  8 |        |             |
-  48:000 | DONE dir | na  8  8 | 00e01a | (8138x 00)  |         .advance 0x0FFE4             
-  49:000 | DONE wsp | na  8  8 |        |             |
-  50:000 | DONE dir | na  8  8 | 00ffe4 | (2 bytes)   |         .word 00e000                 0xFFE4  COP   (native mode)
-  50:000 | DONE dir | na  8  8 |        |             |                 00 e0                    --  . .
-  51:000 | DONE dir | na  8  8 | 00ffe6 | (2 bytes)   |         .word 00e000                 0xFFE6  BRK   (native mode)
-  51:000 | DONE dir | na  8  8 |        |             |                 00 e0                    --  . .
-  52:000 | DONE dir | na  8  8 | 00ffe8 | (2 bytes)   |         .word 00e000                 0xFFE8  ABORT (native mode)
-  52:000 | DONE dir | na  8  8 |        |             |                 00 e0                    --  . .
-  53:000 | DONE dir | na  8  8 | 00ffea | (2 bytes)   |         .word 00e000                 0xFFEA  NMI   (native mode)
+  48:000 | DONE cmt | na  8  8 |        |             |         ; Jump table for interrupts. We are only interested in those for native
+  49:000 | DONE cmt | na  8  8 |        |             |         ; mode, though we keep those in emulation mode
+  50:000 | DONE wsp | na  8  8 |        |             |
+  51:000 | DONE dir | na  8  8 | 00e01b | (8137x 00)  |         .advance 0x0FFE4             
+  52:000 | DONE wsp | na  8  8 |        |             |
+  53:000 | DONE dir | na  8  8 | 00ffe4 | (2 bytes)   |         .word 00e000                 0xFFE4  COP   (native mode)
   53:000 | DONE dir | na  8  8 |        |             |                 00 e0                    --  . .
-  54:000 | DONE dir | na  8  8 | 00ffec | (2 bytes)   |         .word 0000                   0xFFEC  unused
-  54:000 | DONE dir | na  8  8 |        |             |                 00 00                    --  . .
-  55:000 | DONE dir | na  8  8 | 00ffee | (2 bytes)   |         .word 00e000                 0xFFEE  IRQ   (native mode)
-  55:000 | DONE dir | na  8  8 |        |             |                 00 e0                    --  . .
-  56:000 | DONE dir | na  8  8 | 00fff0 | (2 bytes)   |         .word 0000                   0xFFF0  unused
-  56:000 | DONE dir | na  8  8 |        |             |                 00 00                    --  . .
-  57:000 | DONE dir | na  8  8 | 00fff2 | (2 bytes)   |         .word 0000                   0xFFF2  unused
+  54:000 | DONE dir | na  8  8 | 00ffe6 | (2 bytes)   |         .word 00e000                 0xFFE6  BRK   (native mode)
+  54:000 | DONE dir | na  8  8 |        |             |                 00 e0                    --  . .
+  55:000 | DONE dir | na  8  8 | 00ffe8 | (2 bytes)   |         .word 00e009                 0xFFE8  ABORT (native mode)
+  55:000 | DONE dir | na  8  8 |        |             |                 09 e0                    --  	 .
+  56:000 | DONE dir | na  8  8 | 00ffea | (2 bytes)   |         .word 00e015                 0xFFEA  NMI   (native mode)
+  56:000 | DONE dir | na  8  8 |        |             |                 15 e0                    --  . .
+  57:000 | DONE dir | na  8  8 | 00ffec | (2 bytes)   |         .word 0000                   0xFFEC  unused
   57:000 | DONE dir | na  8  8 |        |             |                 00 00                    --  . .
-  58:000 | DONE dir | na  8  8 | 00fff4 | (2 bytes)   |         .word 00e000                 0xFFF4  COP   (emulation mode)
-  58:000 | DONE dir | na  8  8 |        |             |                 00 e0                    --  . .
-  59:000 | DONE dir | na  8  8 | 00fff6 | (2 bytes)   |         .word 0000                   0xFFF6  unused
+  58:000 | DONE dir | na  8  8 | 00ffee | (2 bytes)   |         .word 00e00f                 0xFFEE  IRQ   (native mode)
+  58:000 | DONE dir | na  8  8 |        |             |                 0f e0                    --  . .
+  59:000 | DONE dir | na  8  8 | 00fff0 | (2 bytes)   |         .word 0000                   0xFFF0  unused
   59:000 | DONE dir | na  8  8 |        |             |                 00 00                    --  . .
-  60:000 | DONE dir | na  8  8 | 00fff8 | (2 bytes)   |         .word 00e000                 0xFFF8  ABORT (emulation mode)
-  60:000 | DONE dir | na  8  8 |        |             |                 00 e0                    --  . .
-  61:000 | DONE dir | na  8  8 | 00fffa | (2 bytes)   |         .word 00e000                 0xFFFA  NMI   (emulation mode)
+  60:000 | DONE dir | na  8  8 | 00fff2 | (2 bytes)   |         .word 0000                   0xFFF2  unused
+  60:000 | DONE dir | na  8  8 |        |             |                 00 00                    --  . .
+  61:000 | DONE dir | na  8  8 | 00fff4 | (2 bytes)   |         .word 00e000                 0xFFF4  COP   (emulation mode)
   61:000 | DONE dir | na  8  8 |        |             |                 00 e0                    --  . .
-  62:000 | DONE dir | na  8  8 | 00fffc | (2 bytes)   |         .word 00e000                 0xFFFC  RESET
-  62:000 | DONE dir | na  8  8 |        |             |                 00 e0                    --  . .
-  63:000 | DONE dir | na  8  8 | 00fffe | (2 bytes)   |         .word 00e000                 0xFFFE  IRQ   (emulation mode)
+  62:000 | DONE dir | na  8  8 | 00fff6 | (2 bytes)   |         .word 0000                   0xFFF6  unused
+  62:000 | DONE dir | na  8  8 |        |             |                 00 00                    --  . .
+  63:000 | DONE dir | na  8  8 | 00fff8 | (2 bytes)   |         .word 00e000                 0xFFF8  ABORT (emulation mode)
   63:000 | DONE dir | na  8  8 |        |             |                 00 e0                    --  . .
-  64:000 | DONE wsp | na  8  8 |        |             |
-  65:000 | DONE dir | na  8  8 |        |             |         .end                         
+  64:000 | DONE dir | na  8  8 | 00fffa | (2 bytes)   |         .word 00e000                 0xFFFA  NMI   (emulation mode)
+  64:000 | DONE dir | na  8  8 |        |             |                 00 e0                    --  . .
+  65:000 | DONE dir | na  8  8 | 00fffc | (2 bytes)   |         .word 00e000                 0xFFFC  RESET
+  65:000 | DONE dir | na  8  8 |        |             |                 00 e0                    --  . .
+  66:000 | DONE dir | na  8  8 | 00fffe | (2 bytes)   |         .word 00e000                 0xFFFE  IRQ   (emulation mode)
+  66:000 | DONE dir | na  8  8 |        |             |                 00 e0                    --  . .
+  67:000 | DONE wsp | na  8  8 |        |             |
+  68:000 | DONE dir | na  8  8 |        |             |         .end                         
 
 MACROS:
         (none)
 
 SYMBOL TABLE:
-- getchar : 00f002
-- loop    : 00e002
-- print_a : 00e00e
-- print_b : 00e014
-- putchar : 00f001
-- sleep8  : 00f003
-- vectors : 00e000
+- getchar     : 00f002
+- inter_abort : 00e009
+- inter_irq   : 00e00f
+- inter_nmi   : 00e015
+- inter_reset : 00e000
+- loop        : 00e002
+- putchar     : 00f001
+- sleep8      : 00f003
+- vectors     : 00e000

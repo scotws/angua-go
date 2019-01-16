@@ -16,30 +16,33 @@
         .equ sleep8  0xF003 ; sleeps for A8 seconds
 
 vectors
+inter_reset
         ; All vectors land here because this is just a test
         ; The 65816 automatically sets the interrupt flag so we don't have to
         ; add a SEI
         .native         ; switch to native mode. CLC XCE as "magic number"
 
 loop
-                jsr print_a
-                jsr print_b
-
                 lda.# 01
                 sta sleep8
 
-                stp
+                bra loop
 
-
-print_a         
+inter_abort
                 lda.# 'a'
-                sta putchar
-                rts
+                sta sleep8
+                rti
 
-print_b
-                lda.# 'b'
-                sta putchar
-                rts
+inter_irq
+                lda.# 'i'
+                sta sleep8
+                rti
+
+inter_nmi
+                lda.# 'n'
+                sta sleep8
+                rti
+
                 
 
         ; Jump table for interrupts. We are only interested in those for native
@@ -47,19 +50,19 @@ print_b
 
         .advance 0x0FFE4 
 
-        .word vectors  ; 0xFFE4  COP   (native mode) 
-        .word vectors  ; 0xFFE6  BRK   (native mode) 
-        .word vectors  ; 0xFFE8  ABORT (native mode) 
-        .word vectors  ; 0xFFEA  NMI   (native mode) 
-        .word 0000     ; 0xFFEC  unused
-        .word vectors  ; 0xFFEE  IRQ   (native mode) 
-        .word 0000     ; 0xFFF0  unused
-        .word 0000     ; 0xFFF2  unused
-        .word vectors  ; 0xFFF4  COP   (emulation mode) 
-        .word 0000     ; 0xFFF6  unused
-        .word vectors  ; 0xFFF8  ABORT (emulation mode) 
-        .word vectors  ; 0xFFFA  NMI   (emulation mode)
-        .word vectors  ; 0xFFFC  RESET
-        .word vectors  ; 0xFFFE  IRQ   (emulation mode) 
+        .word vectors     ; 0xFFE4  COP   (native mode) 
+        .word vectors     ; 0xFFE6  BRK   (native mode) 
+        .word inter_abort ; 0xFFE8  ABORT (native mode) 
+        .word inter_nmi   ; 0xFFEA  NMI   (native mode) 
+        .word 0000        ; 0xFFEC  unused
+        .word inter_irq   ; 0xFFEE  IRQ   (native mode) 
+        .word 0000        ; 0xFFF0  unused
+        .word 0000        ; 0xFFF2  unused
+        .word vectors     ; 0xFFF4  COP   (emulation mode) 
+        .word 0000        ; 0xFFF6  unused
+        .word vectors     ; 0xFFF8  ABORT (emulation mode) 
+        .word vectors     ; 0xFFFA  NMI   (emulation mode)
+        .word inter_reset ; 0xFFFC  RESET
+        .word vectors     ; 0xFFFE  IRQ   (emulation mode) 
    
         .end
