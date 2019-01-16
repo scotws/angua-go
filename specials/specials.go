@@ -50,7 +50,6 @@ func PutChar(c common.Data8) {
 	// TODO DUMMY: Print as ASCII char to normal screen
 	// TODO Move this to actual output
 	fmt.Printf("%c", byte(c))
-	return
 }
 
 // Sleep8 takes the value of A in 8 bit width and uses this as the number of

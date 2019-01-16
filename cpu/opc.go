@@ -376,17 +376,17 @@ func (c *CPU) getNextByte() (byte, error) {
 
 func Opc00(c *CPU) error { // brk
 	fmt.Println("OPC: DUMMY: Executing brk (00) at", c.PC.HexString())
-	return nil
+	return fmt.Errorf("brk (0x00): shouldn't be here")
 }
 
 func Opc01(c *CPU) error { // ora.dxi
 	fmt.Println("OPC: DUMMY: Executing ora.dxi (02) at", c.PC.HexString())
-	return nil
+	return fmt.Errorf("ora.dxi (0x01): shouldn't be here")
 }
 
 func Opc02(c *CPU) error { // cop
 	fmt.Println("OPC: DUMMY: Executing cop (03)")
-	return nil
+	return fmt.Errorf("cop (0x02): shouldn't be here")
 }
 
 // ...
@@ -829,10 +829,8 @@ func OpcE8(c *CPU) error { // inx
 }
 
 func OpcEA(c *CPU) error { // nop
-	// We return the execution of a 'nop' as an error and let the higher-ups
-	// decide what to do with it
 	c.PC++
-	return fmt.Errorf("OpcEA: executed 'nop' (0xEA) at %s:%s", c.PBR.HexString(), c.PC.HexString())
+	return nil
 }
 
 func OpcEB(c *CPU) error { // xba p.422

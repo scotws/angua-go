@@ -1,7 +1,7 @@
 // Angua CPU System
 // Scot W. Stevenson <scot.stevenson@gmail.com>
 // First version: 06. Nov 2018
-// This version: 12. Jan 2019
+// This version: 16. Jan 2019
 
 package cpu
 
@@ -101,7 +101,6 @@ func (s *StatReg) SetStatReg(b byte) {
 // for set flags and 0 for cleared. The sequence is NVMXDIZC
 func (s *StatReg) StringStatReg() string {
 	var sb byte
-
 	sb = s.GetStatReg()
 
 	return fmt.Sprintf("%08b", sb)
@@ -170,23 +169,27 @@ func (c *CPU) getFullPC() common.Addr24 {
 	return common.Ensure24(addr)
 }
 
-// Step executes a single instruction from PC. This is called by the Run method
-// TODO this is pretty much all fake at the moment
-func (c *CPU) Step() {
+// Step executes a single instruction from PC.
+func (c *CPU) Step() error {
 
-	// The offset table is used to calculate
+	// TODO Testing
+	fmt.Println("*** c.PC:", c.PC.HexString())
 
 	// Get byte at PC
 	ins, err := c.Mem.Fetch(c.getFullPC())
 	if err != nil {
-		fmt.Errorf("Step: can't get instruction at %s", c.getFullPC().HexString())
-		return
+		return fmt.Errorf("Step: can't get instruction at %s", c.getFullPC().HexString())
 	}
 
 	// Execute the instruction by accessing the entry in the Instruction
 	// Jump table. We pass a pointer to the CPU struct. The instructions are
 	// responsible for updating the PC
-	InsSet[ins].Code(c)
+	err = InsSet[ins].Code(c)
+	if err != nil {
+		return fmt.Errorf("Step: instruction returned error: %v", err)
+	}
+
+	return nil
 }
 
 // Run is the main loop of the CPU.
@@ -238,16 +241,16 @@ func (c *CPU) Run(cmd chan int) {
 			case common.RESET: // Also used for cold boot
 				err = c.Reset()
 				if err != nil {
-					fmt.Printf("Reset returned error: %v", err)
+					fmt.Printf("CPU: Reset returned error: %v", err)
 				}
 
 				c.IsHalted = false
 				c.SingleStepMode = false
 
 			case common.RESUME:
-				fmt.Println("CPU: DUMMY: Received cmd RESUME")
 				c.IsHalted = false
 
+			// TODO REMOVE THIS
 			case common.RUN:
 				fmt.Println("CPU: DUMMY: Received cmd RUN")
 				c.IsHalted = false
@@ -258,11 +261,9 @@ func (c *CPU) Run(cmd chan int) {
 				c.SingleStepMode = true
 
 			case common.TRACE:
-				fmt.Println("CPU: DUMMY: Received cmd TRACE")
 				trace = true
 
 			case common.VERBOSE:
-				fmt.Println("CPU: DUMMY: Received cmd VERBOSE")
 				verbose = true
 
 				// No default clause because we have the CLI check the
@@ -270,11 +271,14 @@ func (c *CPU) Run(cmd chan int) {
 			}
 
 		default:
-			// This is where the CPU actually runs an
-			// instruction.
 
+			// This is where the CPU actually runs an instruction.
 			if !c.IsHalted && !c.IsStopped {
-				c.Step()
+				err = c.Step()
+				if err != nil {
+					fmt.Printf("CPU: Execution error: %v", err)
+					c.IsHalted = true
+				}
 
 				if c.SingleStepMode {
 					<-cmd
@@ -283,8 +287,13 @@ func (c *CPU) Run(cmd chan int) {
 			} else {
 				lock := <-cmd
 
-				if lock == common.RESUME {
+				switch lock {
+
+				case common.RESET:
+					c.Reset()
+				case common.RESUME:
 					c.IsHalted = false
+
 				}
 
 			}
