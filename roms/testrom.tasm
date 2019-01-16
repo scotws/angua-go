@@ -22,16 +22,24 @@ vectors
         .native         ; switch to native mode. CLC XCE as "magic number"
 
 loop
-                lda.# 'a'
-                sta putchar
+                jsr print_a
+                jsr print_b
+
                 lda.# 01
                 sta sleep8
 
-                bra loop
-
-
                 stp
 
+
+print_a         
+                lda.# 'a'
+                sta putchar
+                rts
+
+print_b
+                lda.# 'b'
+                sta putchar
+                rts
                 
 
         ; Jump table for interrupts. We are only interested in those for native

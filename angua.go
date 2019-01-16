@@ -1200,14 +1200,16 @@ func printCPUStatus(c *cpu.CPU) {
 		c.StringStatReg(), " ",
 		c.FlagE)
 
-	// It doesn't make sense to print "halted" because we will usually halt
-	// before printing the CPU state
 	if c.IsWaiting {
 		fmt.Print(" waiting")
 	}
 
 	if c.IsStopped {
 		fmt.Print(" stopped")
+	}
+
+	if c.IsHalted {
+		fmt.Print(" halted")
 	}
 
 	fmt.Println()
