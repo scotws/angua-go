@@ -22,6 +22,7 @@ inter_reset
         ; add a SEI
         .native         ; switch to native mode. CLC XCE as "magic number"
 
+                cli
 loop
                 lda.# 01
                 sta sleep8
