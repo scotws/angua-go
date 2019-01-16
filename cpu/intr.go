@@ -34,9 +34,6 @@ func (c *CPU) commonIntr() {
 // See http://6502.org/tutorials/65c816interrupts.html#toc:interrupt_abort
 func (c *CPU) Abort() error {
 
-	// TODO TESTING
-	fmt.Println("CPU: DUMMY: Abort interrupt routine")
-
 	c.commonIntr()
 
 	// Load PC with contents of Abort vector from 00:FFE8
@@ -53,9 +50,6 @@ func (c *CPU) Abort() error {
 // The IRQ (maskable interrupt request) jumps to the routine at 00:FFEE
 // See http://6502.org/tutorials/65c816interrupts.html#toc:interrupt_irq
 func (c *CPU) IRQ() error {
-
-	// TODO TESTING
-	fmt.Println("CPU: DUMMY: IRQ interrupt routine")
 
 	if c.FlagI == SET {
 		return nil
@@ -77,9 +71,6 @@ func (c *CPU) IRQ() error {
 // The NMI (non-maskable interrupt) jumps to the routine at 00:FFEA
 // See http://6502.org/tutorials/65c816interrupts.html#toc:interrupt_nmi
 func (c *CPU) NMI() error {
-
-	// TODO TESTING
-	fmt.Println("CPU: DUMMY: NMI interrupt routine")
 
 	c.commonIntr()
 

@@ -25,22 +25,36 @@ inter_reset
 loop
                 lda.# 01
                 sta sleep8
-
                 bra loop
 
 inter_abort
+                pha
                 lda.# 'a'
-                sta sleep8
+                sta putchar
+                lda.# 0x0A
+                sta putchar
+                pla
+
                 rti
 
 inter_irq
+                pha
                 lda.# 'i'
-                sta sleep8
+                sta putchar
+                lda.# 0x0A
+                sta putchar
+                pla
+
                 rti
 
 inter_nmi
+                pha
                 lda.# 'n'
-                sta sleep8
+                sta putchar
+                lda.# 0x0A
+                sta putchar
+                pla
+
                 rti
 
                 

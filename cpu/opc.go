@@ -41,6 +41,8 @@ func init() {
 	// ...
 	InsSet[0x38] = OpcData{1, (*CPU).Opc38, false, "sec"}
 	// ...
+	InsSet[0x40] = OpcData{1, (*CPU).Opc40, false, "rti"}
+	// ...
 	InsSet[0x48] = OpcData{1, (*CPU).Opc48, false, "pha"}
 	// ...
 	InsSet[0x4C] = OpcData{3, (*CPU).Opc4C, false, "jmp"}
@@ -431,6 +433,42 @@ func (c *CPU) Opc38() error { // sec
 }
 
 // ---- 4444 ----
+
+func (c *CPU) Opc40() error { // rti p. 391 (note wrong drawings)
+	// The full rti instruction pulls a different number of bytes depending
+	// on if we are in native or emulated mode. Since we only work in native
+	// mode, we throw an error if the emulated flag is set.
+
+	if c.FlagE == SET {
+		return fmt.Errorf("rti (0x40): emulation flag set, we only support native")
+	}
+
+	// We pull four bytes: The status register, the PC, and the PBR
+	b, err := c.pullByte()
+	if err != nil {
+		return fmt.Errorf("rti (0x40): can't retrieve Status Register: %v", err)
+	}
+
+	c.SetStatReg(b)
+
+	d16, err := c.pullData16()
+	if err != nil {
+		return fmt.Errorf("rti (0x40): can't retrieve PC: %v", err)
+	}
+
+	// In contrast to RTS, we don't need to adjust the PC, just store it as
+	// it is
+	c.PC = common.Addr16(d16)
+
+	d8, err := c.pullData8()
+	if err != nil {
+		return fmt.Errorf("rti (0x40): can't retrieve PBR: %v", err)
+	}
+
+	c.PBR = d8
+
+	return nil
+}
 
 func (c *CPU) Opc4C() error { // jmp p. 360
 
