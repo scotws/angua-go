@@ -19,12 +19,13 @@ import (
 
 // commonIntr handles the steps of the interrupt routines which they all share
 func (c *CPU) commonIntr() {
-	// Push PBR to the stack
-	// Push PC to the stack, MSB then LSB
-	// Push Status Register to the stack
-	// Set flag I
-	// Clear flag D
-	// Load PBR with 00
+	c.pushByte(byte(c.PBR))           // Push PBR to the stack
+	c.PBR = 0                         // Load PBR to bank zero
+	c.pushData16(common.Data16(c.PC)) // MSB gets pushed first
+	b := c.GetStatReg()               // Push status register
+	c.pushByte(b)
+	c.FlagI = SET   // Prevent other interrupts
+	c.FlagD = CLEAR // We go through the motions
 }
 
 // The Abort single jumps to the routine at 00:FFE8
@@ -37,8 +38,14 @@ func (c *CPU) Abort() error {
 	fmt.Println("CPU: DUMMY: Abort interrupt routine")
 
 	c.commonIntr()
+
 	// Load PC with contents of Abort vector from 00:FFE8
-	// Transfer execution
+	rv, err := c.Mem.FetchMore(common.AbortAddr, 2)
+	if err != nil {
+		return fmt.Errorf("Reset: couldn't get Abort vector from %s", string(common.AbortAddr))
+	}
+
+	c.PC = common.Addr16(rv)
 
 	return nil
 }
@@ -50,11 +57,19 @@ func (c *CPU) IRQ() error {
 	// TODO TESTING
 	fmt.Println("CPU: DUMMY: IRQ interrupt routine")
 
-	// Check if I flag is set
+	if c.FlagI == SET {
+		return nil
+	}
 
 	c.commonIntr()
+
 	// Load PC with contents of IRQ vector from 00:FFEE
-	// Transfer execution
+	rv, err := c.Mem.FetchMore(common.IRQAddr, 2)
+	if err != nil {
+		return fmt.Errorf("Reset: couldn't get IRQ vector from %s", string(common.IRQAddr))
+	}
+
+	c.PC = common.Addr16(rv)
 
 	return nil
 }
@@ -67,8 +82,14 @@ func (c *CPU) NMI() error {
 	fmt.Println("CPU: DUMMY: NMI interrupt routine")
 
 	c.commonIntr()
+
 	// Load PC with contents of NMI vector from 00:FFEA
-	// Transfer execution
+	rv, err := c.Mem.FetchMore(common.NMIAddr, 2)
+	if err != nil {
+		return fmt.Errorf("Reset: couldn't get NMI vector from %s", string(common.NMIAddr))
+	}
+
+	c.PC = common.Addr16(rv)
 
 	return nil
 }
