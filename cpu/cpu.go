@@ -172,9 +172,6 @@ func (c *CPU) getFullPC() common.Addr24 {
 // Step executes a single instruction from PC.
 func (c *CPU) Step() error {
 
-	// TODO Testing
-	fmt.Println("*** c.PC:", c.PC.HexString())
-
 	// Get byte at PC
 	ins, err := c.Mem.Fetch(c.getFullPC())
 	if err != nil {
@@ -215,6 +212,10 @@ func (c *CPU) Run(cmd chan int) {
 					fmt.Printf("Abort returned error: %v", err)
 				}
 
+			case common.DESTROY:
+				// Stop the go routine
+				return
+
 			case common.HALT:
 				c.IsHalted = true
 
@@ -249,12 +250,6 @@ func (c *CPU) Run(cmd chan int) {
 
 			case common.RESUME:
 				c.IsHalted = false
-
-			// TODO REMOVE THIS
-			case common.RUN:
-				fmt.Println("CPU: DUMMY: Received cmd RUN")
-				c.IsHalted = false
-				c.SingleStepMode = false
 
 			case common.STEP:
 				fmt.Println("CPU: DUMMY: Received cmd STEP")

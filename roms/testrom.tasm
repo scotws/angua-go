@@ -22,11 +22,12 @@ vectors
         .native         ; switch to native mode. CLC XCE as "magic number"
 
 loop
-                nop
-                nop
-                nop
+                lda.# 'a'
+                sta putchar
+                lda.# 01
+                sta sleep8
 
-                jmp loop
+                bra loop
 
 
                 stp

@@ -1,7 +1,7 @@
 // Opcodes for Angua
 // Scot W. Stevenson <scot.stevenson@gmail.com>
 // First version: 02. Jan 2019
-// This version: 15. Jan 2019
+// This version: 16. Jan 2019
 
 // This package contains the opcodes and opcode data for the 65816 instructions.
 // Note there is redundancy with the information in the info package. We keep
@@ -31,58 +31,58 @@ var (
 )
 
 func init() {
-	InsSet[0x00] = OpcData{2, Opc00, false, "brk"} // with signature byte
-	InsSet[0x01] = OpcData{2, Opc01, false, "ora.dxi"}
-	InsSet[0x02] = OpcData{2, Opc02, false, "cop"} // with signature byte
+	InsSet[0x00] = OpcData{2, (*CPU).Opc00, false, "brk"} // with signature byte
+	InsSet[0x01] = OpcData{2, (*CPU).Opc01, false, "ora.dxi"}
+	InsSet[0x02] = OpcData{2, (*CPU).Opc02, false, "cop"} // with signature byte
 	// ...
-	InsSet[0x18] = OpcData{1, Opc18, false, "clc"}
+	InsSet[0x18] = OpcData{1, (*CPU).Opc18, false, "clc"}
 	// ...
-	InsSet[0x20] = OpcData{3, Opc20, false, "jsr"}
+	InsSet[0x20] = OpcData{3, (*CPU).Opc20, false, "jsr"}
 	// ...
-	InsSet[0x38] = OpcData{1, Opc38, false, "sec"}
+	InsSet[0x38] = OpcData{1, (*CPU).Opc38, false, "sec"}
 	// ...
-	InsSet[0x48] = OpcData{1, Opc48, false, "pha"}
+	InsSet[0x48] = OpcData{1, (*CPU).Opc48, false, "pha"}
 	// ...
-	InsSet[0x4C] = OpcData{3, Opc4C, false, "jmp"}
+	InsSet[0x4C] = OpcData{3, (*CPU).Opc4C, false, "jmp"}
 	// ...
-	InsSet[0x58] = OpcData{1, Opc58, false, "cli"}
+	InsSet[0x58] = OpcData{1, (*CPU).Opc58, false, "cli"}
 	// ...
-	InsSet[0x60] = OpcData{1, Opc60, false, "rts"}
+	InsSet[0x60] = OpcData{1, (*CPU).Opc60, false, "rts"}
 	// ...
-	InsSet[0x68] = OpcData{1, Opc68, false, "pla"}
+	InsSet[0x68] = OpcData{1, (*CPU).Opc68, false, "pla"}
 	// ...
-	InsSet[0x78] = OpcData{1, Opc78, false, "sei"}
+	InsSet[0x78] = OpcData{1, (*CPU).Opc78, false, "sei"}
 	// ...
-	InsSet[0x80] = OpcData{2, Opc80, false, "bra"}
+	InsSet[0x80] = OpcData{2, (*CPU).Opc80, false, "bra"}
 	// ...
-	InsSet[0x85] = OpcData{2, Opc85, false, "sta.d"}
+	InsSet[0x85] = OpcData{2, (*CPU).Opc85, false, "sta.d"}
 	// ...
-	InsSet[0x8D] = OpcData{3, Opc8D, false, "sta"}
+	InsSet[0x8D] = OpcData{3, (*CPU).Opc8D, false, "sta"}
 	// ...
-	InsSet[0x9A] = OpcData{1, Opc9A, false, "txs"}
+	InsSet[0x9A] = OpcData{1, (*CPU).Opc9A, false, "txs"}
 	// ...
-	InsSet[0xA9] = OpcData{2, OpcA9, true, "lda.#"} // includes lda.8/lda.16
+	InsSet[0xA9] = OpcData{2, (*CPU).OpcA9, true, "lda.#"} // includes lda.8/lda.16
 	// ...
-	InsSet[0xAD] = OpcData{3, OpcAD, false, "lda"}
+	InsSet[0xAD] = OpcData{3, (*CPU).OpcAD, false, "lda"}
 	// ...
-	InsSet[0xB8] = OpcData{1, OpcB8, false, "clv"}
+	InsSet[0xB8] = OpcData{1, (*CPU).OpcB8, false, "clv"}
 	// ...
-	InsSet[0xC2] = OpcData{2, OpcC2, false, "rep.#"}
+	InsSet[0xC2] = OpcData{2, (*CPU).OpcC2, false, "rep.#"}
 	// ...
-	InsSet[0xD8] = OpcData{1, OpcD8, false, "cld"}
+	InsSet[0xD8] = OpcData{1, (*CPU).OpcD8, false, "cld"}
 	// ...
-	InsSet[0xDB] = OpcData{1, OpcDB, false, "stp"}
+	InsSet[0xDB] = OpcData{1, (*CPU).OpcDB, false, "stp"}
 	// ...
-	InsSet[0xE2] = OpcData{2, OpcE2, false, "sep.#"}
+	InsSet[0xE2] = OpcData{2, (*CPU).OpcE2, false, "sep.#"}
 	// ...
-	InsSet[0xE8] = OpcData{1, OpcE8, false, "inx"}
+	InsSet[0xE8] = OpcData{1, (*CPU).OpcE8, false, "inx"}
 	// ...
-	InsSet[0xEA] = OpcData{1, OpcEA, false, "nop"}
-	InsSet[0xEB] = OpcData{1, OpcEB, false, "xba"}
+	InsSet[0xEA] = OpcData{1, (*CPU).OpcEA, false, "nop"}
+	InsSet[0xEB] = OpcData{1, (*CPU).OpcEB, false, "xba"}
 	// ...
-	InsSet[0xF4] = OpcData{3, OpcF4, false, "phe.#"}
+	InsSet[0xF4] = OpcData{3, (*CPU).OpcF4, false, "phe.#"}
 	// ...
-	InsSet[0xFB] = OpcData{1, OpcFB, false, "xce"}
+	InsSet[0xFB] = OpcData{1, (*CPU).OpcFB, false, "xce"}
 }
 
 // --- Store routines ---
@@ -374,17 +374,17 @@ func (c *CPU) getNextByte() (byte, error) {
 
 // ---- 0000 ----
 
-func Opc00(c *CPU) error { // brk
+func (c *CPU) Opc00() error { // brk
 	fmt.Println("OPC: DUMMY: Executing brk (00) at", c.PC.HexString())
 	return fmt.Errorf("brk (0x00): shouldn't be here")
 }
 
-func Opc01(c *CPU) error { // ora.dxi
+func (c *CPU) Opc01() error { // ora.dxi
 	fmt.Println("OPC: DUMMY: Executing ora.dxi (02) at", c.PC.HexString())
 	return fmt.Errorf("ora.dxi (0x01): shouldn't be here")
 }
 
-func Opc02(c *CPU) error { // cop
+func (c *CPU) Opc02() error { // cop
 	fmt.Println("OPC: DUMMY: Executing cop (03)")
 	return fmt.Errorf("cop (0x02): shouldn't be here")
 }
@@ -393,7 +393,7 @@ func Opc02(c *CPU) error { // cop
 
 // ---- 1111 ----
 
-func Opc18(c *CPU) error { // clc
+func (c *CPU) Opc18() error { // clc
 	c.FlagC = CLEAR
 	c.PC++
 	return nil
@@ -401,7 +401,7 @@ func Opc18(c *CPU) error { // clc
 
 // ---- 2222 ----
 
-func Opc20(c *CPU) error { // jsr p. 362
+func (c *CPU) Opc20() error { // jsr p. 362
 
 	addr, err := c.modeAbsolute()
 	if err != nil {
@@ -424,7 +424,7 @@ func Opc20(c *CPU) error { // jsr p. 362
 
 // ---- 3333 ----
 
-func Opc38(c *CPU) error { // sec
+func (c *CPU) Opc38() error { // sec
 	c.FlagC = SET
 	c.PC++
 	return nil
@@ -432,7 +432,7 @@ func Opc38(c *CPU) error { // sec
 
 // ---- 4444 ----
 
-func Opc4C(c *CPU) error { // jmp p. 360
+func (c *CPU) Opc4C() error { // jmp p. 360
 
 	addr, err := c.getNextData16()
 	if err != nil {
@@ -448,7 +448,7 @@ func Opc4C(c *CPU) error { // jmp p. 360
 
 // ...
 
-func Opc48(c *CPU) error { // pha p. 375
+func (c *CPU) Opc48() error { // pha p. 375
 	var err error
 
 	switch c.WidthA {
@@ -478,7 +478,7 @@ func Opc48(c *CPU) error { // pha p. 375
 
 // ---- 5555 ----
 
-func Opc58(c *CPU) error { // cli
+func (c *CPU) Opc58() error { // cli
 	c.FlagI = CLEAR
 	c.PC++
 	return nil
@@ -486,7 +486,7 @@ func Opc58(c *CPU) error { // cli
 
 // ---- 6666 ----
 
-func Opc60(c *CPU) error { // rts p. 394
+func (c *CPU) Opc60() error { // rts p. 394
 
 	// The LSB ist stored on top of the stack
 	lsb, err := c.pullByte()
@@ -507,7 +507,7 @@ func Opc60(c *CPU) error { // rts p. 394
 	return nil
 }
 
-func Opc68(c *CPU) error { // pla p. 382
+func (c *CPU) Opc68() error { // pla p. 382
 	switch c.WidthA {
 
 	case W8:
@@ -539,7 +539,7 @@ func Opc68(c *CPU) error { // pla p. 382
 
 // ---- 7777 ----
 
-func Opc78(c *CPU) error { // sei
+func (c *CPU) Opc78() error { // sei
 	c.FlagI = SET
 	c.PC++
 	return nil
@@ -547,7 +547,7 @@ func Opc78(c *CPU) error { // sei
 
 // ---- 8888 ----
 
-func Opc80(c *CPU) error { // bra
+func (c *CPU) Opc80() error { // bra
 	b, err := c.getNextByte()
 	if err != nil {
 		return fmt.Errorf("bra (0x80): couldn't get offset: %v", err)
@@ -565,7 +565,7 @@ func Opc80(c *CPU) error { // bra
 
 // ...
 
-func Opc85(c *CPU) error { // sta.d
+func (c *CPU) Opc85() error { // sta.d
 
 	addr, err := c.modeDirectPage()
 	if err != nil {
@@ -584,7 +584,7 @@ func Opc85(c *CPU) error { // sta.d
 
 // ...
 
-func Opc8D(c *CPU) error { // sta
+func (c *CPU) Opc8D() error { // sta
 
 	addr, err := c.modeAbsolute()
 	if err != nil {
@@ -608,7 +608,7 @@ func Opc8D(c *CPU) error { // sta
 // to 01. See p. 416 for details. Flags are not affected by this operation. Note
 // that internally, the Stack Pointer type is an an Addr16, while X is a
 // Data8/Data16
-func Opc9A(c *CPU) error { // txs
+func (c *CPU) Opc9A() error { // txs
 	switch c.WidthXY {
 
 	case W8:
@@ -627,7 +627,7 @@ func Opc9A(c *CPU) error { // txs
 
 // ---- AAAA ----
 
-func OpcA9(c *CPU) error { // lda.# (lda.8/lda.16)
+func (c *CPU) OpcA9() error { // lda.# (lda.8/lda.16)
 
 	switch c.WidthA {
 	case W8:
@@ -659,7 +659,7 @@ func OpcA9(c *CPU) error { // lda.# (lda.8/lda.16)
 
 // ...
 
-func OpcAD(c *CPU) error { // lda
+func (c *CPU) OpcAD() error { // lda
 	addr, err := c.modeAbsolute()
 	if err != nil {
 		return fmt.Errorf("lda (AD): Couldn't fetch address from %s: %v", addr.HexString(), err)
@@ -697,7 +697,7 @@ func OpcAD(c *CPU) error { // lda
 
 // ---- BBBB ----
 
-func OpcB8(c *CPU) error { // clv
+func (c *CPU) OpcB8() error { // clv
 	c.FlagV = CLEAR
 	c.PC++
 	return nil
@@ -707,7 +707,7 @@ func OpcB8(c *CPU) error { // clv
 
 // ---- CCCC ----
 
-func OpcC2(c *CPU) error { // rep.#
+func (c *CPU) OpcC2() error { // rep.#
 	rb, err := c.getNextByte()
 	if err != nil {
 		return fmt.Errorf("rep.# (0xC2): can't get next byte: %v:", err)
@@ -749,7 +749,7 @@ func OpcC2(c *CPU) error { // rep.#
 
 // ---- DDDD ----
 
-func OpcD8(c *CPU) error { // cld
+func (c *CPU) OpcD8() error { // cld
 	c.FlagD = CLEAR
 	c.PC++
 	return nil
@@ -757,7 +757,7 @@ func OpcD8(c *CPU) error { // cld
 
 // ...
 
-func OpcDB(c *CPU) error { // stp
+func (c *CPU) OpcDB() error { // stp
 	// TODO make sure we actually add one to the PC here
 	c.IsStopped = true
 	fmt.Println("Machine stopped by stp (0xDB) in block", c.PBR.HexString(), "at address", c.PC.HexString())
@@ -769,7 +769,7 @@ func OpcDB(c *CPU) error { // stp
 
 // ---- EEEE ----
 
-func OpcE2(c *CPU) error { // sep.#
+func (c *CPU) OpcE2() error { // sep.#
 
 	rb, err := c.getNextByte()
 	if err != nil {
@@ -809,7 +809,7 @@ func OpcE2(c *CPU) error { // sep.#
 	return nil
 }
 
-func OpcE8(c *CPU) error { // inx
+func (c *CPU) OpcE8() error { // inx
 	switch c.WidthXY {
 
 	case W8:
@@ -828,12 +828,12 @@ func OpcE8(c *CPU) error { // inx
 	return nil
 }
 
-func OpcEA(c *CPU) error { // nop
+func (c *CPU) OpcEA() error { // nop
 	c.PC++
 	return nil
 }
 
-func OpcEB(c *CPU) error { // xba p.422
+func (c *CPU) OpcEB() error { // xba p.422
 	switch c.WidthA {
 
 	case W8:
@@ -860,7 +860,7 @@ func OpcEB(c *CPU) error { // xba p.422
 
 // ---- FFFF ----
 
-func OpcF4(c *CPU) error { // phe.#
+func (c *CPU) OpcF4() error { // phe.#
 	d, err := c.getNextData16()
 	if err != nil {
 		return fmt.Errorf("phe.# (0xF4): couldn't get operand: %v", err)
@@ -875,7 +875,7 @@ func OpcF4(c *CPU) error { // phe.#
 	return nil
 }
 
-func OpcFB(c *CPU) error { // xce
+func (c *CPU) OpcFB() error { // xce
 	tmp := c.FlagE
 	c.FlagE = c.FlagC
 	c.FlagC = tmp

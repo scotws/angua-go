@@ -18,11 +18,11 @@ const (
 	maxAddr = 1<<24 - 1
 
 	// Commands from the CLI to the CPU
-	HALT   = 0 // Stop the CPU
-	RESUME = 1 // Continue processing from current PC address
-	RUN    = 2 // Synonym for RESUME
-	STEP   = 3 // Run one step
-	STATUS = 4 // Print status information to stdout
+	HALT    = 0 // Stop the CPU
+	RESUME  = 1 // Continue processing from current PC address
+	DESTROY = 2 // Stops machine
+	STEP    = 3 // Run one step
+	STATUS  = 4 // Print status information to stdout
 
 	// Interrupts, resets, power toggle. These are sent by the CLI to the
 	// CPU which then pretends that this condition just happened

@@ -56,6 +56,7 @@ Type 'help' for more information
 
 var (
 	haveMachine bool = false
+	haveRun     bool = false
 
 	// Flags passed.
 	// TODO Add "-d" to print debug information
@@ -182,19 +183,25 @@ func main() {
 		Help:     "de-initialize a machine (start over)",
 		LongHelp: longHelpDestroy,
 		Func: func(c *ishell.Context) {
+
 			if !haveMachine {
 				c.Println("ERROR: No machine present")
 				return
 			}
 
-			c.Println("CLI: DUMMY: destroy the machine")
-			haveMachine = false
 			cmd <- common.HALT
+			cmd <- common.DESTROY
+			haveRun = false
+			haveMachine = false
 
-			err := shell.Process("beep")
-			if err != nil {
-				log.Fatal(err)
+			memory := &mem.Memory{
+				SpecRead:  make(map[common.Addr24]func() (byte, error)),
+				SpecWrite: make(map[common.Addr24]func(common.Data8)),
 			}
+
+			cpu.Mem = memory
+			c.Println("Machine destroyed. Use 'init' for new machine.")
+
 		},
 	})
 
@@ -389,7 +396,7 @@ func main() {
 			haveMachine = true
 			cpu.IsHalted = true
 
-			c.Println("System initialized, start with 'reset'")
+			c.Println("System initialized, start with 'run'")
 		},
 	})
 
@@ -604,10 +611,9 @@ func main() {
 				c.Println("Machine must be initialized first by 'init'")
 				return
 			}
-
 			cmd <- common.HALT
 			cmd <- common.RESET
-			go cpu.Run(cmd)
+			cmd <- common.RESUME
 		},
 	})
 
@@ -618,6 +624,32 @@ func main() {
 		Func: func(c *ishell.Context) {
 			c.Println("Resuming at current PC location ...")
 			cmd <- common.RESUME
+		},
+	})
+
+	shell.AddCmd(&ishell.Cmd{
+		Name:     "run",
+		Help:     "intial run",
+		LongHelp: longHelpRun,
+		Func: func(c *ishell.Context) {
+
+			if !haveMachine {
+				c.Println("Machine must be initialized first by 'init'")
+				return
+			}
+
+			// Run should only be able to be called once so we don't
+			// start more than one go routine
+			if haveRun {
+				c.Println("Can only run once (use 'destroy' for new machine)")
+				return
+			}
+
+			c.Println("Running new machine ...")
+			haveRun = true
+			go cpu.Run(cmd)
+			cmd <- common.RESET
+
 		},
 	})
 
