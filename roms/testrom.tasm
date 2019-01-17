@@ -23,9 +23,13 @@ vectors
 
 loop
 
-                iny
-                iny
-                tyx
+                lda.# 01
+                pha
+                plx
+
+                lda.# 02
+                pha
+                ply
 
                 stp
 

@@ -1,7 +1,7 @@
 // Angua CPU System
 // Scot W. Stevenson <scot.stevenson@gmail.com>
 // First version: 06. Nov 2018
-// This version: 16. Jan 2019
+// This version: 17. Jan 2019
 
 package cpu
 
@@ -155,6 +155,8 @@ type CPU struct {
 	IsStopped      bool // CPU stopped by STP instruction
 	SingleStepMode bool // Signals if we are in single step mode
 
+	BPs []common.Addr24 // Breakpoints
+
 	Mem *mem.Memory // Pointer to the memory we're working on
 
 	StatReg
@@ -167,6 +169,22 @@ func (c *CPU) getFullPC() common.Addr24 {
 	addr := bank + common.Addr24(c.PC)
 
 	return common.Ensure24(addr)
+}
+
+// breakpointCheck checks to see if the PC is on the list of breakpoints and if
+// yes, halts the machine
+func (c *CPU) breakpointCheck() {
+
+	fullPC := c.getFullPC()
+
+	for _, addr := range c.BPs {
+
+		if fullPC == addr {
+			c.IsHalted = true
+			fmt.Println("Breakpoint reached at", addr.HexString())
+			break
+		}
+	}
 }
 
 // Step executes a single instruction from PC.
@@ -266,13 +284,17 @@ func (c *CPU) Run(cmd chan int) {
 			}
 
 		default:
-
 			// This is where the CPU actually runs an instruction.
+			// The instuctions update the PC
 			if !c.IsHalted && !c.IsStopped {
 				err = c.Step()
 				if err != nil {
 					fmt.Printf("CPU: Execution error: %v", err)
 					c.IsHalted = true
+				}
+
+				if len(c.BPs) != 0 {
+					c.breakpointCheck()
 				}
 
 				if c.SingleStepMode {

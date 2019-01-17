@@ -56,6 +56,8 @@ func init() {
 	// ...
 	InsSet[0x78] = OpcData{1, (*CPU).Opc78, false, "sei"}
 	// ...
+	InsSet[0x7A] = OpcData{1, (*CPU).Opc7A, false, "ply"}
+	// ...
 	InsSet[0x80] = OpcData{2, (*CPU).Opc80, false, "bra"}
 	// ...
 	InsSet[0x85] = OpcData{2, (*CPU).Opc85, false, "sta.d"}
@@ -92,6 +94,7 @@ func init() {
 	// ...
 	InsSet[0xF4] = OpcData{3, (*CPU).OpcF4, false, "phe.#"}
 	// ...
+	InsSet[0xFA] = OpcData{1, (*CPU).OpcFA, false, "plx"}
 	InsSet[0xFB] = OpcData{1, (*CPU).OpcFB, false, "xce"}
 }
 
@@ -602,6 +605,36 @@ func (c *CPU) Opc78() error { // sei
 	return nil
 }
 
+func (c *CPU) Opc7A() error { // ply
+	switch c.WidthXY {
+
+	case W8:
+		d, err := c.pullData8()
+		if err != nil {
+			return fmt.Errorf("ply (0x7A) XY8: couldn't get byte off the stack: %v", err)
+		}
+
+		c.Y8 = d
+		c.TestNZ8(c.Y8)
+
+	case W16:
+		d, err := c.pullData16()
+		if err != nil {
+			return fmt.Errorf("ply (0x7A) XY16: couldn't get word off the stack: %v", err)
+		}
+
+		c.Y16 = d
+		c.TestNZ16(c.Y16)
+
+	default:
+		return fmt.Errorf("ply (0x7A): illegal width for register Y:%d", c.WidthXY)
+
+	}
+
+	c.PC++
+	return nil
+}
+
 // ---- 8888 ----
 
 func (c *CPU) Opc80() error { // bra
@@ -995,6 +1028,36 @@ func (c *CPU) OpcF4() error { // phe.#
 	}
 
 	c.PC += 3
+	return nil
+}
+
+func (c *CPU) OpcFA() error { // plx
+	switch c.WidthXY {
+
+	case W8:
+		d, err := c.pullData8()
+		if err != nil {
+			return fmt.Errorf("plx (0xFA) XY8: couldn't get byte off the stack: %v", err)
+		}
+
+		c.X8 = d
+		c.TestNZ8(c.X8)
+
+	case W16:
+		d, err := c.pullData16()
+		if err != nil {
+			return fmt.Errorf("plx (0xFA) XY16: couldn't get word off the stack: %v", err)
+		}
+
+		c.X16 = d
+		c.TestNZ16(c.X16)
+
+	default:
+		return fmt.Errorf("plx (0xFA): illegal width for register X:%d", c.WidthXY)
+
+	}
+
+	c.PC++
 	return nil
 }
 
