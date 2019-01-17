@@ -1,7 +1,7 @@
 // Angua - An Emulator for the 65816 CPU in Native Mode
 // Scot W. Stevenson <scot.stevenson@gmail.com>
 // First version: 26. Sep 2017
-// This version: 16. Jan 2019
+// This version: 17. Jan 2019
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -117,7 +117,7 @@ func main() {
 		SpecRead:  make(map[common.Addr24]func() (byte, error)),
 		SpecWrite: make(map[common.Addr24]func(common.Data8)),
 	}
-	cpu := &cpu.CPU{}
+	mpu := &cpu.CPU{}
 
 	// The specials name table takes a lower case string (for example
 	// "getchar") and returns the related function (GetChar). To add your
@@ -199,7 +199,7 @@ func main() {
 				SpecWrite: make(map[common.Addr24]func(common.Data8)),
 			}
 
-			cpu.Mem = memory
+			mpu.Mem = memory
 			c.Println("Machine destroyed. Use 'init' for new machine.")
 
 		},
@@ -274,7 +274,7 @@ func main() {
 				}
 
 				// Print first line
-				sp0 := common.Addr24(cpu.SP).HexString()
+				sp0 := common.Addr24(mpu.SP).HexString()
 				c.Println(sp0, stackLine)
 
 				if depth == 0 {
@@ -282,7 +282,7 @@ func main() {
 				}
 
 				// We want more than just the first line
-				limit := depth + int(cpu.SP)
+				limit := depth + int(mpu.SP)
 
 				// Go, for some weird reason, doesn't
 				// have a max() function for int, only
@@ -292,9 +292,9 @@ func main() {
 					limit = 0xFFFF
 				}
 
-				for i := int(cpu.SP + 1); i <= limit; i++ {
+				for i := int(mpu.SP + 1); i <= limit; i++ {
 
-					b, err := cpu.Mem.Fetch(common.Addr24(i))
+					b, err := mpu.Mem.Fetch(common.Addr24(i))
 					if err != nil {
 						c.Println("ERROR: Can't fetch stack value at", i)
 						return
@@ -305,7 +305,7 @@ func main() {
 				}
 
 			case "dp", "direct", "directpage":
-				addrDP := common.Addr24(cpu.DP)
+				addrDP := common.Addr24(mpu.DP)
 				fmt.Println(rulerLine)
 				hexDump(addrDP, addrDP+0xFF, memory)
 
@@ -353,7 +353,7 @@ func main() {
 
 			cmd <- common.HALT
 			c.Println("Halting machine ...")
-			printCPUStatus(cpu)
+			printCPUStatus(mpu)
 		},
 	})
 
@@ -389,11 +389,11 @@ func main() {
 			// TODO set up external terminal access
 
 			// Set up CPU
-			cpu.Mem = memory
+			mpu.Mem = memory
 
 			c.Println("Initializing machine ...")
 			haveMachine = true
-			cpu.IsHalted = true
+			mpu.IsHalted = true
 
 			c.Println("System initialized, start with 'run'")
 		},
@@ -646,7 +646,7 @@ func main() {
 
 			c.Println("Running new machine ...")
 			haveRun = true
-			go cpu.Run(cmd)
+			go mpu.Run(cmd)
 			cmd <- common.RESET
 
 		},
@@ -669,17 +669,26 @@ func main() {
 
 			// Need two arguments
 			if len(c.Args) != 2 {
-				c.Println("ERROR: Need two arguments")
+				c.Println("Need two arguments for 'set'.")
 				return
 			}
 
 			switch c.Args[0] {
+			case "bp", "break", "breakpoint":
+				addr, err := common.ConvertNum(c.Args[1])
+				if err != nil {
+					c.Println("Couldn't convert", c.Args[1], "to address.")
+					return
+				}
+
+				mpu.BPs = append(mpu.BPs, common.Addr24(addr))
+
 			case "ss", "step", "singlestep":
 
 				if c.Args[1] == "on" {
-					cpu.SingleStepMode = true
+					mpu.SingleStepMode = true
 				} else {
-					cpu.SingleStepMode = false
+					mpu.SingleStepMode = false
 				}
 
 			case "tr", "trace":
@@ -786,18 +795,18 @@ func main() {
 			// well, print all data
 			if len(c.Args) == 1 && c.Args[0] == "all" {
 
-				if cpu.IsHalted {
+				if mpu.IsHalted {
 					fmt.Println("Machine is halted.")
 				}
 
 				fmt.Println("Total memory (ROM and RAM):", memory.Size(), "bytes")
-				printCPUStatus(cpu)
+				printCPUStatus(mpu)
 
 				return
 			}
 
 			// In all other cases, we just print the CPU status
-			printCPUStatus(cpu)
+			printCPUStatus(mpu)
 
 			// TODO restore old status
 
@@ -941,7 +950,7 @@ func disassemble(addr1, addr2 common.Addr24, m *mem.Memory) {
 
 		len := cpu.InsSet[b].Size
 		mne := cpu.InsSet[b].Mnemonic
-		// exp := cpu.InsSet[b].Expands
+		// exp := mpu.InsSet[b].Expands
 
 		// During development, this can happen if the instruction hasn't
 		// been coded yet
