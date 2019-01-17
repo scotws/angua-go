@@ -716,8 +716,21 @@ func main() {
 
 			switch subcmd {
 
-			case "breakpoints":
-				c.Println("CLI: SHOW: DUMMY show breakpoints")
+			case "bp", "break", "breakpoint", "breakpoints":
+
+				if !haveMachine {
+					c.Println("No machine present (use 'init').")
+					return
+				}
+
+				if len(mpu.BPs) == 0 {
+					c.Println("No breakpoints defined.")
+					return
+				}
+
+				for _, bp := range mpu.BPs {
+					c.Println(bp.HexString())
+				}
 
 			case "config":
 				c.Println("CLI: DUMMY show config")
@@ -1064,6 +1077,7 @@ func hexDump(addr1, addr2 common.Addr24, m *mem.Memory) {
 
 			nextAddr := addr1 + common.Addr24(count)
 			fmt.Fprintf(&hb, nextAddr.HexString()+" ")
+			fmt.Fprintf(&cb, " ")
 		}
 
 		b, err := m.Fetch(i)

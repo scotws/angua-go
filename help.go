@@ -1,7 +1,7 @@
 // Long Help messages for the Angua Command Line Interface (CLI)
 // Scot W. Stevenson <scot.stevenson@gmail.com>
 // First version: 11. Nov 2018
-// This version: 12. Jan 2019
+// This version: 17. Jan 2019
 
 package main
 
@@ -183,10 +183,12 @@ Example:
 
 	longHelpRun string = `Run an initialized machine.
 
-(THE REST OF THIS ENTRY IS MISSING)
+Run is used to start a machine the first time. It is required interally because
+it starts the goroutine (think "thread") that the 65816 emulator runs in and
+that the other commands modify. You can't "run" a machine twice, use "reset".
 
 Example:
-		(THE EXAMPLE IS MISSING)`
+		run`
 
 	longHelpSave string = `Save an address range of memory to a file.
 
@@ -197,16 +199,14 @@ Example:
 
 	longHelpSet string = `Set various parameters.
 
-Use this to set verbose and trace modes. 
-
-	set singlestep [on|off]	- Single step mode, synonyms "ss", "step"
-	set trace [on|off]	- Print trace (lots and lots of output)
-	set verbose [on|off]    - Give more information (more output)
-
-(THE REST OF THIS ENTRY IS MISSING)
+Use this to set breakpoints, verbose and trace modes. 
 
 Example:
-		(THE EXAMPLE IS MISSING)`
+
+	set breakpoint <ADDR>   - Set a breakpoint; synonyms "bp", "break"
+	set singlestep [on|off]	- Single step mode; synonyms "ss", "step"
+	set trace [on|off]	- Print trace (lots and lots of output)
+	set verbose [on|off]    - Give more information (more output)`
 
 	longHelpShow string = `Show information on the system
 
