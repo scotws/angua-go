@@ -62,6 +62,7 @@ func init() {
 	// ...
 	InsSet[0x85] = OpcData{2, (*CPU).Opc85, false, "sta.d"}
 	// ...
+	InsSet[0x8A] = OpcData{1, (*CPU).Opc8A, false, "txa"}
 	InsSet[0x8B] = OpcData{1, (*CPU).Opc8B, false, "phb"} // pushes DBR
 	// ...
 	InsSet[0x8D] = OpcData{3, (*CPU).Opc8D, false, "sta"}
@@ -69,6 +70,7 @@ func init() {
 	InsSet[0x9A] = OpcData{1, (*CPU).Opc9A, false, "txs"}
 	InsSet[0x9B] = OpcData{1, (*CPU).Opc9B, false, "txy"}
 	// ...
+	InsSet[0xA8] = OpcData{1, (*CPU).OpcA8, false, "tay"}
 	InsSet[0xA9] = OpcData{2, (*CPU).OpcA9, true, "lda.#"} // includes lda.8/lda.16
 	// ...
 	InsSet[0xAA] = OpcData{1, (*CPU).OpcAA, false, "tax"}
@@ -674,6 +676,43 @@ func (c *CPU) Opc85() error { // sta.d
 	return nil
 }
 
+// Helper functions for txa (0x8A)
+
+func (c *CPU) txaX8A8() {
+	c.A8 = c.X8
+	c.TestNZ8(c.A8)
+}
+
+func (c *CPU) txaX8A16() {
+	c.A16 = common.Data16(c.X8)
+	c.TestNZ16(c.A16)
+}
+
+func (c *CPU) txaX16A8() {
+	c.A8 = common.Data8(c.X16.Lsb())
+	c.TestNZ8(c.A8)
+}
+
+func (c *CPU) txaX16A16() {
+	c.A16 = c.X16
+	c.TestNZ16(c.A16)
+}
+
+var txaFNS [2][2]func(c *CPU)
+
+func init() {
+	txaFNS[W8][W8] = (*CPU).txaX8A8
+	txaFNS[W8][W16] = (*CPU).txaX8A16
+	txaFNS[W16][W8] = (*CPU).txaX16A8
+	txaFNS[W16][W16] = (*CPU).txaX16A16
+}
+
+func (c *CPU) Opc8A() error { // txa
+	txaFNS[c.WidthA][c.WidthXY](c)
+	c.PC += 1
+	return nil
+}
+
 func (c *CPU) Opc8B() error { // phb (Data Bank Register)
 	err := c.pushData8(c.DBR)
 	if err != nil {
@@ -747,40 +786,41 @@ func (c *CPU) Opc9B() error { // txy
 
 // ---- AAAA ----
 
-// Helper functions for tax (0xAA)
+// Helper functions for tay (0xA8)
 
-func (c *CPU) taxA8X8() {
-	c.X8 = common.Data8(c.A8)
-	c.TestNZ8(c.X8)
+func (c *CPU) tayA8Y8() {
+	c.Y8 = c.A8
+	c.TestNZ8(c.Y8)
 }
 
-func (c *CPU) taxA8X16() {
+func (c *CPU) tayA8Y16() {
 	MSB := common.Data16(c.B) << 8
-	c.X16 = MSB | common.Data16(c.A8)
-	c.TestNZ16(c.X16)
+	c.Y16 = MSB | common.Data16(c.A8)
+	c.TestNZ16(c.Y16)
 }
 
-func (c *CPU) taxA16X8() {
-	c.X8 = common.Data8(c.A16.Lsb())
-	c.TestNZ8(c.X8)
+func (c *CPU) tayA16Y8() {
+	c.Y8 = common.Data8(c.A16.Lsb())
+	c.TestNZ8(c.Y8)
 }
 
-func (c *CPU) taxA16X16() {
-	c.X16 = c.A16
-	c.TestNZ16(c.X16)
+func (c *CPU) tayA16Y16() {
+	c.Y16 = c.A16
+	c.TestNZ16(c.Y16)
 }
 
-var taxFNS [2][2]func(c *CPU)
+var tayFNS [2][2]func(c *CPU)
 
 func init() {
-	taxFNS[W8][W8] = (*CPU).taxA8X8
-	taxFNS[W8][W16] = (*CPU).taxA8X16
-	taxFNS[W16][W8] = (*CPU).taxA16X8
-	taxFNS[W16][W16] = (*CPU).taxA16X16
+	tayFNS[W8][W8] = (*CPU).tayA8Y8
+	tayFNS[W8][W16] = (*CPU).tayA8Y16
+	tayFNS[W16][W8] = (*CPU).tayA16Y8
+	tayFNS[W16][W16] = (*CPU).tayA16Y16
 }
 
-func (c *CPU) OpcAA() error { // tax
-	taxFNS[c.WidthA][c.WidthXY](c)
+func (c *CPU) OpcA8() error { // tay
+	tayFNS[c.WidthA][c.WidthXY](c)
+	c.PC += 1
 	return nil
 }
 
@@ -814,7 +854,43 @@ func (c *CPU) OpcA9() error { // lda.# (lda.8/lda.16)
 	return nil
 }
 
-// ...
+// Helper functions for tax (0xAA)
+
+func (c *CPU) taxA8X8() {
+	c.X8 = c.A8
+	c.TestNZ8(c.X8)
+}
+
+func (c *CPU) taxA8X16() {
+	MSB := common.Data16(c.B) << 8
+	c.X16 = MSB | common.Data16(c.A8)
+	c.TestNZ16(c.X16)
+}
+
+func (c *CPU) taxA16X8() {
+	c.X8 = common.Data8(c.A16.Lsb())
+	c.TestNZ8(c.X8)
+}
+
+func (c *CPU) taxA16X16() {
+	c.X16 = c.A16
+	c.TestNZ16(c.X16)
+}
+
+var taxFNS [2][2]func(c *CPU)
+
+func init() {
+	taxFNS[W8][W8] = (*CPU).taxA8X8
+	taxFNS[W8][W16] = (*CPU).taxA8X16
+	taxFNS[W16][W8] = (*CPU).taxA16X8
+	taxFNS[W16][W16] = (*CPU).taxA16X16
+}
+
+func (c *CPU) OpcAA() error { // tax
+	taxFNS[c.WidthA][c.WidthXY](c)
+	c.PC += 1
+	return nil
+}
 
 func (c *CPU) OpcAD() error { // lda
 	addr, err := c.modeAbsolute()
