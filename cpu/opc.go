@@ -702,8 +702,8 @@ var txaFNS [2][2]func(c *CPU)
 
 func init() {
 	txaFNS[W8][W8] = (*CPU).txaX8A8
-	txaFNS[W8][W16] = (*CPU).txaX8A16
-	txaFNS[W16][W8] = (*CPU).txaX16A8
+	txaFNS[W16][W8] = (*CPU).txaX8A16
+	txaFNS[W8][W16] = (*CPU).txaX16A8
 	txaFNS[W16][W16] = (*CPU).txaX16A16
 }
 
