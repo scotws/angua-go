@@ -1,7 +1,7 @@
 // Opcodes for Angua
 // Scot W. Stevenson <scot.stevenson@gmail.com>
 // First version: 02. Jan 2019
-// This version: 16. Jan 2019
+// This version: 19. Jan 2019
 
 // This package contains the opcodes and opcode data for the 65816 instructions.
 // Note there is redundancy with the information in the info package. We keep
@@ -70,6 +70,8 @@ func init() {
 	InsSet[0x9B] = OpcData{1, (*CPU).Opc9B, false, "txy"}
 	// ...
 	InsSet[0xA9] = OpcData{2, (*CPU).OpcA9, true, "lda.#"} // includes lda.8/lda.16
+	// ...
+	InsSet[0xAA] = OpcData{1, (*CPU).OpcAA, false, "tax"}
 	// ...
 	InsSet[0xAD] = OpcData{3, (*CPU).OpcAD, false, "lda"}
 	// ...
@@ -744,6 +746,43 @@ func (c *CPU) Opc9B() error { // txy
 }
 
 // ---- AAAA ----
+
+// Helper functions for tax (0xAA)
+
+func (c *CPU) taxA8X8() {
+	c.X8 = common.Data8(c.A8)
+	c.TestNZ8(c.X8)
+}
+
+func (c *CPU) taxA8X16() {
+	MSB := common.Data16(c.B) << 8
+	c.X16 = MSB | common.Data16(c.A8)
+	c.TestNZ16(c.X16)
+}
+
+func (c *CPU) taxA16X8() {
+	c.X8 = common.Data8(c.A16.Lsb())
+	c.TestNZ8(c.X8)
+}
+
+func (c *CPU) taxA16X16() {
+	c.X16 = c.A16
+	c.TestNZ16(c.X16)
+}
+
+var taxFNS [2][2]func(c *CPU)
+
+func init() {
+	taxFNS[W8][W8] = (*CPU).taxA8X8
+	taxFNS[W8][W16] = (*CPU).taxA8X16
+	taxFNS[W16][W8] = (*CPU).taxA16X8
+	taxFNS[W16][W16] = (*CPU).taxA16X16
+}
+
+func (c *CPU) OpcAA() error { // tax
+	taxFNS[c.WidthA][c.WidthXY](c)
+	return nil
+}
 
 func (c *CPU) OpcA9() error { // lda.# (lda.8/lda.16)
 

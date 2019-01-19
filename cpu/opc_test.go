@@ -1,7 +1,7 @@
 // Test file for Angua CPU opcodes
 // Scot W. Stevenson <scot.stevenson@gmail.com>
 // First version: 05. Jan 2019
-// This version: 15. Jan 2019
+// This version: 19. Jan 2019
 
 package cpu
 
@@ -50,23 +50,23 @@ func TestOpcFlags(t *testing.T) {
 	var c = CPU{}
 	var tests = []struct {
 		name string
-		init func(*CPU) error
+		init func() error
 		flag *byte
 		want byte
 	}{
-		{"0x18 (clc)", Opc18, &c.FlagC, CLEAR},
-		{"0xD8 (cld)", OpcD8, &c.FlagD, CLEAR},
-		{"0x58 (cli)", Opc58, &c.FlagI, CLEAR},
-		{"0xB8 (clv)", OpcB8, &c.FlagV, CLEAR},
+		{"0x18 (clc)", c.Opc18, &c.FlagC, CLEAR},
+		{"0xD8 (cld)", c.OpcD8, &c.FlagD, CLEAR},
+		{"0x58 (cli)", c.Opc58, &c.FlagI, CLEAR},
+		{"0xB8 (clv)", c.OpcB8, &c.FlagV, CLEAR},
 
-		{"0x38 (sec)", Opc38, &c.FlagC, SET},
+		{"0x38 (sec)", c.Opc38, &c.FlagC, SET},
 		// {"0x?? (sed)", Opc??, &c.FlagD, SET}, TODO
-		{"0x78 (sei)", Opc78, &c.FlagI, SET},
+		{"0x78 (sei)", c.Opc78, &c.FlagI, SET},
 		// {"0x?? (sev)", Opc??, &c.FlagV, SET}, TODO
 	}
 
 	for _, test := range tests {
-		test.init(&c) // executes opcode
+		test.init() // executes opcode
 
 		if *test.flag != test.want {
 			t.Errorf("TestOpcFlags for %v returns %X, wanted %X",
@@ -83,18 +83,18 @@ func TestOpc9A(t *testing.T) {
 	// Test with 8 bit X
 
 	var tests8 = []struct {
-		init func(*CPU) error
+		init func() error
 		have common.Data8
 		want common.Addr16 // SP is Addr16
 	}{
-		{Opc9A, 0x01, 0x0001},
+		{c.Opc9A, 0x01, 0x0001},
 	}
 
 	c.WidthXY = W8
 
 	for _, test8 := range tests8 {
 		c.X8 = test8.have
-		_ = test8.init(&c) // executes opcode, dump err
+		_ = test8.init() // executes opcode, dump err
 
 		if c.SP != test8.want {
 			t.Errorf("TestOpc9A (txs) 8 returns %X for c.SP, wanted %X", c.SP, test8.want)
@@ -104,18 +104,18 @@ func TestOpc9A(t *testing.T) {
 	// Test with 16 bit X
 
 	var tests16 = []struct {
-		init func(*CPU) error
+		init func() error
 		have common.Data16
 		want common.Addr16 // SP is Addr16
 	}{
-		{Opc9A, 0x01, 0x0001},
+		{c.Opc9A, 0x01, 0x0001},
 	}
 
 	c.WidthXY = W16
 
 	for _, test16 := range tests16 {
 		c.X16 = test16.have
-		_ = test16.init(&c) // executes opcode, dump err
+		_ = test16.init() // executes opcode, dump err
 
 		if c.SP != test16.want {
 			t.Errorf("TestOpc9A (txs) 16 returns %X for c.SP, wanted %X", c.SP, test16.want)
@@ -130,19 +130,19 @@ func TestOpcEB(t *testing.T) {
 	// First step: Test with 8 bit A
 
 	var tests8 = []struct {
-		init func(*CPU) error
+		init func() error
 		have common.Data8
 		want common.Data8
 	}{
-		{OpcEB, 0xFF, 0xFF},
-		{OpcEB, 0x00, 0x00},
+		{c.OpcEB, 0xFF, 0xFF},
+		{c.OpcEB, 0x00, 0x00},
 	}
 
 	c.WidthA = W8 // We start in native mode otherwise
 
 	for _, test8 := range tests8 {
 		c.A8 = test8.have
-		_ = test8.init(&c) // executes opcode, dump err
+		_ = test8.init() // executes opcode, dump err
 
 		if c.B != test8.want {
 			t.Errorf("TestOpcEB (xba) A8 returns %X for B and %X for A, wanted %X", c.B, c.A8, test8.want)
@@ -152,22 +152,52 @@ func TestOpcEB(t *testing.T) {
 	// Second step: Test with 16 bit A
 
 	var tests16 = []struct {
-		init func(*CPU) error
+		init func() error
 		have common.Data16
 		want common.Data16
 	}{
-		{OpcEB, 0xFF00, 0x00FF},
-		{OpcEB, 0x0000, 0x0000},
+		{c.OpcEB, 0xFF00, 0x00FF},
+		{c.OpcEB, 0x0000, 0x0000},
 	}
 
 	c.WidthA = W16
 
 	for _, test16 := range tests16 {
 		c.A16 = test16.have
-		_ = test16.init(&c) // executes opcode
+		_ = test16.init() // executes opcode
 
 		if c.A16 != test16.want {
 			t.Errorf("TestOpcEB (xba) A16 returns %X, wanted %X", c.A16, test16.want)
+		}
+	}
+
+}
+
+// tax
+func TestOpcAA(t *testing.T) {
+	var c = CPU{}
+
+	// First test with A8 and X8
+
+	var tests8n8 = []struct {
+		init func() error
+		have common.Data8
+		want common.Data8
+	}{
+		{c.OpcAA, 0x00, 0x00},
+		{c.OpcAA, 0xAA, 0xAA},
+	}
+
+	c.WidthA = W8
+	c.WidthXY = W8
+
+	for _, test8 := range tests8n8 {
+		c.A8 = test8.have
+		_ = test8.init() // executes opcode
+
+		if c.X8 != test8.want {
+			t.Errorf("TestOpcAA (tax) A8X8 with %X returns %X, wanted %X",
+				test8.have, c.X8, test8.want)
 		}
 	}
 
