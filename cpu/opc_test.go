@@ -173,7 +173,7 @@ func TestOpcEB(t *testing.T) {
 
 }
 
-// tax
+// tax (0xAA). The test currently doesn't check flags
 func TestOpcAA(t *testing.T) {
 	var c = CPU{}
 
@@ -186,6 +186,7 @@ func TestOpcAA(t *testing.T) {
 	}{
 		{c.OpcAA, 0x00, 0x00},
 		{c.OpcAA, 0xAA, 0xAA},
+		{c.OpcAA, 0xFF, 0xFF},
 	}
 
 	c.WidthA = W8
@@ -198,6 +199,85 @@ func TestOpcAA(t *testing.T) {
 		if c.X8 != test8.want {
 			t.Errorf("TestOpcAA (tax) A8X8 with %X returns %X, wanted %X",
 				test8.have, c.X8, test8.want)
+		}
+	}
+
+	// Second test with A8 and X16
+
+	var tests8n16 = []struct {
+		init func() error
+		have common.Data8
+		want common.Data16
+	}{
+		{c.OpcAA, 0x00, 0x0000},
+		{c.OpcAA, 0xAA, 0x00AA},
+		{c.OpcAA, 0xFF, 0x00FF},
+	}
+
+	c.WidthA = W8
+	c.WidthXY = W16
+
+	for _, test8 := range tests8n16 {
+		c.A8 = test8.have
+		_ = test8.init() // executes opcode
+
+		if c.X16 != test8.want {
+			t.Errorf("TestOpcAA (tax) A8X16 with %X returns %X, wanted %X",
+				test8.have, c.X16, test8.want)
+		}
+	}
+
+	// Third test with A16 and X8
+
+	var tests16n8 = []struct {
+		init func() error
+		have common.Data16
+		want common.Data8
+	}{
+		{c.OpcAA, 0x0000, 0x00},
+		{c.OpcAA, 0x00AA, 0xAA},
+		{c.OpcAA, 0x00FF, 0xFF},
+		{c.OpcAA, 0x0FF0, 0xF0},
+		{c.OpcAA, 0xFF00, 0x00},
+	}
+
+	c.WidthA = W16
+	c.WidthXY = W8
+
+	for _, test8 := range tests16n8 {
+		c.A16 = test8.have
+		_ = test8.init() // executes opcode
+
+		if c.X8 != test8.want {
+			t.Errorf("TestOpcAA (tax) A8X16 with %X returns %X, wanted %X",
+				test8.have, c.X8, test8.want)
+		}
+	}
+
+	// Fourth test with A16 and X16
+
+	var tests16n16 = []struct {
+		init func() error
+		have common.Data16
+		want common.Data16
+	}{
+		{c.OpcAA, 0x0000, 0x0000},
+		{c.OpcAA, 0x00AA, 0x00AA},
+		{c.OpcAA, 0x00FF, 0x00FF},
+		{c.OpcAA, 0x0FF0, 0x0FF0},
+		{c.OpcAA, 0xFF00, 0xFF00},
+	}
+
+	c.WidthA = W16
+	c.WidthXY = W16
+
+	for _, test8 := range tests16n16 {
+		c.A16 = test8.have
+		_ = test8.init() // executes opcode
+
+		if c.X16 != test8.want {
+			t.Errorf("TestOpcAA (tax) A8X16 with %X returns %X, wanted %X",
+				test8.have, c.X16, test8.want)
 		}
 	}
 
