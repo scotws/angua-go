@@ -1,12 +1,14 @@
 CPU files for Angua 
 Scot W. Stevenson <scot.stevenson@gmail.com>
 First version: 06. Jan 2019
-This version: 16. Jan 2019
+This version: 03. Feb 2019 (Superbowl LIII)
 
-This folder contains the basic CPU structure
+This folder contains the basic CPU structure. The files are organized
+as follows:
 
-        cpu.go  - registers and general routines
-        opc.go  - opcode routines
-        intr.go - interrupt handling
-
+        cpu         - registers and general routines
+        intr        - interrupt handling
+        modes       - common mode routines for the opcodes
+        opc         - opcode routines
+        opc_helpers - various helper functions for the opcodes
 
