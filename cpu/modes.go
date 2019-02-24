@@ -15,10 +15,11 @@ import (
 )
 
 // modeAbsolute returns the address stored in the next two bytes after the
-// opcode and an error code.
+// opcode and an error.
 func (c *CPU) modeAbsolute() (common.Addr24, error) {
 	operandAddr := c.getFullPC() + 1
 	addrUint, err := c.Mem.FetchMore(operandAddr, 2)
+
 	if err != nil {
 		return 0,
 			fmt.Errorf("absolute mode: couldn't fetch address from %s: %v",
@@ -52,6 +53,7 @@ func (c *CPU) modeBranch(b byte) (common.Addr16, error) {
 func (c *CPU) modeDirectPage() (common.Addr24, error) {
 	operandAddr := c.getFullPC() + 1
 	dpOffset, err := c.Mem.Fetch(operandAddr)
+
 	if err != nil {
 		return 0,
 			fmt.Errorf("direct page mode: couldn't fetch address from %s: %v",
@@ -69,6 +71,7 @@ func (c *CPU) modeDirectPage() (common.Addr24, error) {
 func (c *CPU) modeImmediate8() (common.Data8, error) {
 	operandAddr := c.getFullPC() + 1
 	operand, err := c.Mem.Fetch(operandAddr)
+
 	if err != nil {
 		return 0,
 			fmt.Errorf("immediate 8 mode: couldn't fetch data from %s: %v",
@@ -88,6 +91,7 @@ func (c *CPU) getNextData8() (common.Data8, error) {
 func (c *CPU) modeImmediate16() (common.Data16, error) {
 	operandAddr := c.getFullPC() + 1
 	ui, err := c.Mem.FetchMore(operandAddr, 2)
+
 	if err != nil {
 		return 0,
 			fmt.Errorf("immediate 16 mode: couldn't fetch data from %s: %v",
@@ -97,11 +101,17 @@ func (c *CPU) modeImmediate16() (common.Data16, error) {
 	return common.Data16(ui), nil
 }
 
+// getNextData16 is a synonym for modeImmediate16
+func (c *CPU) getNextData16() (common.Data16, error) {
+	return c.modeImmediate16()
+}
+
 // modeLong returns the address stored in the next three bytes after the
 // opcode and an error code.
 func (c *CPU) modeLong() (common.Addr24, error) {
 	operandAddr := c.getFullPC() + 1
 	addrUint, err := c.Mem.FetchMore(operandAddr, 3)
+
 	if err != nil {
 		return 0,
 			fmt.Errorf("long mode: couldn't fetch address from %s: %v",
@@ -111,11 +121,6 @@ func (c *CPU) modeLong() (common.Addr24, error) {
 	return common.Addr24(addrUint), nil
 }
 
-// getNextData16 is a synonym for modeImmediate16
-func (c *CPU) getNextData16() (common.Data16, error) {
-	return c.modeImmediate16()
-}
-
 // getNextByte takes a pointer to the CPU and returns the next byte - usually
 // the byte after the opcode - and an error message. This is a slight variation
 // in modeImmediate8, except we return a byte and not common.Data8. Keep them
@@ -123,6 +128,7 @@ func (c *CPU) getNextData16() (common.Data16, error) {
 func (c *CPU) getNextByte() (byte, error) {
 	byteAddr := c.getFullPC() + 1
 	b, err := c.Mem.Fetch(byteAddr)
+
 	if err != nil {
 		return 0,
 			fmt.Errorf("getNextByte: couldn't fetch data from %s: %v",

@@ -392,3 +392,113 @@ func TestOpc8A(t *testing.T) {
 	}
 
 }
+
+// tya (0x98). The test currently doesn't check flags
+func TestOpc98(t *testing.T) {
+	var c = CPU{}
+
+	// First test with Y8 and A8
+
+	var tests8n8 = []struct {
+		init func() error
+		have common.Data8
+		want common.Data8
+	}{
+		{c.Opc98, 0x00, 0x00},
+		{c.Opc98, 0xAA, 0xAA},
+		{c.Opc98, 0xFF, 0xFF},
+	}
+
+	c.WidthXY = W8
+	c.WidthA = W8
+
+	for _, test8 := range tests8n8 {
+		c.Y8 = test8.have
+		_ = test8.init() // executes opcode
+
+		if c.A8 != test8.want {
+			t.Errorf("TestOpc98 (tya) Y8A8 with %X returns %X, wanted %X",
+				test8.have, c.A8, test8.want)
+		}
+	}
+
+	// Second test with Y8 and A16
+
+	var tests8n16 = []struct {
+		init func() error
+		have common.Data8
+		want common.Data16
+	}{
+		{c.Opc98, 0x00, 0x0000},
+		{c.Opc98, 0xAA, 0x00AA},
+		{c.Opc98, 0xFF, 0x00FF},
+	}
+
+	c.WidthXY = W8
+	c.WidthA = W16
+
+	for _, test8 := range tests8n16 {
+		c.Y8 = test8.have
+		_ = test8.init() // executes opcode
+
+		if c.A16 != test8.want {
+			t.Errorf("TestOpc98 (tya) Y8A16 with %X returns %X, wanted %X",
+				test8.have, c.A16, test8.want)
+		}
+	}
+
+	// Third test with Y16 and A8
+
+	var tests16n8 = []struct {
+		init func() error
+		have common.Data16
+		want common.Data8
+	}{
+		{c.Opc98, 0x0000, 0x00},
+		{c.Opc98, 0x00AA, 0xAA},
+		{c.Opc98, 0x00FF, 0xFF},
+		{c.Opc98, 0x0FF0, 0xF0},
+		{c.Opc98, 0xFF00, 0x00},
+	}
+
+	c.WidthXY = W16
+	c.WidthA = W8
+
+	for _, test8 := range tests16n8 {
+		c.Y16 = test8.have
+		_ = test8.init() // executes opcode
+
+		if c.A8 != test8.want {
+			t.Errorf("TestOpc98 (tya) Y8A16 with %X returns %X, wanted %X",
+				test8.have, c.A8, test8.want)
+		}
+	}
+
+	// Fourth test with Y16 and A16
+
+	var tests16n16 = []struct {
+		init func() error
+		have common.Data16
+		want common.Data16
+	}{
+		{c.Opc98, 0x0000, 0x0000},
+		{c.Opc98, 0x00AA, 0x00AA},
+		{c.Opc98, 0x00FF, 0x00FF},
+		{c.Opc98, 0x0FF0, 0x0FF0},
+		{c.Opc98, 0xFF00, 0xFF00},
+	}
+
+	c.WidthXY = W16
+	c.WidthA = W16
+
+	for _, test8 := range tests16n16 {
+		c.Y16 = test8.have
+		_ = test8.init() // executes opcode
+
+		if c.A16 != test8.want {
+			t.Errorf("TestOpc98 (tya) Y8A16 with %X returns %X, wanted %X",
+				test8.have, c.A16, test8.want)
+		}
+	}
+
+}

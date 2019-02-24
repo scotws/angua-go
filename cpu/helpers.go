@@ -1,9 +1,9 @@
 // Helper functions for opcodes in Angua
 // Scot W. Stevenson <scot.stevenson@gmail.com>
 // First version: 03. Feb 2019 (Superbowl LIII)
-// This version: 03. Feb 2019 (Superbowl LIII)
+// This version: 24. Feb 2019 (Oscars)
 
-// This package contains helper functions for the opcodes in opc.go
+// This package contains helper functions for the opcodes in opcodes.go
 
 package cpu
 
@@ -12,6 +12,8 @@ import (
 
 	"angua/common"
 )
+
+// --- Load routines ---
 
 // --- Store routines ---
 
@@ -235,7 +237,36 @@ func init() {
 	txaFNS[W16][W16] = (*CPU).txaX16A16
 }
 
-// TODO add helper functions for TYA
+// Helper functions for TYA
+
+func (c *CPU) tyaY8A8() {
+	c.A8 = c.Y8
+	c.TestNZ8(c.A8)
+}
+
+func (c *CPU) tyaY8A16() {
+	c.A16 = common.Data16(c.Y8)
+	c.TestNZ16(c.A16)
+}
+
+func (c *CPU) tyaY16A8() {
+	c.A8 = common.Data8(c.Y16.Lsb())
+	c.TestNZ8(c.A8)
+}
+
+func (c *CPU) tyaY16A16() {
+	c.A16 = c.Y16
+	c.TestNZ16(c.A16)
+}
+
+var tyaFNS [2][2]func(c *CPU)
+
+func init() {
+	tyaFNS[W8][W8] = (*CPU).tyaY8A8
+	tyaFNS[W16][W8] = (*CPU).tyaY8A16
+	tyaFNS[W8][W16] = (*CPU).tyaY16A8
+	tyaFNS[W16][W16] = (*CPU).tyaY16A16
+}
 
 // Helper functions for tay (0xA8)
 

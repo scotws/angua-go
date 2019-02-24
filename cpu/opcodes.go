@@ -1,7 +1,7 @@
 // Opcodes for Angua
 // Scot W. Stevenson <scot.stevenson@gmail.com>
 // First version: 02. Jan 2019
-// This version: 19. Jan 2019
+// This version: 24. Feb 2019
 
 // This package contains the opcodes and opcode data for the 65816 instructions.
 // Note there is redundancy with the information in the info package. We keep
@@ -15,7 +15,7 @@ import (
 	"angua/common"
 )
 
-// TODO see if we need the boolean
+// TODO see if we really need the boolean (probably not)
 type OpcData struct {
 	Size     int              // number of bytes including operand (1 to 4)
 	Code     func(*CPU) error // function for actual code of instruction
@@ -68,6 +68,7 @@ func init() {
 	// ...
 	InsSet[0x8D] = OpcData{3, (*CPU).Opc8D, false, "sta"}
 	// ...
+	InsSet[0x98] = OpcData{1, (*CPU).Opc98, false, "tya"}
 	InsSet[0x9A] = OpcData{1, (*CPU).Opc9A, false, "txs"}
 	InsSet[0x9B] = OpcData{1, (*CPU).Opc9B, false, "txy"}
 	// ...
@@ -102,8 +103,6 @@ func init() {
 	InsSet[0xFA] = OpcData{1, (*CPU).OpcFA, false, "plx"}
 	InsSet[0xFB] = OpcData{1, (*CPU).OpcFB, false, "xce"}
 }
-
-// --- Instruction functions ---
 
 // ---- 0000 ----
 
@@ -166,10 +165,10 @@ func (c *CPU) Opc38() error { // sec
 // ---- 4444 ----
 
 func (c *CPU) Opc40() error { // rti p. 391 (note wrong drawings)
+
 	// The full rti instruction pulls a different number of bytes depending
 	// on if we are in native or emulated mode. Since we only work in native
 	// mode, we throw an error if the emulated flag is set.
-
 	if c.FlagE == SET {
 		return fmt.Errorf("rti (0x40): emulation flag set, we only support native")
 	}
@@ -229,6 +228,7 @@ func (c *CPU) Opc4C() error { // jmp p. 360
 // ...
 
 func (c *CPU) Opc48() error { // pha p. 375
+	// TODO change this to function-based code once tests are complete
 	var err error
 
 	switch c.WidthA {
@@ -427,6 +427,12 @@ func (c *CPU) Opc8D() error { // sta
 }
 
 // ---- 9999 ----
+
+func (c *CPU) Opc98() error { // tya
+	tyaFNS[c.WidthA][c.WidthXY](c)
+	c.PC += 1
+	return nil
+}
 
 // txs (0x9a) transfers the X register to the Stack Pointer. Note that if we
 // have 8-bit index registers, the MSB of the Stack Pointer is zeroed, not set
