@@ -1,7 +1,7 @@
 // Test file for Angua Specials
 // Scot W. Stevenson <scot.stevenson@gmail.com>
 // First version: 05. Jan 2019
-// This version: 05. Jan 2019
+// This version: 17. Mar 2019
 
 package specials
 
@@ -31,16 +31,16 @@ func TestGetChar(t *testing.T) {
 func TestPutChar(t *testing.T) {
 
 	var tests = []struct {
-		char common.Data8
+		b byte
 	}{
 		{0x61}, // ASCII hex for "a"
-		{0x62}, // ASCII hex for "a"
-		{0x63}, // ASCII hex for "a"
+		{0x62}, // ASCII hex for "b"
+		{0x63}, // ASCII hex for "c"
 	}
 
 	for _, test := range tests {
-		fmt.Printf("Printing '%c': ", test.char)
-		PutChar(test.char)
+		fmt.Printf("Printing '%c': ", test.b)
+		PutChar(test.b)
 		fmt.Println()
 	}
 }
@@ -56,7 +56,7 @@ func TestSleep(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		fmt.Printf("Starting 8 in %d seconds ...", test.duration)
+		fmt.Printf("Starting Sleep8 in %d seconds ...", test.duration)
 		Sleep8(test.duration)
 		fmt.Println(" done.")
 	}
