@@ -1,7 +1,15 @@
 # Angua - An Emulator for 65816 Native Mode 
 Scot W. Stevenson <scot.stevenson@gmail.com>
 First version: 26. Sep 2017
-This version: 08. Jan 2019
+This version: 15. April 2019
+
+**THIS PROJECT IS ON HOLD.** Angua has the problem that there seems to be no
+easy, elegant way to receive one single character from the console with Go,
+making it hard to emulate the very low level routines involved. I'm taking a
+break from this project (which has been very useful for various things I
+learned) while I figure out where to go from here.
+
+Original README text:
 
 Angua is an emulator for the native mode of the 65816 CPU, a 8/16-bit hybrid
 processor that is the sibling of the famous 6502 8-bit processor of the Apple
