@@ -1,7 +1,7 @@
 // Angua - An Emulator for the 65816 CPU in Native Mode
 // Scot W. Stevenson <scot.stevenson@gmail.com>
 // First version: 26. Sep 2017
-// This version: 24. May 2019
+// This version: 26. May 2019
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -25,6 +25,7 @@ package main
 
 import (
 	"fmt"
+	"time"
 
 	"angua/cli"
 	"angua/info"
@@ -35,6 +36,9 @@ func main() {
 	// Generate Dictionaries for the information system in the
 	// background
 	go info.GenerateDicts()
+
+	// TODO testing start heart beat
+	go testHeartbeat()
 
 	// Create three channels for the Command Line Interface (CLI). 'cmd' are
 	// the commands sent from the CLI running in a separate go routine to the
@@ -60,5 +64,17 @@ command_loop:
 		case s := <-cmd:
 			fmt.Println("Got command:", s)
 		}
+	}
+}
+
+// testHeartbeat is a testing routine that prints a message on the standard
+// output during testing to make sure this routine is still alive. Use with a go
+// routine
+func testHeartbeat() {
+	var seconds = 5
+
+	for {
+		fmt.Println("(Heartbeat)")
+		time.Sleep(time.Duration(seconds) * time.Second)
 	}
 }
